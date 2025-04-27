@@ -1,1 +1,1 @@
-pub mod simple;
+pub mod c2pa;
