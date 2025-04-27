@@ -124,14 +124,47 @@ class TestCaseList extends StatelessWidget {
                   context: context,
                   builder: (context) => AlertDialog(
                     title: Text(testCase.title),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Image URL: ${testCase.imageUrl}'),
-                        Text('Manifest URL: ${testCase.manifestUrl}'),
-                        Text('Detailed Manifest URL: ${testCase.detailedManifestUrl}'),
-                      ],
+                    content: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              testCase.imageUrl,
+                              height: 200,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return SizedBox(
+                                  height: 200,
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      value: loadingProgress.expectedTotalBytes != null
+                                          ? loadingProgress.cumulativeBytesLoaded /
+                                              loadingProgress.expectedTotalBytes!
+                                          : null,
+                                    ),
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return const SizedBox(
+                                  height: 200,
+                                  child: Center(
+                                    child: Icon(Icons.error_outline, size: 48),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text('Image URL: ${testCase.imageUrl}'),
+                          Text('Manifest URL: ${testCase.manifestUrl}'),
+                          Text('Detailed Manifest URL: ${testCase.detailedManifestUrl}'),
+                        ],
+                      ),
                     ),
                     actions: [
                       TextButton(
