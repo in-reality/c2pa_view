@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:c2pa_view/c2pa_view.dart';
 
@@ -41,8 +42,7 @@ class TestCase {
 }
 
 Future<List<TestCase>> loadTestCases() async {
-  final file = File('assets/c2pa_test_data.dsv');
-  final contents = await file.readAsString();
+  final String contents = await rootBundle.loadString('assets/c2pa_test_data.dsv');
   final lines = contents.split('\n');
   // Skip header and empty lines
   return lines
