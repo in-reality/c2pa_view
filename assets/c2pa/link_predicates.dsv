@@ -1,0 +1,4 @@
+predicate | description | icon
+embedded | The manifest is embedded directly within the asset's metadata. | Icons.storage
+sidecar | The manifest is stored in a separate file alongside the asset. | Icons.insert_drive_file
+remote | The manifest is hosted at a remote URL and linked from the asset’s metadata. | Icons.cloud

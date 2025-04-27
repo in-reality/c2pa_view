@@ -1,0 +1,19 @@
+predicate | description | icon
+c2pa.actions | Details the sequence of actions performed on the asset. | Icons.timeline
+c2pa.hash.data | Provides a cryptographic hash of the asset's data to ensure integrity. | Icons.security
+c2pa.hash.bmff | Contains a hash specific to BMFF-based file formats. | Icons.security
+c2pa.hash.bmff.v2 | An updated version of the BMFF hash assertion. | Icons.security
+c2pa.hash.boxes | Hashes of specific boxes within the asset for granular integrity checks. | Icons.security
+c2pa.thumbnail.claim.jpeg | A JPEG thumbnail representing the asset's appearance. | Icons.image
+c2pa.metadata | General metadata about the asset, such as title and creator. | Icons.info
+c2pa.soft-binding | Links to related content without modifying the original asset. | Icons.link
+c2pa.cloud-data | References to assertions stored in the cloud. | Icons.cloud
+c2pa.ingredient | Information about source assets used in the creation of the current asset. | Icons.layers
+c2pa.asset-reference | References to external assets related to the current asset. | Icons.link
+c2pa.asset-type | Specifies the type of asset (e.g., image, video). | Icons.category
+c2pa.depthmap | Includes depth information for 3D representations. | Icons.blur_on
+c2pa.fontinfo | Details about fonts used within the asset. | Icons.font_download
+c2pa.roi | Defines regions of interest within the asset. | Icons.crop
+c2pa.metadata.assertion | Metadata specific to a particular assertion. | Icons.info_outline
+c2pa.collection-data-hash | Hash representing a collection of data elements. | Icons.collections
+c2pa.schema-org.CreativeWork | Metadata following schema.org's CreativeWork specification. | Icons.description

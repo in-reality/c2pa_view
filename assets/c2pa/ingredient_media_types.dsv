@@ -1,0 +1,17 @@
+media_type | simplified_name | description | icon
+image/jpeg | JPEG Image | A commonly used method of lossy compression for digital images. | Icons.image
+image/png | PNG Image | A raster-graphics file format that supports lossless data compression. | Icons.image
+image/gif | GIF Image | A bitmap image format supporting animations. | Icons.image
+image/webp | WebP Image | A modern image format that provides superior lossless and lossy compression. | Icons.image
+image/tiff | TIFF Image | A flexible image format supporting multiple layers and high color depth. | Icons.image
+video/mp4 | MP4 Video | A digital multimedia container format most commonly used to store video. | Icons.videocam
+video/quicktime | MOV Video | A multimedia container file format developed by Apple. | Icons.videocam
+audio/mpeg | MP3 Audio | A coding format for digital audio. | Icons.audiotrack
+audio/wav | WAV Audio | An audio file format standard for storing waveform data. | Icons.audiotrack
+application/pdf | PDF Document | A file format developed to present documents consistently. | Icons.picture_as_pdf
+application/vnd.adobe.photoshop | PSD File | Adobe Photoshop's native file format. | Icons.photo
+application/vnd.ms-powerpoint | PowerPoint Presentation | Microsoft's presentation program format. | Icons.slideshow
+application/vnd.openxmlformats-officedocument.wordprocessingml.document | Word Document | Microsoft's word processing document format. | Icons.description
+application/vnd.openxmlformats-officedocument.spreadsheetml.sheet | Excel Spreadsheet | Microsoft's spreadsheet document format. | Icons.grid_on
+application/x-font-ttf | TTF Font | TrueType font file. | Icons.font_download
+application/x-font-otf | OTF Font | OpenType font file. | Icons.font_download

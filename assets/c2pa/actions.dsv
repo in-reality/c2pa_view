@@ -1,0 +1,21 @@
+type | description | icon
+c2pa.created | The asset was originally created. | Icons.create
+c2pa.captured | The asset was captured using a device like a camera or scanner. | Icons.camera_alt
+c2pa.edited | The asset underwent editing operations. | Icons.edit
+c2pa.transcoded | The asset was converted to a different format or encoding. | Icons.sync_alt
+c2pa.redacted | Sensitive information was removed from the asset. | Icons.remove_red_eye
+c2pa.repackaged | The asset was repackaged without altering its content. | Icons.archive
+c2pa.converted | The asset was converted to a different type or format. | Icons.transform
+c2pa.copied | The asset was duplicated. | Icons.copy
+c2pa.cropped | The asset was cropped to remove parts of its content. | Icons.crop
+c2pa.filtered | Filters were applied to the asset. | Icons.filter
+c2pa.formatted | The asset's formatting was changed. | Icons.format_paint
+c2pa.version_updated | The asset's version was updated. | Icons.update
+c2pa.printed | The asset was printed. | Icons.print
+c2pa.published | The asset was published or made publicly available. | Icons.publish
+c2pa.managed | The asset underwent management operations. | Icons.manage_accounts
+c2pa.produced | The asset was produced, possibly as part of a larger project. | Icons.build
+c2pa.resized | The asset's dimensions were changed. | Icons.photo_size_select_large
+c2pa.saved | The asset was saved. | Icons.save
+c2pa.placed | The asset was placed within another asset. | Icons.add_to_photos
+c2pa.removed | The asset was removed from a composite. | Icons.remove_circle
