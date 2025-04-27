@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -15,8 +16,41 @@ import 'package:c2pa_view/c2pa_view.dart';
 //    without knowledge about path variables. Should be fixable (see
 //    Run main.dart configuration)
 
-const String testURL = 'https://c2pa.org/public-testfiles/image/jpeg/manifests/'
-  'adobe-20220124-CACAICAICICA/manifest_store.json';
+class TestCase {
+  final String title;
+  final String imageUrl;
+  final String manifestUrl;
+  final String detailedManifestUrl;
+
+  TestCase({
+    required this.title,
+    required this.imageUrl,
+    required this.manifestUrl,
+    required this.detailedManifestUrl,
+  });
+
+  factory TestCase.fromDsv(String line) {
+    final parts = line.split('|');
+    return TestCase(
+      title: parts[0],
+      imageUrl: parts[1],
+      manifestUrl: parts[2],
+      detailedManifestUrl: parts[3],
+    );
+  }
+}
+
+Future<List<TestCase>> loadTestCases() async {
+  final file = File('assets/c2pa_test_data.dsv');
+  final contents = await file.readAsString();
+  final lines = contents.split('\n');
+  // Skip header and empty lines
+  return lines
+      .skip(1)
+      .where((line) => line.isNotEmpty)
+      .map(TestCase.fromDsv)
+      .toList();
+}
 
 Future<void> main() async {
   await RustLib.init();
@@ -30,27 +64,88 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('flutter_rust_bridge quickstart')),
-        body: Center(
-          child: Column(
-            children: [
-              Text(
-                'Action: Call Rust `greet("Jeppe")`\nResult: `${greet(name: "Jeppe")}`',
+        appBar: AppBar(title: const Text('C2PA Test Cases')),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Select file from the C2PA JPEG test files to show it\'s manifest data.',
+                style: Theme.of(context).textTheme.bodyLarge,
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 40),
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black),
-                ),
-                padding: const EdgeInsets.all(16),
-                child: ManifestViewer(
-                  manifestUrl: testURL,
-                ),
+            ),
+            Expanded(
+              child: FutureBuilder<List<TestCase>>(
+                future: loadTestCases(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else if (snapshot.hasData) {
+                    return TestCaseList(testCases: snapshot.data!);
+                  } else {
+                    return const Center(child: Text('No test cases found.'));
+                  }
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+}
+
+class TestCaseList extends StatelessWidget {
+  final List<TestCase> testCases;
+
+  const TestCaseList({super.key, required this.testCases});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16.0),
+      itemCount: testCases.length,
+      itemBuilder: (context, index) {
+        final testCase = testCases[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ListTile(
+              title: Text(testCase.title),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text(testCase.title),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Image URL: ${testCase.imageUrl}'),
+                        Text('Manifest URL: ${testCase.manifestUrl}'),
+                        Text('Detailed Manifest URL: ${testCase.detailedManifestUrl}'),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Close'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 }
