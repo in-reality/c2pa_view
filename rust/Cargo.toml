@@ -9,6 +9,7 @@ crate-type = ["cdylib", "staticlib"]
 [dependencies]
 c2pa = {git = "ssh://git@github.com/NorthGuard/c2pa-rs.git", features = ["file_io", "rust_native_crypto"] }
 flutter_rust_bridge = "=2.9.0"
+mime_guess = "2.0.5"
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
