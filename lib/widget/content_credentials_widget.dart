@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import 'assertions_list_widget.dart';
 import 'ingredients_list_widget.dart';
+import 'actions_list_widget.dart';
 
 
 /// A widget that displays a content credentials based on the provided source.
@@ -77,6 +78,15 @@ class ContentCredentialsWidget extends StatelessWidget {
           Text('Claim Generator: ${activeManifest.claimGenerator}', style: contentStyle),
           const SizedBox(height: 4),
         ],
+
+        const SizedBox(height: 16),
+
+        // Actions
+        ActionsListWidget(
+          actions: activeManifest.actions,
+          sectionTitleStyle: sectionTitleStyle,
+          contentStyle: contentStyle,
+        ),
 
         const SizedBox(height: 16),
 
