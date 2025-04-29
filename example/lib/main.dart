@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -152,7 +151,7 @@ class TestCaseList extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 16),
-                            ContentCredentialWidget(
+                            ContentCredentialsWidget(
                               source: localPath,
                               contentPreview: ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
