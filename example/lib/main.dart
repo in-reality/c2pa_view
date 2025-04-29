@@ -3,7 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:dio/dio.dart';
 import 'package:c2pa_view/c2pa_view.dart';
 
 // Decent introduction: https://medium.com/flutter-community/how-to-create-publish-and-manage-flutter-packages-b4f2cd2c6b90
@@ -22,12 +23,14 @@ class TestCase {
   final String imageUrl;
   final String manifestUrl;
   final String detailedManifestUrl;
+  String? localImagePath;
 
   TestCase({
     required this.title,
     required this.imageUrl,
     required this.manifestUrl,
     required this.detailedManifestUrl,
+    this.localImagePath,
   });
 
   factory TestCase.fromDsv(String line) {
@@ -38,6 +41,22 @@ class TestCase {
       manifestUrl: parts[2],
       detailedManifestUrl: parts[3],
     );
+  }
+
+  Future<String> downloadImage() async {
+    if (localImagePath != null) {
+      return localImagePath!;
+    }
+
+    final tempDir = await getTemporaryDirectory();
+    final fileName = '${title.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')}.jpg';
+    final filePath = '${tempDir.path}/$fileName';
+
+    final dio = Dio();
+    await dio.download(imageUrl, filePath);
+    
+    localImagePath = filePath;
+    return filePath;
   }
 }
 
@@ -119,101 +138,61 @@ class TestCaseList extends StatelessWidget {
             ),
             child: ListTile(
               title: Text(testCase.title),
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text(testCase.title),
-                    content: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              testCase.imageUrl,
-                              height: 200,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return SizedBox(
-                                  height: 200,
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      value: loadingProgress.expectedTotalBytes != null
-                                          ? loadingProgress.cumulativeBytesLoaded /
-                                              loadingProgress.expectedTotalBytes!
-                                          : null,
+              onTap: () async {
+                try {
+                  final localPath = await testCase.downloadImage();
+                  if (!context.mounted) return;
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text(testCase.title),
+                      content: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                File(localPath),
+                                height: 200,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const SizedBox(
+                                    height: 200,
+                                    child: Center(
+                                      child: Icon(Icons.error_outline, size: 48),
                                     ),
-                                  ),
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace) {
-                                return const SizedBox(
-                                  height: 200,
-                                  child: Center(
-                                    child: Icon(Icons.error_outline, size: 48),
-                                  ),
-                                );
-                              },
+                                  );
+                                },
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text('Image URL: ${testCase.imageUrl}'),
-                          Text('Manifest URL: ${testCase.manifestUrl}'),
-                          Text('Detailed Manifest URL: ${testCase.detailedManifestUrl}'),
-                        ],
+                            const SizedBox(height: 16),
+                            ContentCredentialWidget(
+                              source: localPath,
+                            ),
+                          ],
+                        ),
                       ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Close'),
+                        ),
+                      ],
                     ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Close'),
-                      ),
-                    ],
-                  ),
-                );
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error downloading image: $e')),
+                  );
+                }
               },
             ),
           ),
         );
       },
     );
-  }
-}
-
-class ManifestViewer extends StatelessWidget {
-  final String fileUrl;
-
-  const ManifestViewer({super.key, required this.fileUrl});
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: getC2PAManifestURL(fileUrl).then((s) => json.decode(s)),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return CircularProgressIndicator();
-        } else if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
-        } else if (snapshot.hasData) {
-          // return ContentCredentialWidget(manifestData: snapshot.data!);
-          return Text('Unimplemented');
-        } else {
-          return Text('No data found.');
-        }
-      },
-    );
-  }
-}
-
-Future<Map<String, dynamic>> fetchManifest(String url) async {
-  final response = await http.get(Uri.parse(url));
-
-  if (response.statusCode == 200) {
-    return json.decode(response.body) as Map<String, dynamic>;
-  } else {
-    throw Exception('Failed to load manifest');
   }
 }
