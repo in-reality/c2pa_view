@@ -39,7 +39,7 @@ void main() {
     Map<String, dynamic> trueManifest = json.decode(manifestResponse.body);
 
     // Get manifest from file
-    Map<String, dynamic> manifest = json.decode(getFileManifestFormat(
+    Map<String, dynamic> manifest = json.decode(getC2PAManifestBytes(
       fileBytes: response.bodyBytes,
       format: 'image/jpeg',
     ));

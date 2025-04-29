@@ -184,21 +184,22 @@ class TestCaseList extends StatelessWidget {
 }
 
 class ManifestViewer extends StatelessWidget {
-  final String manifestUrl;
+  final String fileUrl;
 
-  const ManifestViewer({super.key, required this.manifestUrl});
+  const ManifestViewer({super.key, required this.fileUrl});
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
-      future: fetchManifest(manifestUrl),
+      future: getC2PAManifestURL(fileUrl).then((s) => json.decode(s)),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return CircularProgressIndicator();
         } else if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}');
         } else if (snapshot.hasData) {
-          return ContentCredentialWidget(manifestData: snapshot.data!);
+          // return ContentCredentialWidget(manifestData: snapshot.data!);
+          return Text('Unimplemented');
         } else {
           return Text('No data found.');
         }

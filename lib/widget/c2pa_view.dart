@@ -1,22 +1,12 @@
+import 'dart:convert';
+
+import 'package:c2pa_view/c2pa_view.dart';
 import 'package:flutter/material.dart';
 
-// Look at tmp/manifest_store_concat.json
-// The assertions-labels in all examples are:
-//    c2pa.actions                  <-- important
-//    stds.schema-org.CreativeWork  <-- important
-//    com.truepic.libc2pa           <-- not important
-//    com.truepic.custom.odometry   <-- not important
-//    stds.exif                     <-- what is this?
-
-// Examples from:
-//    https://c2pa.org/public-testfiles/image/
-// Specifications:
-//    https://c2pa.org/specifications/specifications/2.1/specs/C2PA_Specification.html#_assertions
-// Example verify app:
-//    https://contentcredentials.org/verify
-
+/// A widget that displays a content credential based on the provided source.
+/// `source` can be a local path or File pointing at the source-file.
 class ContentCredentialWidget extends StatelessWidget {
-  final Map<String, dynamic> manifestData;
+  final dynamic source;
   final Widget? contentPreview;
   final TextStyle? titleStyle;
   final TextStyle? sectionTitleStyle;
@@ -25,7 +15,7 @@ class ContentCredentialWidget extends StatelessWidget {
 
   const ContentCredentialWidget({
     super.key,
-    required this.manifestData,
+    required this.source,
     this.contentPreview,
     this.titleStyle,
     this.sectionTitleStyle,
@@ -35,6 +25,9 @@ class ContentCredentialWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get manifest
+    Map<String, dynamic> manifestData = json.decode(getC2PAManifest(source));
+
     // Get styles
     final titleStyle = this.titleStyle ?? Theme.of(context).textTheme.headlineMedium;
     final sectionTitleStyle = this.sectionTitleStyle ?? Theme.of(context).textTheme.titleMedium;
