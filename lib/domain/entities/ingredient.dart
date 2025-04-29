@@ -2,35 +2,82 @@ import 'package:equatable/equatable.dart';
 
 /// Represents an ingredient (e.g., original asset or intermediate) in the manifest.
 class Ingredient extends Equatable {
-  /// URI pointing to the ingredient data.
-  final String uri;
+  /// A human-readable title, generally source filename.
+  final String? title;
 
-  /// The media type of the ingredient (e.g., 'image/jpeg').
-  final String mediaType;
+  /// The format of the source file as a MIME type.
+  final String? format;
 
-  /// The byte length of the ingredient.
-  final int length;
+  /// Document ID from `xmpMM:DocumentID` in XMP metadata.
+  final String? documentId;
 
-  /// Map of hashes, keyed by algorithm.
-  final Map<String, String> hashes;
+  /// Instance ID from `xmpMM:InstanceID` in XMP metadata.
+  final String? instanceId;
+
+  /// URI from `dcterms:provenance` in XMP metadata.
+  final String? provenance;
+
+  /// An optional hash of the asset to prevent duplicates.
+  final String? hash;
+
+  /// The active manifest label (if one exists).
+  ///
+  /// If this ingredient has a [`ManifestStore`],
+  /// this will hold the label of the active [`Manifest`].
+  ///
+  /// [`Manifest`]: crate::Manifest
+  /// [`ManifestStore`]: crate::ManifestStore
+  final String? activeManifest;
+
+  /// Additional description of the ingredient.
+  final String? description;
+
+  /// URI to an informational page about the ingredient or its data.
+  final String? informationalUri;
+
+  /// The ingredient's label as assigned in the manifest.
+  final String? label;
 
   const Ingredient({
-    required this.uri,
-    required this.mediaType,
-    required this.length,
-    required this.hashes,
+    this.title,
+    this.format,
+    this.documentId,
+    this.instanceId,
+    this.provenance,
+    this.hash,
+    this.activeManifest,
+    this.description,
+    this.informationalUri,
+    this.label,
   });
 
   /// Creates an Ingredient from a JSON map.
   factory Ingredient.fromJson(Map<String, dynamic> json) {
     return Ingredient(
-      uri: json['uri'] as String,
-      mediaType: json['mediaType'] as String,
-      length: json['length'] as int,
-      hashes: Map<String, String>.from(json['hashes'] as Map),
+      title: json['title'] as String?,
+      format: json['format'] as String?,
+      documentId: json['document_id'] as String?,
+      instanceId: json['instance_id'] as String?,
+      provenance: json['provenance'] as String?,
+      hash: json['hash'] as String?,
+      activeManifest: json['active_manifest'] as String?,
+      description: json['description'] as String?,
+      informationalUri: json['informational_uri'] as String?,
+      label: json['label'] as String?,
     );
   }
 
   @override
-  List<Object?> get props => [uri, mediaType, length, hashes];
+  List<Object?> get props => [
+    title,
+    format,
+    documentId,
+    instanceId,
+    provenance,
+    hash,
+    activeManifest,
+    description,
+    informationalUri,
+    label,
+  ];
 }

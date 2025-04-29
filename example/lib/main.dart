@@ -151,25 +151,25 @@ class TestCaseList extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.file(
-                                File(localPath),
-                                height: 200,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const SizedBox(
-                                    height: 200,
-                                    child: Center(
-                                      child: Icon(Icons.error_outline, size: 48),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
                             const SizedBox(height: 16),
                             ContentCredentialWidget(
                               source: localPath,
+                              contentPreview: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  File(localPath),
+                                  height: 200,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const SizedBox(
+                                      height: 200,
+                                      child: Center(
+                                        child: Icon(Icons.error_outline, size: 48),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
                             ),
                           ],
                         ),

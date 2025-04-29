@@ -1,61 +1,67 @@
 import 'package:equatable/equatable.dart';
 
-import 'assertion.dart';
-import 'action.dart';
+import 'manifest_assertion.dart';
 import 'ingredient.dart';
-import 'link.dart';
 
-/// Root domain entity representing a C2PA Content Credential Manifest.
+/// Domain entity representing a C2PA Content Credential Manifest.
 class Manifest extends Equatable {
-  /// Unique identifier for the manifest.
-  final String id;
+  /// A User Agent formatted string identifying the software/hardware/system produced this claim
+  /// Spaces are not allowed in names, versions can be specified with product/1.0 syntax
+  final String? claimGenerator;
 
-  /// Version of the manifest schema.
-  final String version;
+  /// A human-readable title, generally source filename.
+  final String? title;
+
+  /// The format of the source file as a MIME type.
+  final String? format;
 
   /// List of ingredients referenced by this manifest.
   final List<Ingredient> ingredients;
 
   /// List of assertions applied to the asset.
-  final List<Assertion> assertions;
+  final List<ManifestAssertion> assertions;
 
-  /// Sequence of actions that form the provenance chain.
-  final List<Action> actions;
+  /// Signature info
+  final Map<String, dynamic>? signatureInfo;
 
-  /// Optional links to related manifests or resources.
-  final List<Link>? links;
+  /// Label
+  final String? label;
 
   const Manifest({
-    required this.id,
-    required this.version,
-    required this.ingredients,
-    required this.assertions,
-    required this.actions,
-    this.links,
+    this.claimGenerator,
+    this.title,
+    this.format,
+    this.signatureInfo,
+    this.label,
+    this.ingredients = const [],
+    this.assertions = const [],
   });
 
   /// Parses a Manifest from a JSON map.
   factory Manifest.fromJson(Map<String, dynamic> json) {
     return Manifest(
-      id: json['id'] as String,
-      version: json['version'] as String,
-      ingredients: (json['ingredients'] as List)
-          .map((e) => Ingredient.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      assertions: (json['assertions'] as List)
-          .map((e) => Assertion.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      actions: (json['actions'] as List)
-          .map((e) => Action.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      links: json['links'] != null
-          ? (json['links'] as List)
-          .map((e) => Link.fromJson(e as Map<String, dynamic>))
-          .toList()
-          : null,
+      claimGenerator: json['claim_generator'] as String?,
+      title: json['title'] as String?,
+      format: json['format'] as String?,
+      signatureInfo: json['signature_info'] as Map<String, dynamic>?,
+      label: json['label'] as String?,
+      ingredients: (json['ingredients'] as List?)
+          ?.map((e) => Ingredient.fromJson(e as Map<String, dynamic>))
+          .toList() ?? [],
+      assertions: (json['assertions'] as List?)
+          ?.map((e) => ManifestAssertion.fromJson(e as Map<String, dynamic>))
+          .toList() ?? [],
     );
   }
 
   @override
-  List<Object?> get props => [id, version, ingredients, assertions, actions, links];
+  List<Object?> get props => [
+        claimGenerator,
+        title,
+        format,
+        signatureInfo,
+        label,
+        ingredients,
+        assertions,
+      ];
 }

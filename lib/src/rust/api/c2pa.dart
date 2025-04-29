@@ -6,13 +6,13 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-String getFileManifest({required List<int> fileBytes, required String path}) =>
+String? getFileManifest({required List<int> fileBytes, required String path}) =>
     RustLib.instance.api.crateApiC2PaGetFileManifest(
       fileBytes: fileBytes,
       path: path,
     );
 
-String getFileManifestFormat({
+String? getFileManifestFormat({
   required List<int> fileBytes,
   required String format,
 }) => RustLib.instance.api.crateApiC2PaGetFileManifestFormat(

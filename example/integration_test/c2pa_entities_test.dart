@@ -12,19 +12,7 @@ const manifestUrl = 'https://c2pa.org/public-testfiles/image/jpeg/manifests/adob
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async => await RustLib.init());
-  test('Manifest', () async {
-    // Load image from url into bytes
-    final response = await http.get(Uri.parse(url));
-
-    // Check that the response is successful
-    expect(
-      response.statusCode,
-      200,
-      reason: "Failed to get c2pa test image: ${response.statusCode}"
-        "\nLooked for: $url"
-        "\nCheck here for info: $testDataUrl",
-    );
-
+  test('ManifestParsing', () async {
     // Get true manifest
     final manifestResponse = await http.get(Uri.parse(manifestUrl));
 
@@ -36,19 +24,17 @@ void main() {
         "\nLooked for: $manifestUrl"
         "\nCheck here for info: $testDataUrl",
     );
+    // String trueManifestString = manifestResponse.body;
     Map<String, dynamic> trueManifest = json.decode(manifestResponse.body);
 
-    // Get manifest from file
-    Map<String, dynamic> manifest = json.decode(getC2PAManifestBytes(
-      fileBytes: response.bodyBytes,
-      format: 'image/jpeg',
-    ));
+    // Parse as manifest store
+    ManifestStore trueManifestStore = ManifestStore.fromJson(trueManifest);
 
     // Check active manifest
-    expect(manifest['active_manifest'], trueManifest['active_manifest']);
+    expect(trueManifestStore.activeManifest, trueManifest['active_manifest']);
 
     // Get set of manifests for both
-    final Set<String> activeManifests = manifest['manifests'].keys.toSet();
+    final Set<String> activeManifests = trueManifestStore.manifests.keys.toSet();
     final Set<String> trueActiveManifests = trueManifest['manifests'].keys.toSet();
 
     // Check that the active manifests are the same

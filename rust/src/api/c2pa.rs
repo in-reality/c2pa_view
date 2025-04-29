@@ -5,7 +5,7 @@ use mime_guess;
 pub fn get_file_manifest(
     file_bytes: Vec<u8>,
     path: String,
-    ) -> Result<String, String> {
+    ) -> Result<Option<String>, String> {
     // Guess the MIME type
     let mime_type = mime_guess::from_path(path)
         .first()
@@ -22,15 +22,15 @@ pub fn get_file_manifest(
 pub fn get_file_manifest_format(
     file_bytes: Vec<u8>,
     format: String,
-) -> Result<String, String> {
+) -> Result<Option<String>, String> {
     // Create buffer from data_in
     let stream = std::io::Cursor::new(file_bytes);
 
     // Read the C2PA manifest
     let reader = Reader::from_stream(&format, stream)
-      .map_err(|e| format!("Failed to read C2PA manifest: {}", e))?;
+      .ok();
 
     // Get the manifest
-    Ok(reader.json())
+    Ok(reader.map(|r| r.json()))
 }
 

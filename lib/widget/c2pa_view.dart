@@ -26,13 +26,26 @@ class ContentCredentialWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Get manifest
-    Map<String, dynamic> manifestData = json.decode(getC2PAManifest(source));
+    String? manifest = getC2PAManifest(source);
+
+    // Check if manifest is null
+    if (manifest == null) {
+      return const Text('No manifest found');
+    }
+
+    // Parse to entity
+    ManifestStore manifestStore = ManifestStore.fromJson(
+      json.decode(manifest),
+    );
+
+    // Parse
+    Map<String, dynamic> manifestData = json.decode(manifest);
 
     // Get styles
     final titleStyle = this.titleStyle ?? Theme.of(context).textTheme.headlineMedium;
     final sectionTitleStyle = this.sectionTitleStyle ?? Theme.of(context).textTheme.titleMedium;
     final contentLabelStyle = this.contentLabelStyle ?? Theme.of(context).textTheme.titleSmall;
-    final contentStyle = this.contentStyle ?? Theme.of(context).textTheme.bodySmall;
+    final contentStyle = this.contentStyle ?? Theme.of(context).textTheme.bodyMedium;
 
     // Get active manifest tag
     final activeTag = manifestData['active_manifest'] as String;
@@ -46,8 +59,8 @@ class ContentCredentialWidget extends StatelessWidget {
     // Get top level information
     final title = activeManifest['title'] as String? ?? 'Unknown';
 
-    // // Thumbnail info
-    // final thumbnail = activeManifest['thumbnail'] as Map<String, dynamic>? ?? {};
+    // Ingredients
+    final ingredients = activeManifest['ingredients'] as List<dynamic>? ?? [];
 
     // Signature info
     final signature = activeManifest['signature_info']
@@ -57,38 +70,39 @@ class ContentCredentialWidget extends StatelessWidget {
     //   ?? 'Unknown';
     final signTime = signature['time'] as String? ?? 'Unknown';
 
-
+    // Credit
     final credit = manifestData['credit'] ?? 'Unknown';
-    final process = manifestData['process'] as Map<String, dynamic>? ?? {};
 
+    // Build
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Title
         Text(title, style: titleStyle),
-        if (contentPreview != null) contentPreview!,
+
+        // Content preview
+        if (contentPreview != null) ...[
+          SizedBox(height: 16),
+          contentPreview!,
+        ],
+
+        // Credit
         SizedBox(height: 16),
         Text('Credit: $credit', style: contentStyle),
-        SizedBox(height: 16),
-        Text('Process:', style: sectionTitleStyle),
-        if (process.isNotEmpty) ...[
-          if (process['appOrDevice'] != null)
-            Text('App/Device: ${process['appOrDevice']}', style: contentStyle),
-          if (process['actions'] != null)
-            Text('Actions: ${process['actions'].join(', ')}', style: contentStyle),
-          if (process['ingredients'] != null)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Ingredients:', style: contentStyle),
-                ...List<Widget>.from(
-                  (process['ingredients'] as List).map((ingredient) => Text(
-                    '- ${ingredient['filename']} (${ingredient['extension']})',
-                    style: contentStyle,
-                  )),
-                ),
-              ],
-            ),
+
+        // Ingredients
+        if (ingredients.isNotEmpty) ...[
+          SizedBox(height: 16),
+          Text('Ingredients:', style: sectionTitleStyle),
+          ...List<Widget>.from(
+            ingredients.map((ingredient) => Text(
+              '- ${ingredient['title']}',
+              style: contentStyle,
+            )),
+          ),
         ],
+
+        // Signing
         SizedBox(height: 16),
         Text('About this Content Credential:', style: sectionTitleStyle),
         Padding(

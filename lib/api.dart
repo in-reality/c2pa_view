@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:c2pa_view/src/rust/api/c2pa.dart';
 
 /// Get the manifest from a file
-String getC2PAManifest(dynamic source) {
+String? getC2PAManifest(dynamic source) {
   // source must be either path String or File
   if (source is! String && source is! File) {
     throw ArgumentError('source must be either path String or File');
@@ -26,7 +26,7 @@ String getC2PAManifest(dynamic source) {
 
 /// Get the manifest from a URL
 /// Optionally specify the format (mime type) if not in the header
-Future<String> getC2PAManifestURL(String url, {String? format}) async {
+Future<String?> getC2PAManifestURL(String url, {String? format}) async {
   // Download from url
   final response = await http.get(Uri.parse(url));
 
@@ -38,7 +38,7 @@ Future<String> getC2PAManifestURL(String url, {String? format}) async {
 }
 
 /// Get the manifest from bytes and format (mime type)
-String getC2PAManifestBytes({
+String? getC2PAManifestBytes({
   required List<int> fileBytes,
   required String format,
 }) {
