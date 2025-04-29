@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import 'manifest_assertion.dart';
 import 'ingredient.dart';
+import 'action.dart';
 
 /// Domain entity representing a C2PA Content Credential Manifest.
 class Manifest extends Equatable {
@@ -21,6 +22,9 @@ class Manifest extends Equatable {
   /// List of assertions applied to the asset.
   final List<ManifestAssertion> assertions;
 
+  /// List of actions parsed from the c2pa.actions assertion
+  final List<Action>? actions;
+
   /// Signature info
   final Map<String, dynamic>? signatureInfo;
 
@@ -35,10 +39,37 @@ class Manifest extends Equatable {
     this.label,
     this.ingredients = const [],
     this.assertions = const [],
+    this.actions = const [],
   });
 
   /// Parses a Manifest from a JSON map.
   factory Manifest.fromJson(Map<String, dynamic> json) {
+    // All assertions
+    final allAssertions = (json['assertions'] as List?)
+        ?.map((e) => ManifestAssertion.fromJson(e as Map<String, dynamic>))
+        .toList() ?? [];
+
+    // Check for the c2pa.actions assertion
+    final int actionsIndex = allAssertions.indexWhere(
+      (a) => a.label == 'c2pa.actions',
+    );
+
+    // Take the actions assertion out
+    final ManifestAssertion? actionsAssertion =
+        actionsIndex != -1 ? allAssertions[actionsIndex] : null;
+
+    // Parse the actions from the c2pa.actions assertion
+    final List<Action>? actions = actionsAssertion != null
+        ? (actionsAssertion.data['actions'] as List?)
+            ?.map((e) => Action.fromJson(e as Map<String, dynamic>))
+            .toList()
+        : null;
+
+    // Filter out the c2pa.actions assertion from the regular assertions list
+    final filteredAssertions = allAssertions
+        .where((a) => a.label != 'c2pa.actions')
+        .toList();
+
     return Manifest(
       claimGenerator: json['claim_generator'] as String?,
       title: json['title'] as String?,
@@ -48,9 +79,8 @@ class Manifest extends Equatable {
       ingredients: (json['ingredients'] as List?)
           ?.map((e) => Ingredient.fromJson(e as Map<String, dynamic>))
           .toList() ?? [],
-      assertions: (json['assertions'] as List?)
-          ?.map((e) => ManifestAssertion.fromJson(e as Map<String, dynamic>))
-          .toList() ?? [],
+      assertions: filteredAssertions,
+      actions: actions,
     );
   }
 
@@ -63,5 +93,6 @@ class Manifest extends Equatable {
         label,
         ingredients,
         assertions,
+        actions,
       ];
 }
