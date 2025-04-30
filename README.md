@@ -1,92 +1,66 @@
 # c2pa_view
 
-A new Flutter FFI plugin project.
+A Flutter package for reading and displaying C2PA (Coalition for Content Provenance and Authenticity) manifests in your Flutter applications.
 
-## Getting Started
+## Overview
 
-This project is a starting point for a Flutter
-[FFI plugin](https://flutter.dev/to/ffi-package),
-a specialized package that includes native code directly invoked with Dart FFI.
+C2PA is an open technical standard that provides publishers, creators, and consumers with tools to trace the origin of different types of media. This Flutter package allows you to:
 
-## Project structure
+- 📃 Read C2PA manifests from local files, URLs, or raw bytes
+- 🎨 Display content credentials in a customizable UI
+- 🔍 Access detailed information about media provenance, including:
+  - Content format and generator information
+  - Actions performed on the content
+  - Ingredients (source files) used
+  - Assertions about the content
+  - Signature information
 
-This template uses the following structure:
 
-* `src`: Contains the native source code, and a CmakeFile.txt file for building
-  that source code into a dynamic library.
+## Example
 
-* `lib`: Contains the Dart code that defines the API of the plugin, and which
-  calls into the native code using `dart:ffi`.
+```dart
+SingleChildScrollView showManifest(String path) {
+  // We make a preview (optional) for showing the content with the manifest
+  final preview = Image.file(
+    File(path),
+    height: 200,
+    fit: BoxFit.cover,
+    errorBuilder: (context, error, stackTrace) {
+      return const Text('Error loading image');
+    },
+  );
 
-* platform folders (`android`, `ios`, `windows`, etc.): Contains the build files
-  for building and bundling the native code library with the platform application.
+  // Make content credentials widget with the preview
+  final ccw = ContentCredentialsWidget(
+    source: path,
+    contentPreview: preview,
+  );
 
-## Building and bundling native code
-
-The `pubspec.yaml` specifies FFI plugins as follows:
-
-```yaml
-  plugin:
-    platforms:
-      some_platform:
-        ffiPlugin: true
+  // We wrap in scrollable because the manifest can be long
+  return SingleChildScrollView(
+    child: ccw,
+  );
+}
 ```
 
-This configuration invokes the native build for the various target platforms
-and bundles the binaries in Flutter applications using these FFI plugins.
+## Customization
 
-This can be combined with dartPluginClass, such as when FFI is used for the
-implementation of one platform in a federated plugin:
+The `ContentCredentialsWidget` supports various styling options:
 
-```yaml
-  plugin:
-    implements: some_other_plugin
-    platforms:
-      some_platform:
-        dartPluginClass: SomeClass
-        ffiPlugin: true
+```dart
+ContentCredentialsWidget(
+  source: path,
+  contentPreview: preview,
+  titleStyle: TextStyle(...),
+  sectionTitleStyle: TextStyle(...),
+  contentLabelStyle: TextStyle(...),
+  contentStyle: TextStyle(...),
+)
 ```
 
-A plugin can have both FFI and method channels:
+## Note
 
-```yaml
-  plugin:
-    platforms:
-      some_platform:
-        pluginClass: SomeName
-        ffiPlugin: true
-```
+This package was created during a Hackathon sprint and is in a very early stage.
+We hope to develop further and provide more features in the future 😁
 
-The native build systems that are invoked by FFI (and method channel) plugins are:
-
-* For Android: Gradle, which invokes the Android NDK for native builds.
-  * See the documentation in android/build.gradle.
-* For iOS and MacOS: Xcode, via CocoaPods.
-  * See the documentation in ios/c2pa_view.podspec.
-  * See the documentation in macos/c2pa_view.podspec.
-* For Linux and Windows: CMake.
-  * See the documentation in linux/CMakeLists.txt.
-  * See the documentation in windows/CMakeLists.txt.
-
-## Binding to native code
-
-To use the native code, bindings in Dart are needed.
-To avoid writing these by hand, they are generated from the header file
-(`src/c2pa_view.h`) by `package:ffigen`.
-Regenerate the bindings by running `dart run ffigen --config ffigen.yaml`.
-
-## Invoking native code
-
-Very short-running native functions can be directly invoked from any isolate.
-For example, see `sum` in `lib/c2pa_view.dart`.
-
-Longer-running functions should be invoked on a helper isolate to avoid
-dropping frames in Flutter applications.
-For example, see `sumAsync` in `lib/c2pa_view.dart`.
-
-## Flutter help
-
-For help getting started with Flutter, view our
-[online documentation](https://docs.flutter.dev), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
 

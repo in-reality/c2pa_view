@@ -6,17 +6,32 @@ import 'package:path_provider/path_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:c2pa_view/c2pa_view.dart';
 
-// Decent introduction: https://medium.com/flutter-community/how-to-create-publish-and-manage-flutter-packages-b4f2cd2c6b90
+/// showManifest is an example of hot to use the C2PAView package to show a
+/// (image) file manifest.
+SingleChildScrollView showManifest(String path) {
+  // We make a preview (optional) for showing the content with the manifest
+  final preview = Image.file(
+    File(path),
+    height: 200,
+    fit: BoxFit.cover,
+    errorBuilder: (context, error, stackTrace) {
+      return const Text('Error loading image');
+    },
+  );
 
-// Run with:
-// flutter_rust_bridge_codegen build-web
-// flutter run --web-header=Cross-Origin-Opener-Policy=same-origin --web-header=Cross-Origin-Embedder-Policy=require-corp
+  // Make content credentials widget with the preview
+  final ccw = ContentCredentialsWidget(
+    source: path,
+    contentPreview: preview,
+  );
 
-// I have worked on getting 'flutter_rust_bridge_codegen build-web' to run
-//    before the main-run in Android Studio, but it seems it runs the pre-script
-//    without knowledge about path variables. Should be fixable (see
-//    Run main.dart configuration)
+  // We wrap in scrollable because the manifest can be long
+  return SingleChildScrollView(
+    child: ccw,
+  );
+}
 
+/// TestCase is used to show the test cases from the C2PA test file repository.
 class TestCase {
   final String title;
   final String imageUrl;
@@ -144,35 +159,8 @@ class TestCaseList extends StatelessWidget {
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: Text(testCase.title),
-                      content: SingleChildScrollView(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 16),
-                            ContentCredentialsWidget(
-                              source: localPath,
-                              contentPreview: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.file(
-                                  File(localPath),
-                                  height: 200,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const SizedBox(
-                                      height: 200,
-                                      child: Center(
-                                        child: Icon(Icons.error_outline, size: 48),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      title: Text(File(localPath).path.split('/').last),
+                      content: showManifest(localPath),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(),

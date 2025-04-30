@@ -1,27 +1,21 @@
 import 'dart:convert';
 
 import 'package:c2pa_view/c2pa_view.dart';
+import 'package:c2pa_view/widget/actions_list_widget.dart';
+import 'package:c2pa_view/widget/assertions_list_widget.dart';
+import 'package:c2pa_view/widget/ingredients_list_widget.dart';
 import 'package:c2pa_view/widget/signature_info_widget.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-
-import 'assertions_list_widget.dart';
-import 'ingredients_list_widget.dart';
-import 'actions_list_widget.dart';
 
 
 /// A widget that displays a content credentials based on the provided source.
 /// `source` can be a local path or File pointing at the source-file.
 class ContentCredentialsWidget extends StatelessWidget {
-  final dynamic source;
-  final Widget? contentPreview;
-  final TextStyle? titleStyle;
-  final TextStyle? sectionTitleStyle;
-  final TextStyle? contentLabelStyle;
-  final TextStyle? contentStyle;
 
+  /// Creates an instance of [ContentCredentialsWidget].
   const ContentCredentialsWidget({
-    super.key,
-    required this.source,
+    required this.source, super.key,
     this.contentPreview,
     this.titleStyle,
     this.sectionTitleStyle,
@@ -29,10 +23,28 @@ class ContentCredentialsWidget extends StatelessWidget {
     this.contentStyle,
   });
 
+  /// The source of the content credentials, which can be a local path or File.
+  final dynamic source;
+
+  /// The widget to display as a preview of the content.
+  final Widget? contentPreview;
+
+  /// The style for the title text.
+  final TextStyle? titleStyle;
+
+  /// The style for the section title text.
+  final TextStyle? sectionTitleStyle;
+
+  /// The style for the content label text.
+  final TextStyle? contentLabelStyle;
+
+  /// The style for the content text.
+  final TextStyle? contentStyle;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     // Get manifest
-    String? manifest = getC2PAManifest(source);
+    final manifest = getC2PAManifest(source);
 
     // Check if manifest is null
     if (manifest == null) {
@@ -40,21 +52,26 @@ class ContentCredentialsWidget extends StatelessWidget {
     }
 
     // Parse to entity
-    ManifestStore manifestStore = ManifestStore.fromJson(
+    final manifestStore = ManifestStore.fromJson(
       json.decode(manifest),
     );
 
     // Get the active manifest
-    final activeManifest = manifestStore.manifests[manifestStore.activeManifest];
+    final activeManifest = manifestStore
+      .manifests[manifestStore.activeManifest];
     if (activeManifest == null) {
       return const Text('No active manifest found');
     }
 
     // Get styles
-    final titleStyle = this.titleStyle ?? Theme.of(context).textTheme.headlineMedium;
-    final sectionTitleStyle = this.sectionTitleStyle ?? Theme.of(context).textTheme.titleMedium;
-    final contentLabelStyle = this.contentLabelStyle ?? Theme.of(context).textTheme.titleSmall;
-    final contentStyle = this.contentStyle ?? Theme.of(context).textTheme.bodyMedium;
+    final titleStyle = this.titleStyle ?? Theme.of(context)
+      .textTheme.headlineMedium;
+    final sectionTitleStyle = this.sectionTitleStyle ?? Theme.of(context)
+      .textTheme.titleMedium;
+    final contentLabelStyle = this.contentLabelStyle ?? Theme.of(context)
+      .textTheme.titleSmall;
+    final contentStyle = this.contentStyle ?? Theme.of(context)
+      .textTheme.bodyMedium;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,7 +92,10 @@ class ContentCredentialsWidget extends StatelessWidget {
           const SizedBox(height: 4),
         ],
         if (activeManifest.claimGenerator != null) ...[
-          Text('Claim Generator: ${activeManifest.claimGenerator}', style: contentStyle),
+          Text(
+            'Claim Generator: ${activeManifest.claimGenerator}',
+            style: contentStyle,
+          ),
           const SizedBox(height: 4),
         ],
 
@@ -117,5 +137,17 @@ class ContentCredentialsWidget extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty('source', source))
+    ..add(DiagnosticsProperty<TextStyle?>('titleStyle', titleStyle))
+    ..add(DiagnosticsProperty<TextStyle?>(
+        'sectionTitleStyle', sectionTitleStyle,),)
+    ..add(DiagnosticsProperty<TextStyle?>(
+        'contentLabelStyle', contentLabelStyle,),)
+    ..add(DiagnosticsProperty<TextStyle?>('contentStyle', contentStyle));
   }
 }

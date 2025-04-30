@@ -1,7 +1,36 @@
 import 'package:equatable/equatable.dart';
 
-/// Represents an ingredient (e.g., original asset or intermediate) in the manifest.
+/// Represents an ingredient (e.g., original asset or intermediate) in the
+/// manifest.
 class Ingredient extends Equatable {
+
+  /// Creates an instance of [Ingredient].
+  const Ingredient({
+    this.title,
+    this.format,
+    this.documentId,
+    this.instanceId,
+    this.provenance,
+    this.hash,
+    this.activeManifest,
+    this.description,
+    this.informationalUri,
+    this.label,
+  });
+
+  /// Creates an Ingredient from a JSON map.
+  factory Ingredient.fromJson(final Map<String, dynamic> json) => Ingredient(
+      title: json['title'] as String?,
+      format: json['format'] as String?,
+      documentId: json['document_id'] as String?,
+      instanceId: json['instance_id'] as String?,
+      provenance: json['provenance'] as String?,
+      hash: json['hash'] as String?,
+      activeManifest: json['active_manifest'] as String?,
+      description: json['description'] as String?,
+      informationalUri: json['informational_uri'] as String?,
+      label: json['label'] as String?,
+    );
   /// A human-readable title, generally source filename.
   final String? title;
 
@@ -37,35 +66,6 @@ class Ingredient extends Equatable {
 
   /// The ingredient's label as assigned in the manifest.
   final String? label;
-
-  const Ingredient({
-    this.title,
-    this.format,
-    this.documentId,
-    this.instanceId,
-    this.provenance,
-    this.hash,
-    this.activeManifest,
-    this.description,
-    this.informationalUri,
-    this.label,
-  });
-
-  /// Creates an Ingredient from a JSON map.
-  factory Ingredient.fromJson(Map<String, dynamic> json) {
-    return Ingredient(
-      title: json['title'] as String?,
-      format: json['format'] as String?,
-      documentId: json['document_id'] as String?,
-      instanceId: json['instance_id'] as String?,
-      provenance: json['provenance'] as String?,
-      hash: json['hash'] as String?,
-      activeManifest: json['active_manifest'] as String?,
-      description: json['description'] as String?,
-      informationalUri: json['informational_uri'] as String?,
-      label: json['label'] as String?,
-    );
-  }
 
   @override
   List<Object?> get props => [

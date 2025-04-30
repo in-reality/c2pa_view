@@ -1,22 +1,34 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+/// A widget that displays information about the signature of a C2PA manifest.
 class SignatureInfoWidget extends StatelessWidget {
-  final Map<String, dynamic>? signatureInfo;
-  final TextStyle? sectionTitleStyle;
-  final TextStyle? contentLabelStyle;
-  final TextStyle? contentStyle;
 
+  /// Creates an instance of [SignatureInfoWidget].
   const SignatureInfoWidget({
-    super.key,
-    required this.signatureInfo,
+    required this.signatureInfo, super.key,
     this.sectionTitleStyle,
     this.contentLabelStyle,
     this.contentStyle,
   });
 
+  /// The information about the signature of the C2PA manifest.
+  final Map<String, dynamic>? signatureInfo;
+
+  /// The style for the section title text.
+  final TextStyle? sectionTitleStyle;
+
+  /// The style for the content label text.
+  final TextStyle? contentLabelStyle;
+
+  /// The style for the content text.
+  final TextStyle? contentStyle;
+
   @override
-  Widget build(BuildContext context) {
-    if (signatureInfo == null) return const SizedBox.shrink();
+  Widget build(final BuildContext context) {
+    if (signatureInfo == null) {
+      return const SizedBox.shrink();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,5 +46,17 @@ class SignatureInfoWidget extends StatelessWidget {
         ],
       ],
     );
+  }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<Map<String, dynamic>?>(
+        'signatureInfo', signatureInfo,),)
+    ..add(DiagnosticsProperty<TextStyle?>(
+        'sectionTitleStyle', sectionTitleStyle,),)
+    ..add(DiagnosticsProperty<TextStyle?>(
+        'contentLabelStyle', contentLabelStyle,),)
+    ..add(DiagnosticsProperty<TextStyle?>('contentStyle', contentStyle));
   }
 }

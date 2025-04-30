@@ -1,7 +1,9 @@
 name: c2pa_view
-description: "A new Flutter FFI plugin project."
-version: 0.0.1
-homepage:
+description: "`c2pa_view` is a Flutter plugin for viewing C2PA manifests in files. 
+It provides a simple interface to extract and display C2PA metadata using the official C2PA Rust 
+library and the Flutter Rust Bridge."
+version: 0.1.0
+homepage: "https://github.com/Township-Innovation/c2pa_view"
 
 environment:
   sdk: ^3.7.0
@@ -18,29 +20,14 @@ dependencies:
 dev_dependencies:
   ffi: ^2.1.3
   ffigen: ^13.0.0
+  flutter_lints: ^5.0.0
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
   integration_test:
     sdk: flutter
 
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
-
 # The following section is specific to Flutter packages.
 flutter:
-  # This section identifies this Flutter project as a plugin project.
-  # The 'pluginClass' specifies the class (in Java, Kotlin, Swift, Objective-C, etc.)
-  # which should be registered in the plugin registry. This is required for
-  # using method channels.
-  # The Android 'package' specifies package in which the registered class is.
-  # This is required for using method channels on Android.
-  # The 'ffiPlugin' specifies that native code should be built and bundled.
-  # This is required for using `dart:ffi`.
-  # All these are used by the tooling to maintain consistency when
-  # adding or updating assets for this project.
-  #
-  # Please refer to README.md for a detailed explanation.
   plugin:
     platforms:
       android:
@@ -55,30 +42,5 @@ flutter:
         ffiPlugin: true
 
   assets:
+    # Assets for c2pa tags
     - assets/c2pa/
-  #
-  # For details regarding assets in packages, see
-  # https://flutter.dev/to/asset-from-package
-  #
-  # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/to/resolution-aware-images
-
-  # To add custom fonts to your plugin package, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
-  #
-  # For details regarding fonts in packages, see
-  # https://flutter.dev/to/font-from-package

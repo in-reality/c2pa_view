@@ -3,18 +3,18 @@
 
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
-import '../frb_generated.dart';
+import 'package:c2pa_view/src/rust/frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-String? getFileManifest({required List<int> fileBytes, required String path}) =>
+String? getFileManifest({required final List<int> fileBytes, required final String path}) =>
     RustLib.instance.api.crateApiC2PaGetFileManifest(
       fileBytes: fileBytes,
       path: path,
     );
 
 String? getFileManifestFormat({
-  required List<int> fileBytes,
-  required String format,
+  required final List<int> fileBytes,
+  required final String format,
 }) => RustLib.instance.api.crateApiC2PaGetFileManifestFormat(
   fileBytes: fileBytes,
   format: format,

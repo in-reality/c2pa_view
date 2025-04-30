@@ -2,6 +2,23 @@ import 'package:equatable/equatable.dart';
 
 /// Represents a generic C2PA assertion with a predicate and associated content.
 class ManifestAssertion extends Equatable {
+
+  /// Creates an instance of [ManifestAssertion].
+  const ManifestAssertion(
+    this.label,
+    this.data, {
+    this.instance,
+    this.kind,
+  });
+
+  /// Creates an Assertion from a JSON map.
+  factory ManifestAssertion.fromJson(final Map<String, dynamic> json) =>
+    ManifestAssertion(
+      json['label'] as String,
+      json['data'] as Map<String, dynamic>,
+      instance: json['instance'] as int?,
+      kind: json['kind'] as String?,
+    );
   /// An assertion label in reverse domain format
   final String label;
 
@@ -11,25 +28,8 @@ class ManifestAssertion extends Equatable {
   /// There can be more than one assertion for any label
   final int? instance;
 
-  /// The [ManifestAssertionKind] for this assertion (as stored in c2pa content)
+  /// The kind of assertion
   final String? kind;
-
-  const ManifestAssertion(
-    this.label,
-    this.data, {
-    this.instance,
-    this.kind,
-  });
-
-  /// Creates an Assertion from a JSON map.
-  factory ManifestAssertion.fromJson(Map<String, dynamic> json) {
-    return ManifestAssertion(
-      json['label'] as String,
-      json['data'] as Map<String, dynamic>,
-      instance: json['instance'] as int?,
-      kind: json['kind'] as String?,
-    );
-  }
 
   @override
   List<Object?> get props => [

@@ -3,26 +3,27 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
-import 'api/c2pa.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'frb_generated.dart';
-import 'frb_generated.io.dart'
+
+import 'package:c2pa_view/src/rust/api/c2pa.dart';
+import 'package:c2pa_view/src/rust/frb_generated.dart';
+import 'package:c2pa_view/src/rust/frb_generated.io.dart'
     if (dart.library.js_interop) 'frb_generated.web.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 /// Main entrypoint of the Rust API
 class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
+
+  RustLib._();
   @internal
   static final instance = RustLib._();
 
-  RustLib._();
-
   /// Initialize flutter_rust_bridge
   static Future<void> init({
-    RustLibApi? api,
-    BaseHandler? handler,
-    ExternalLibrary? externalLibrary,
+    final RustLibApi? api,
+    final BaseHandler? handler,
+    final ExternalLibrary? externalLibrary,
   }) async {
     await instance.initImpl(
       api: api,
@@ -33,7 +34,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 
   /// Initialize flutter_rust_bridge in mock mode.
   /// No libraries for FFI are loaded.
-  static void initMock({required RustLibApi api}) {
+  static void initMock({required final RustLibApi api}) {
     instance.initMockImpl(api: api);
   }
 
@@ -74,13 +75,13 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 
 abstract class RustLibApi extends BaseApi {
   String? crateApiC2PaGetFileManifest({
-    required List<int> fileBytes,
-    required String path,
+    required final List<int> fileBytes,
+    required final String path,
   });
 
   String? crateApiC2PaGetFileManifestFormat({
-    required List<int> fileBytes,
-    required String format,
+    required final List<int> fileBytes,
+    required final String format,
   });
 }
 
@@ -94,10 +95,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   String? crateApiC2PaGetFileManifest({
-    required List<int> fileBytes,
-    required String path,
-  }) {
-    return handler.executeSync(
+    required final List<int> fileBytes,
+    required final String path,
+  }) => handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -114,20 +114,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         apiImpl: this,
       ),
     );
-  }
 
   TaskConstMeta get kCrateApiC2PaGetFileManifestConstMeta =>
       const TaskConstMeta(
-        debugName: "get_file_manifest",
-        argNames: ["fileBytes", "path"],
+        debugName: 'get_file_manifest',
+        argNames: ['fileBytes', 'path'],
       );
 
   @override
   String? crateApiC2PaGetFileManifestFormat({
-    required List<int> fileBytes,
-    required String format,
-  }) {
-    return handler.executeSync(
+    required final List<int> fileBytes,
+    required final String format,
+  }) => handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
@@ -144,104 +142,103 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         apiImpl: this,
       ),
     );
-  }
 
   TaskConstMeta get kCrateApiC2PaGetFileManifestFormatConstMeta =>
       const TaskConstMeta(
-        debugName: "get_file_manifest_format",
-        argNames: ["fileBytes", "format"],
+        debugName: 'get_file_manifest_format',
+        argNames: ['fileBytes', 'format'],
       );
 
   @protected
-  String dco_decode_String(dynamic raw) {
+  String dco_decode_String(final raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as String;
   }
 
   @protected
-  List<int> dco_decode_list_prim_u_8_loose(dynamic raw) {
+  List<int> dco_decode_list_prim_u_8_loose(final raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as List<int>;
   }
 
   @protected
-  Uint8List dco_decode_list_prim_u_8_strict(dynamic raw) {
+  Uint8List dco_decode_list_prim_u_8_strict(final raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as Uint8List;
   }
 
   @protected
-  String? dco_decode_opt_String(dynamic raw) {
+  String? dco_decode_opt_String(final raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_String(raw);
   }
 
   @protected
-  int dco_decode_u_8(dynamic raw) {
+  int dco_decode_u_8(final raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
   }
 
   @protected
-  String sse_decode_String(SseDeserializer deserializer) {
+  String sse_decode_String(final SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    var inner = sse_decode_list_prim_u_8_strict(deserializer);
+    final inner = sse_decode_list_prim_u_8_strict(deserializer);
     return utf8.decoder.convert(inner);
   }
 
   @protected
-  List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer) {
+  List<int> sse_decode_list_prim_u_8_loose(final SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    var len_ = sse_decode_i_32(deserializer);
+    final len_ = sse_decode_i_32(deserializer);
     return deserializer.buffer.getUint8List(len_);
   }
 
   @protected
-  Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer) {
+  Uint8List sse_decode_list_prim_u_8_strict(final SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    var len_ = sse_decode_i_32(deserializer);
+    final len_ = sse_decode_i_32(deserializer);
     return deserializer.buffer.getUint8List(len_);
   }
 
   @protected
-  String? sse_decode_opt_String(SseDeserializer deserializer) {
+  String? sse_decode_opt_String(final SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     if (sse_decode_bool(deserializer)) {
-      return (sse_decode_String(deserializer));
+      return sse_decode_String(deserializer);
     } else {
       return null;
     }
   }
 
   @protected
-  int sse_decode_u_8(SseDeserializer deserializer) {
+  int sse_decode_u_8(final SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint8();
   }
 
   @protected
-  int sse_decode_i_32(SseDeserializer deserializer) {
+  int sse_decode_i_32(final SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getInt32();
   }
 
   @protected
-  bool sse_decode_bool(SseDeserializer deserializer) {
+  bool sse_decode_bool(final SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint8() != 0;
   }
 
   @protected
-  void sse_encode_String(String self, SseSerializer serializer) {
+  void sse_encode_String(final String self, final SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer);
   }
 
   @protected
   void sse_encode_list_prim_u_8_loose(
-    List<int> self,
-    SseSerializer serializer,
+    final List<int> self,
+    final SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.length, serializer);
@@ -252,8 +249,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void sse_encode_list_prim_u_8_strict(
-    Uint8List self,
-    SseSerializer serializer,
+    final Uint8List self,
+    final SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.length, serializer);
@@ -261,7 +258,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_opt_String(String? self, SseSerializer serializer) {
+  void sse_encode_opt_String(final String? self, final SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     sse_encode_bool(self != null, serializer);
@@ -271,19 +268,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_u_8(int self, SseSerializer serializer) {
+  void sse_encode_u_8(final int self, final SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint8(self);
   }
 
   @protected
-  void sse_encode_i_32(int self, SseSerializer serializer) {
+  void sse_encode_i_32(final int self, final SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putInt32(self);
   }
 
   @protected
-  void sse_encode_bool(bool self, SseSerializer serializer) {
+  void sse_encode_bool(final bool self, final SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint8(self ? 1 : 0);
   }
