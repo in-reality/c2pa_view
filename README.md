@@ -18,29 +18,49 @@ C2PA is an open technical standard that provides publishers, creators, and consu
 
 ## Example
 
+In the example directory we use the following code to show a C2PA manifest from a local file:
 ```dart
-SingleChildScrollView showManifest(String path) {
-  // We make a preview (optional) for showing the content with the manifest
-  final preview = Image.file(
-    File(path),
-    height: 200,
-    fit: BoxFit.cover,
-    errorBuilder: (context, error, stackTrace) {
-      return const Text('Error loading image');
-    },
-  );
+// We make a preview (optional) for showing the content with the manifest
+final preview = Image.file(
+  file,
+  height: 200,
+  fit: BoxFit.cover,
+  errorBuilder: (context, error, stackTrace) {
+    return const Text('Error loading image');
+  },
+);
 
-  // Make content credentials widget with the preview
-  final ccw = ContentCredentialsWidget(
-    source: path,
-    contentPreview: preview,
-  );
+// Get manifest store from file
+final manifestStore = ManifestStore.fromLocalPath(file.path);
 
-  // We wrap in scrollable because the manifest can be long
-  return SingleChildScrollView(
-    child: ccw,
+// Check if manifest store is null (if there is no manifest)
+if (manifestStore == null) {
+  return const SingleChildScrollView(
+    child: Text('No manifest found'),
   );
 }
+
+// Make content credentials widget with manifest store and preview
+// We wrap in scrollable as the manifest can be long
+final ccw = SingleChildScrollView(
+  child: ContentCredentialsWidget(
+    manifestStore: manifestStore,
+    contentPreview: preview,
+  ),
+);
+```
+
+The `ManifestStrore` can be created in multiple ways:
+```dart
+// From a local path
+final store = ManifestStore.fromLocalPath('/local/path/to/file.jpg');
+
+// From bytes and format / mime-type
+final bytes = [...]; // Your image bytes
+final store4 = ManifestStore.fromBytes(bytes, 'image/jpeg');
+
+// From a URL
+final store = await ManifestStore.fromUrl('https://example.com/image.jpg');
 ```
 
 ## Customization

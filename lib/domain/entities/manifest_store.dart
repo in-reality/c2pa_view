@@ -1,4 +1,5 @@
-
+import 'dart:convert';
+import 'package:c2pa_view/api.dart';
 import 'package:c2pa_view/domain/entities/manifest.dart';
 import 'package:equatable/equatable.dart';
 
@@ -22,6 +23,63 @@ class ManifestStore extends Equatable {
         ),
       ) ?? {},
     );
+
+  /// Creates a ManifestStore from a local file path
+  static ManifestStore? fromLocalPath(final String localPath) {
+    // Get manifest from file bytes
+    final manifestJson = getManifestJsonFromFile(
+      localPath,
+    );
+
+    // Check that the manifest was found
+    if (manifestJson == null) {
+      return null;
+    }
+
+    // Parse and return ManifestStore
+    return ManifestStore.fromJson(json.decode(manifestJson));
+  }
+
+  /// Creates a ManifestStore from a URL
+  static Future<ManifestStore?> fromUrl(
+    final String url,
+    {final String? format,}
+  ) async {
+    // Get manifest from file bytes
+    final manifestJson = await getManifestJsonFromURL(
+      url,
+      format: format,
+    );
+
+    // Check that the manifest was found
+    if (manifestJson == null) {
+      return null;
+    }
+
+    // Parse and return ManifestStore
+    return ManifestStore.fromJson(json.decode(manifestJson));
+  }
+
+  /// Creates a ManifestStore from raw bytes
+  static ManifestStore? fromBytes(
+      final List<int> fileBytes,
+      final String format,
+    ) {
+    // Get manifest from file bytes
+    final manifestJson = getManifestJsonFromBytes(
+      fileBytes: fileBytes,
+      format: format,
+    );
+
+    // Check that the manifest was found
+    if (manifestJson == null) {
+      return null;
+    }
+
+    // Parse and return ManifestStore
+    return ManifestStore.fromJson(json.decode(manifestJson));
+  }
+
   /// A label for the active (most recent) manifest in the store
   final String? activeManifest;
 

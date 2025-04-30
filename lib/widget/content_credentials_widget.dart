@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:c2pa_view/c2pa_view.dart';
 import 'package:c2pa_view/widget/actions_list_widget.dart';
 import 'package:c2pa_view/widget/assertions_list_widget.dart';
@@ -15,7 +13,7 @@ class ContentCredentialsWidget extends StatelessWidget {
 
   /// Creates an instance of [ContentCredentialsWidget].
   const ContentCredentialsWidget({
-    required this.source, super.key,
+    required this.manifestStore, super.key,
     this.contentPreview,
     this.titleStyle,
     this.sectionTitleStyle,
@@ -23,8 +21,8 @@ class ContentCredentialsWidget extends StatelessWidget {
     this.contentStyle,
   });
 
-  /// The source of the content credentials, which can be a local path or File.
-  final dynamic source;
+  /// Manifest store
+  final ManifestStore manifestStore;
 
   /// The widget to display as a preview of the content.
   final Widget? contentPreview;
@@ -43,19 +41,6 @@ class ContentCredentialsWidget extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) {
-    // Get manifest
-    final manifest = getC2PAManifest(source);
-
-    // Check if manifest is null
-    if (manifest == null) {
-      return const Text('No manifest found');
-    }
-
-    // Parse to entity
-    final manifestStore = ManifestStore.fromJson(
-      json.decode(manifest),
-    );
-
     // Get the active manifest
     final activeManifest = manifestStore
       .manifests[manifestStore.activeManifest];
@@ -142,7 +127,9 @@ class ContentCredentialsWidget extends StatelessWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty('source', source))
+    properties
+      ..add(DiagnosticsProperty<ManifestStore>('manifestStore', manifestStore))
+      ..add(DiagnosticsProperty<Widget?>('contentPreview', contentPreview))
     ..add(DiagnosticsProperty<TextStyle?>('titleStyle', titleStyle))
     ..add(DiagnosticsProperty<TextStyle?>(
         'sectionTitleStyle', sectionTitleStyle,),)

@@ -8,10 +8,10 @@ import 'package:c2pa_view/c2pa_view.dart';
 
 /// showManifest is an example of hot to use the C2PAView package to show a
 /// (image) file manifest.
-SingleChildScrollView showManifest(String path) {
+Future<SingleChildScrollView> showManifest(File file) async {
   // We make a preview (optional) for showing the content with the manifest
   final preview = Image.file(
-    File(path),
+    file,
     height: 200,
     fit: BoxFit.cover,
     errorBuilder: (context, error, stackTrace) {
@@ -19,16 +19,26 @@ SingleChildScrollView showManifest(String path) {
     },
   );
 
-  // Make content credentials widget with the preview
-  final ccw = ContentCredentialsWidget(
-    source: path,
-    contentPreview: preview,
+  // Get manifest store from file
+  final manifestStore = ManifestStore.fromLocalPath(file.path);
+
+  // Check if manifest store is null (if there is no manifest)
+  if (manifestStore == null) {
+    return const SingleChildScrollView(
+      child: Text('No manifest found'),
+    );
+  }
+
+  // Make content credentials widget with manifest store and preview
+  // We wrap in scrollable as the manifest can be long
+  final ccw = SingleChildScrollView(
+    child: ContentCredentialsWidget(
+      manifestStore: manifestStore,
+      contentPreview: preview,
+    ),
   );
 
-  // We wrap in scrollable because the manifest can be long
-  return SingleChildScrollView(
-    child: ccw,
-  );
+  return ccw;
 }
 
 /// TestCase is used to show the test cases from the C2PA test file repository.
@@ -160,7 +170,20 @@ class TestCaseList extends StatelessWidget {
                     context: context,
                     builder: (context) => AlertDialog(
                       title: Text(File(localPath).path.split('/').last),
-                      content: showManifest(localPath),
+                      content: FutureBuilder<SingleChildScrollView>(
+                        future: showManifest(File(localPath)),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          } else if (snapshot.hasError) {
+                            return Text('Error: ${snapshot.error}');
+                          } else if (snapshot.hasData) {
+                            return snapshot.data!;
+                          } else {
+                            return const Text('No manifest data available');
+                          }
+                        },
+                      ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(),
