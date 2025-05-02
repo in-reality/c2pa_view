@@ -1,3 +1,8 @@
+## 0.1.0 (2025-05-02)
+
+### Fixes
+- Fixed image link in README.md
+
 ## 0.1.0 (2025-04-30)
 
 Initial release of the `c2pa_view` package, providing basic C2PA manifest reading and display 
