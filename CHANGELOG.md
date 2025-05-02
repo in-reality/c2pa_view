@@ -1,4 +1,4 @@
-## 0.1.0 (2025-05-02)
+## 0.1.1 (2025-05-02)
 
 ### Fixes
 - Fixed image link in README.md
