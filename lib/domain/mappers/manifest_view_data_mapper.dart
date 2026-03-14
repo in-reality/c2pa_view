@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/widgets.dart' hide Action;
 
 import 'package:c2pa_view/domain/entities/action.dart';
 import 'package:c2pa_view/domain/entities/creative_work.dart';
@@ -137,7 +137,7 @@ class ManifestViewDataMapper {
 
   static List<ActionDisplayInfo> _mapActions(List<Action>? actions) {
     if (actions == null) return [];
-    return actions.map((a) {
+    return actions.map<ActionDisplayInfo>((a) {
       final sourceType =
           a.sourceType ?? a.parameters?['digitalSourceType'] as String?;
       final isAi = sourceType != null &&

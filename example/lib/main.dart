@@ -1,25 +1,19 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:dio/dio.dart';
 import 'package:c2pa_view/c2pa_view.dart';
 
-/// TestCase is used to show the test cases from the C2PA test file repository.
 class TestCase {
   final String title;
   final String imageUrl;
   final String manifestUrl;
   final String detailedManifestUrl;
-  String? localImagePath;
 
   TestCase({
     required this.title,
     required this.imageUrl,
     required this.manifestUrl,
     required this.detailedManifestUrl,
-    this.localImagePath,
   });
 
   factory TestCase.fromDsv(String line) {
@@ -32,20 +26,11 @@ class TestCase {
     );
   }
 
-  Future<String> downloadImage() async {
-    if (localImagePath != null) {
-      return localImagePath!;
-    }
-
-    final tempDir = await getTemporaryDirectory();
-    final fileName = '${title.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')}.jpg';
-    final filePath = '${tempDir.path}/$fileName';
-
-    final dio = Dio();
-    await dio.download(imageUrl, filePath);
-
-    localImagePath = filePath;
-    return filePath;
+  String get mimeType {
+    final lower = imageUrl.toLowerCase();
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    return 'image/jpeg';
   }
 }
 
@@ -61,48 +46,107 @@ Future<List<TestCase>> loadTestCases() async {
 }
 
 Future<void> main() async {
-  await RustLib.init();
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  String? initError;
+  try {
+    await RustLib.init().timeout(
+      const Duration(seconds: 15),
+      onTimeout: () => throw Exception('RustLib.init timed out after 15s'),
+    );
+  } catch (e, st) {
+    initError = e.toString();
+    debugPrint('RustLib.init failed: $e\n$st');
+  }
+  runApp(MyApp(initError: initError));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, this.initError});
+
+  final String? initError;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: C2paViewerTheme(
-        data: const C2paViewerThemeData(),
-        child: Scaffold(
-          appBar: AppBar(title: const Text('C2PA Test Cases')),
-          body: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Select a file from the C2PA JPEG test files to view its '
-                  'manifest data using the new provenance tree viewer.',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                  textAlign: TextAlign.center,
+      home: SelectionArea(
+        child: C2paViewerTheme(
+          data: const C2paViewerThemeData(),
+          child: Scaffold(
+            appBar: AppBar(title: const Text('C2PA Test Cases')),
+            body: Column(
+              children: [
+                if (initError != null)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16.0),
+                    color: Colors.orange.shade100,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Rust library failed to load',
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    color: Colors.orange.shade900,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          initError!,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.orange.shade900,
+                                  ),
+                        ),
+                        if (kIsWeb)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              'On web, the Rust/WASM build may be missing or '
+                              'CORS may block loading. See flutter_rust_bridge '
+                              'web documentation.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Colors.orange.shade800,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'Select a file from the C2PA JPEG test files to view its '
+                    'manifest data using the new provenance tree viewer.',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-              ),
-              Expanded(
-                child: FutureBuilder<List<TestCase>>(
-                  future: loadTestCases(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    } else if (snapshot.hasData) {
-                      return TestCaseList(testCases: snapshot.data!);
-                    } else {
-                      return const Center(child: Text('No test cases found.'));
-                    }
-                  },
+                Expanded(
+                  child: FutureBuilder<List<TestCase>>(
+                    future: loadTestCases(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      } else if (snapshot.hasData) {
+                        return TestCaseList(testCases: snapshot.data!);
+                      } else {
+                        return const Center(
+                            child: Text('No test cases found.'));
+                      }
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -131,24 +175,14 @@ class TestCaseList extends StatelessWidget {
             ),
             child: ListTile(
               title: Text(testCase.title),
-              onTap: () async {
-                try {
-                  final localPath = await testCase.downloadImage();
-                  if (!context.mounted) return;
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ManifestViewerPage(
-                        filePath: localPath,
-                        title: testCase.title,
-                      ),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ManifestViewerPage(
+                      testCase: testCase,
                     ),
-                  );
-                } catch (e) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error downloading image: $e')),
-                  );
-                }
+                  ),
+                );
               },
             ),
           ),
@@ -158,48 +192,71 @@ class TestCaseList extends StatelessWidget {
   }
 }
 
-/// Full-screen page showing the provenance tree and manifest details.
-class ManifestViewerPage extends StatelessWidget {
-  final String filePath;
-  final String title;
+/// Full-screen page that fetches bytes from the URL, then parses the manifest.
+class ManifestViewerPage extends StatefulWidget {
+  final TestCase testCase;
 
-  const ManifestViewerPage({
-    super.key,
-    required this.filePath,
-    required this.title,
-  });
+  const ManifestViewerPage({super.key, required this.testCase});
+
+  @override
+  State<ManifestViewerPage> createState() => _ManifestViewerPageState();
+}
+
+class _ManifestViewerPageState extends State<ManifestViewerPage> {
+  late Future<ManifestStore?> _storeFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _storeFuture = ManifestStore.fromUrl(
+      widget.testCase.imageUrl,
+      format: widget.testCase.mimeType,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final store = ManifestStore.fromLocalPath(filePath);
+    final title = widget.testCase.title;
 
-    if (store == null) {
-      return Scaffold(
-        appBar: AppBar(title: Text(title)),
-        body: const Center(child: Text('No manifest found in this file.')),
-      );
-    }
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: FutureBuilder<ManifestStore?>(
+        future: _storeFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-    try {
-      final rootNode = ProvenanceMapper.mapToTree(store);
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Text('Error loading manifest:\n${snapshot.error}'),
+              ),
+            );
+          }
 
-      return Scaffold(
-        appBar: AppBar(title: Text(title)),
-        body: C2paViewerTheme(
-          data: const C2paViewerThemeData(),
-          child: C2paManifestViewer(
-            rootNode: rootNode,
-            mimeType: File(filePath).path.endsWith('.jpg')
-                ? 'image/jpeg'
-                : null,
-          ),
-        ),
-      );
-    } catch (e) {
-      return Scaffold(
-        appBar: AppBar(title: Text(title)),
-        body: Center(child: Text('Error building provenance tree: $e')),
-      );
-    }
+          final store = snapshot.data;
+          if (store == null) {
+            return const Center(
+                child: Text('No manifest found in this file.'));
+          }
+
+          try {
+            final rootNode = ProvenanceMapper.mapToTree(store);
+            return C2paViewerTheme(
+              data: const C2paViewerThemeData(),
+              child: C2paManifestViewer(
+                rootNode: rootNode,
+                mimeType: widget.testCase.mimeType,
+              ),
+            );
+          } catch (e) {
+            return Center(
+                child: Text('Error building provenance tree: $e'));
+          }
+        },
+      ),
+    );
   }
 }
