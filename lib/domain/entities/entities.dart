@@ -1,6 +1,13 @@
-
 export 'action.dart';
+export 'claim_generator_info.dart';
+export 'creative_work.dart';
+export 'custom_field.dart';
+export 'exif_data.dart';
 export 'ingredient.dart';
 export 'manifest.dart';
 export 'manifest_assertion.dart';
 export 'manifest_store.dart';
+export 'signature_info.dart';
+export 'thumbnail_data.dart';
+export 'training_mining.dart';
+export 'validation_status.dart';
