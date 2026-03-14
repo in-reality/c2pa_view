@@ -1,10 +1,11 @@
 import 'package:equatable/equatable.dart';
 
+import 'thumbnail_data.dart';
+import 'validation_status.dart';
+
 /// Represents an ingredient (e.g., original asset or intermediate) in the
 /// manifest.
 class Ingredient extends Equatable {
-
-  /// Creates an instance of [Ingredient].
   const Ingredient({
     this.title,
     this.format,
@@ -16,10 +17,30 @@ class Ingredient extends Equatable {
     this.description,
     this.informationalUri,
     this.label,
+    this.relationship,
+    this.thumbnail,
+    this.validationStatus = const [],
+    this.metadata,
   });
 
   /// Creates an Ingredient from a JSON map.
-  factory Ingredient.fromJson(final Map<String, dynamic> json) => Ingredient(
+  factory Ingredient.fromJson(final Map<String, dynamic> json) {
+    ThumbnailData? thumbnail;
+    if (json['thumbnail'] is Map<String, dynamic>) {
+      thumbnail =
+          ThumbnailData.fromJson(json['thumbnail'] as Map<String, dynamic>);
+    }
+
+    final validationStatus = <ValidationStatusEntry>[];
+    if (json['validation_status'] is List) {
+      for (final item in json['validation_status'] as List) {
+        if (item is Map<String, dynamic>) {
+          validationStatus.add(ValidationStatusEntry.fromJson(item));
+        }
+      }
+    }
+
+    return Ingredient(
       title: json['title'] as String?,
       format: json['format'] as String?,
       documentId: json['document_id'] as String?,
@@ -30,7 +51,13 @@ class Ingredient extends Equatable {
       description: json['description'] as String?,
       informationalUri: json['informational_uri'] as String?,
       label: json['label'] as String?,
+      relationship: json['relationship'] as String?,
+      thumbnail: thumbnail,
+      validationStatus: validationStatus,
+      metadata: json['metadata'] as Map<String, dynamic>?,
     );
+  }
+
   /// A human-readable title, generally source filename.
   final String? title;
 
@@ -50,12 +77,6 @@ class Ingredient extends Equatable {
   final String? hash;
 
   /// The active manifest label (if one exists).
-  ///
-  /// If this ingredient has a [`ManifestStore`],
-  /// this will hold the label of the active [`Manifest`].
-  ///
-  /// [`Manifest`]: crate::Manifest
-  /// [`ManifestStore`]: crate::ManifestStore
   final String? activeManifest;
 
   /// Additional description of the ingredient.
@@ -67,17 +88,33 @@ class Ingredient extends Equatable {
   /// The ingredient's label as assigned in the manifest.
   final String? label;
 
+  /// Relationship type: "parentOf", "componentOf", "inputTo".
+  final String? relationship;
+
+  /// Ingredient thumbnail data.
+  final ThumbnailData? thumbnail;
+
+  /// Validation status entries for this ingredient.
+  final List<ValidationStatusEntry> validationStatus;
+
+  /// Vendor-specific metadata.
+  final Map<String, dynamic>? metadata;
+
   @override
   List<Object?> get props => [
-    title,
-    format,
-    documentId,
-    instanceId,
-    provenance,
-    hash,
-    activeManifest,
-    description,
-    informationalUri,
-    label,
-  ];
+        title,
+        format,
+        documentId,
+        instanceId,
+        provenance,
+        hash,
+        activeManifest,
+        description,
+        informationalUri,
+        label,
+        relationship,
+        thumbnail,
+        validationStatus,
+        metadata,
+      ];
 }
