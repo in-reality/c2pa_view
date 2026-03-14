@@ -4,6 +4,8 @@ This plan covers the full modernization of the `c2pa_view` Flutter package: alig
 with the latest C2PA specification, enriching domain models, handling custom fields,
 integrating the newer UI from `c2pa_viewer_new`, and cleaning up.
 
+We are making these updates as breaking changes: no backward compatibility.
+
 ---
 
 ## Table of Contents
@@ -184,10 +186,9 @@ pub fn get_manifest_thumbnail(
 > are already in the JSON as base64 in assertions (e.g. `c2pa.thumbnail.claim.jpeg`),
 > they can be extracted on the Dart side instead.
 
-#### 2.4 Keep existing functions for backwards compatibility
+#### 2.4 Existing functions
 
-The existing `get_file_manifest` and `get_file_manifest_format` should remain untouched
-for backwards compatibility. New functions are additive.
+Remove `get_file_manifest` and `get_file_manifest_format` if they are no longer useful. We do not need backward compatibility.
 
 #### 2.5 Regenerate FRB bindings
 
@@ -936,12 +937,6 @@ Update existing integration tests and add new ones:
 | `Manifest.signatureInfo` type      | Was `Map<String, dynamic>?`, now `SignatureInfo?`      |
 | Old widget imports removed         | Update to new feature imports                         |
 | `ManifestStore.fromLocalPath` etc. | Still works, but now returns enriched entities        |
-
-### Backwards Compatibility
-
-- The Rust bridge functions remain unchanged (additive only).
-- `ManifestStore.fromJson` will still accept the same JSON format.
-- The DSV asset files in `assets/c2pa/` remain for metadata lookup.
 
 ### Execution Order
 
