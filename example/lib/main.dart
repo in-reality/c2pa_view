@@ -6,41 +6,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:c2pa_view/c2pa_view.dart';
 
-/// showManifest is an example of hot to use the C2PAView package to show a
-/// (image) file manifest.
-Future<SingleChildScrollView> showManifest(File file) async {
-  // We make a preview (optional) for showing the content with the manifest
-  final preview = Image.file(
-    file,
-    height: 200,
-    fit: BoxFit.cover,
-    errorBuilder: (context, error, stackTrace) {
-      return const Text('Error loading image');
-    },
-  );
-
-  // Get manifest store from file
-  final manifestStore = ManifestStore.fromLocalPath(file.path);
-
-  // Check if manifest store is null (if there is no manifest)
-  if (manifestStore == null) {
-    return const SingleChildScrollView(
-      child: Text('No manifest found'),
-    );
-  }
-
-  // Make content credentials widget with manifest store and preview
-  // We wrap in scrollable as the manifest can be long
-  final ccw = SingleChildScrollView(
-    child: ContentCredentialsWidget(
-      manifestStore: manifestStore,
-      contentPreview: preview,
-    ),
-  );
-
-  return ccw;
-}
-
 /// TestCase is used to show the test cases from the C2PA test file repository.
 class TestCase {
   final String title;
@@ -78,16 +43,16 @@ class TestCase {
 
     final dio = Dio();
     await dio.download(imageUrl, filePath);
-    
+
     localImagePath = filePath;
     return filePath;
   }
 }
 
 Future<List<TestCase>> loadTestCases() async {
-  final String contents = await rootBundle.loadString('assets/c2pa_test_data.dsv');
+  final String contents =
+      await rootBundle.loadString('assets/c2pa_test_data.dsv');
   final lines = contents.split('\n');
-  // Skip header and empty lines
   return lines
       .skip(1)
       .where((line) => line.isNotEmpty)
@@ -106,35 +71,39 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: const Text('C2PA Test Cases')),
-        body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Select file from the C2PA JPEG test files to show it\'s manifest data.',
-                style: Theme.of(context).textTheme.bodyLarge,
-                textAlign: TextAlign.center,
+      home: C2paViewerTheme(
+        data: const C2paViewerThemeData(),
+        child: Scaffold(
+          appBar: AppBar(title: const Text('C2PA Test Cases')),
+          body: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Select a file from the C2PA JPEG test files to view its '
+                  'manifest data using the new provenance tree viewer.',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ),
-            Expanded(
-              child: FutureBuilder<List<TestCase>>(
-                future: loadTestCases(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (snapshot.hasData) {
-                    return TestCaseList(testCases: snapshot.data!);
-                  } else {
-                    return const Center(child: Text('No test cases found.'));
-                  }
-                },
+              Expanded(
+                child: FutureBuilder<List<TestCase>>(
+                  future: loadTestCases(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    } else if (snapshot.hasData) {
+                      return TestCaseList(testCases: snapshot.data!);
+                    } else {
+                      return const Center(child: Text('No test cases found.'));
+                    }
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -166,30 +135,12 @@ class TestCaseList extends StatelessWidget {
                 try {
                   final localPath = await testCase.downloadImage();
                   if (!context.mounted) return;
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text(File(localPath).path.split('/').last),
-                      content: FutureBuilder<SingleChildScrollView>(
-                        future: showManifest(File(localPath)),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
-                          } else if (snapshot.hasError) {
-                            return Text('Error: ${snapshot.error}');
-                          } else if (snapshot.hasData) {
-                            return snapshot.data!;
-                          } else {
-                            return const Text('No manifest data available');
-                          }
-                        },
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ManifestViewerPage(
+                        filePath: localPath,
+                        title: testCase.title,
                       ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Close'),
-                        ),
-                      ],
                     ),
                   );
                 } catch (e) {
@@ -204,5 +155,51 @@ class TestCaseList extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+/// Full-screen page showing the provenance tree and manifest details.
+class ManifestViewerPage extends StatelessWidget {
+  final String filePath;
+  final String title;
+
+  const ManifestViewerPage({
+    super.key,
+    required this.filePath,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final store = ManifestStore.fromLocalPath(filePath);
+
+    if (store == null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(title)),
+        body: const Center(child: Text('No manifest found in this file.')),
+      );
+    }
+
+    try {
+      final rootNode = ProvenanceMapper.mapToTree(store);
+
+      return Scaffold(
+        appBar: AppBar(title: Text(title)),
+        body: C2paViewerTheme(
+          data: const C2paViewerThemeData(),
+          child: C2paManifestViewer(
+            rootNode: rootNode,
+            mimeType: File(filePath).path.endsWith('.jpg')
+                ? 'image/jpeg'
+                : null,
+          ),
+        ),
+      );
+    } catch (e) {
+      return Scaffold(
+        appBar: AppBar(title: Text(title)),
+        body: Center(child: Text('Error building provenance tree: $e')),
+      );
+    }
   }
 }
