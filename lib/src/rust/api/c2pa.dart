@@ -19,3 +19,19 @@ String? getFileManifestFormat({
   fileBytes: fileBytes,
   format: format,
 );
+
+String? getManifestWithValidation({
+  required final List<int> fileBytes,
+  required final String format,
+}) => RustLib.instance.api.crateApiC2PaGetManifestWithValidation(
+  fileBytes: fileBytes,
+  format: format,
+);
+
+String? getManifestWithValidationFromPath({
+  required final List<int> fileBytes,
+  required final String path,
+}) => RustLib.instance.api.crateApiC2PaGetManifestWithValidationFromPath(
+  fileBytes: fileBytes,
+  path: path,
+);
