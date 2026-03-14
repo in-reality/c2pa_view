@@ -15,6 +15,7 @@ import 'validation_status.dart';
 /// Labels of known assertions that get routed to structured fields.
 const _routedAssertionLabels = {
   'c2pa.actions',
+  'c2pa.actions.v2',
   'stds.exif',
   'stds.schema-org.CreativeWork',
   'c2pa.training-mining',
@@ -69,9 +70,10 @@ class Manifest extends Equatable {
             .toList() ??
         [];
 
-    // Extract c2pa.actions assertion
+    // Extract c2pa.actions or c2pa.actions.v2 assertion
     final actionsAssertion = allAssertions
-        .where((a) => a.label == 'c2pa.actions')
+        .where((a) =>
+            a.label == 'c2pa.actions' || a.label == 'c2pa.actions.v2')
         .toList();
     List<Action>? actions;
     if (actionsAssertion.isNotEmpty) {
