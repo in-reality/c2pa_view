@@ -80,8 +80,9 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
   Widget build(BuildContext context) {
     final theme = C2paViewerTheme.of(context);
 
-    return Row(
-      children: [
+    return SelectionArea(
+      child: Row(
+        children: [
         Expanded(
           child: ProvenanceTreeViewer(
             rootNode: widget.rootNode,
@@ -100,10 +101,13 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
             mimeType: widget.mimeType,
             onThumbnailTap: widget.onThumbnailTap,
             onIngredientTap: widget.onIngredientTap,
-            mediaImage: widget.mediaImage,
+            mediaImage: _selectedNodeId == widget.rootNode.id
+                ? widget.mediaImage
+                : null,
           ),
         ],
       ],
+      ),
     );
   }
 }

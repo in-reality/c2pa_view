@@ -71,12 +71,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: SelectionArea(
-        child: C2paViewerTheme(
+      home: C2paViewerTheme(
           data: const C2paViewerThemeData(),
           child: Scaffold(
             appBar: AppBar(title: const Text('C2PA Test Cases')),
-            body: Column(
+            body: SelectionArea(
+              child: Column(
               children: [
                 if (initError != null)
                   Container(
@@ -149,10 +149,10 @@ class MyApp extends StatelessWidget {
                   ),
                 ),
               ],
+              ),
             ),
           ),
         ),
-      ),
     );
   }
 }

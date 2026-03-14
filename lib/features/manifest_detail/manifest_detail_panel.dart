@@ -120,29 +120,29 @@ class _ScrollBodyState extends State<_ScrollBody> {
           ),
         Expanded(
           child: ListView(
-            controller: _scrollController,
-            padding: EdgeInsets.zero,
-            children: [
-              ErrorBanner(result: widget.data.validationResult),
-              ThumbnailSection(
-                thumbnail: widget.data.thumbnail ?? widget.mediaImage,
-                mimeType: widget.mimeType,
-                onTapFullScreen: widget.onThumbnailTap,
-              ),
-              ContentSummarySection(
-                generativeInfo: widget.data.generativeInfo,
-              ),
-              ProcessSection(
-                data: widget.data,
-                onIngredientTap: widget.onIngredientTap,
-              ),
-              CameraCaptureSection(exifData: widget.data.exifData),
-              AboutSection(data: widget.data),
-              if (widget.data.customFields.isNotEmpty)
-                CustomFieldsSection(fields: widget.data.customFields),
-              Divider(height: 1, color: theme.borderColor),
-              const SizedBox(height: 24),
-            ],
+              controller: _scrollController,
+              padding: EdgeInsets.zero,
+              children: [
+                ErrorBanner(result: widget.data.validationResult),
+                ThumbnailSection(
+                  thumbnail: widget.data.thumbnail ?? widget.mediaImage,
+                  mimeType: widget.mimeType,
+                  onTapFullScreen: widget.onThumbnailTap,
+                ),
+                ContentSummarySection(
+                  generativeInfo: widget.data.generativeInfo,
+                ),
+                ProcessSection(
+                  data: widget.data,
+                  onIngredientTap: widget.onIngredientTap,
+                ),
+                CameraCaptureSection(exifData: widget.data.exifData),
+                AboutSection(data: widget.data),
+                if (widget.data.customFields.isNotEmpty)
+                  CustomFieldsSection(fields: widget.data.customFields),
+                Divider(height: 1, color: theme.borderColor),
+                const SizedBox(height: 24),
+              ],
           ),
         ),
       ],

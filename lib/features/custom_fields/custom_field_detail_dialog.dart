@@ -14,12 +14,13 @@ class CustomFieldDetailDialog extends StatelessWidget {
     final theme = C2paViewerTheme.of(context);
 
     return Dialog(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      child: SelectionArea(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             Container(
               padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
               decoration: BoxDecoration(
@@ -73,7 +74,8 @@ class CustomFieldDetailDialog extends StatelessWidget {
                 child: _buildValue(field.value, theme, 0),
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
