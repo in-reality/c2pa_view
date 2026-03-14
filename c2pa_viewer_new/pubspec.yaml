@@ -1,0 +1,24 @@
+name: c2pa_manifest_viewer
+description: >
+  Reusable Flutter widgets for viewing C2PA content credentials manifests.
+  Includes a provenance tree viewer and a manifest detail sidebar panel.
+version: 0.1.0
+homepage: https://github.com/contentauth/verify-site
+repository: https://github.com/contentauth/verify-site
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
