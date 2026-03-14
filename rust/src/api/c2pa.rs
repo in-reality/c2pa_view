@@ -1,36 +1,60 @@
 use c2pa::Reader;
-use mime_guess;
 
-#[flutter_rust_bridge::frb(sync)] // Synchronous mode for simplicity
+#[flutter_rust_bridge::frb(sync)]
 pub fn get_file_manifest(
     file_bytes: Vec<u8>,
     path: String,
-    ) -> Result<Option<String>, String> {
-    // Guess the MIME type
+) -> Result<Option<String>, String> {
     let mime_type = mime_guess::from_path(path)
         .first()
-        .ok_or("Failed to guess MIME type")?.to_string();
+        .ok_or("Failed to guess MIME type")?
+        .to_string();
 
-    // Get file manifest using format
-    get_file_manifest_format(
-        file_bytes,
-        mime_type,
-    )
+    get_file_manifest_format(file_bytes, mime_type)
 }
 
-#[flutter_rust_bridge::frb(sync)] // Synchronous mode for simplicity
+#[flutter_rust_bridge::frb(sync)]
 pub fn get_file_manifest_format(
     file_bytes: Vec<u8>,
     format: String,
 ) -> Result<Option<String>, String> {
-    // Create buffer from data_in
     let stream = std::io::Cursor::new(file_bytes);
 
-    // Read the C2PA manifest
-    let reader = Reader::from_stream(&format, stream)
-      .ok();
+    let reader = Reader::from_stream(&format, stream).ok();
 
-    // Get the manifest
     Ok(reader.map(|r| r.json()))
 }
 
+#[flutter_rust_bridge::frb(sync)]
+pub fn get_manifest_with_validation(
+    file_bytes: Vec<u8>,
+    format: String,
+) -> Result<Option<String>, String> {
+    let stream = std::io::Cursor::new(file_bytes);
+    let reader = Reader::from_stream(&format, stream).ok();
+    match reader {
+        Some(r) => {
+            let mut value: serde_json::Value =
+                serde_json::from_str(&r.json()).map_err(|e| e.to_string())?;
+            if let Some(statuses) = r.validation_status() {
+                value["validation_status"] =
+                    serde_json::to_value(statuses).map_err(|e| e.to_string())?;
+            }
+            Ok(Some(value.to_string()))
+        }
+        None => Ok(None),
+    }
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn get_manifest_with_validation_from_path(
+    file_bytes: Vec<u8>,
+    path: String,
+) -> Result<Option<String>, String> {
+    let mime_type = mime_guess::from_path(path)
+        .first()
+        .ok_or("Failed to guess MIME type")?
+        .to_string();
+
+    get_manifest_with_validation(file_bytes, mime_type)
+}

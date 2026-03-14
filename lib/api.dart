@@ -6,22 +6,21 @@ import 'package:http/http.dart' as http;
 /// Get the manifest from a file
 // ignore: type_annotate_public_apis
 String? getManifestJsonFromFile(final String path) {
-  // File
   final file = File(path);
-
-  // Get manifest
-  return getFileManifest(fileBytes: file.readAsBytesSync(), path: file.path);
+  return getManifestWithValidationFromPath(
+    fileBytes: file.readAsBytesSync(),
+    path: file.path,
+  );
 }
 
 /// Get the manifest from a URL
 /// Optionally specify the format (mime type) if not in the header
-Future<String?> getManifestJsonFromURL(final String url, {final String? format})
-async {
-  // Download from url
+Future<String?> getManifestJsonFromURL(
+  final String url, {
+  final String? format,
+}) async {
   final response = await http.get(Uri.parse(url));
-
-  // Get manifest
-  return getFileManifestFormat(
+  return getManifestWithValidation(
     fileBytes: response.bodyBytes,
     format: response.headers['content-type'] ?? format ?? 'image/jpeg',
   );
@@ -31,4 +30,5 @@ async {
 String? getManifestJsonFromBytes({
   required final List<int> fileBytes,
   required final String format,
-}) => getFileManifestFormat(fileBytes: fileBytes, format: format);
+}) =>
+    getManifestWithValidation(fileBytes: fileBytes, format: format);

@@ -83,6 +83,16 @@ abstract class RustLibApi extends BaseApi {
     required final List<int> fileBytes,
     required final String format,
   });
+
+  String? crateApiC2PaGetManifestWithValidation({
+    required final List<int> fileBytes,
+    required final String format,
+  });
+
+  String? crateApiC2PaGetManifestWithValidationFromPath({
+    required final List<int> fileBytes,
+    required final String path,
+  });
 }
 
 class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
@@ -147,6 +157,62 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(
         debugName: 'get_file_manifest_format',
         argNames: ['fileBytes', 'format'],
+      );
+
+  @override
+  String? crateApiC2PaGetManifestWithValidation({
+    required final List<int> fileBytes,
+    required final String format,
+  }) => handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(fileBytes, serializer);
+          sse_encode_String(format, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 3)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_String,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiC2PaGetManifestWithValidationConstMeta,
+        argValues: [fileBytes, format],
+        apiImpl: this,
+      ),
+    );
+
+  TaskConstMeta get kCrateApiC2PaGetManifestWithValidationConstMeta =>
+      const TaskConstMeta(
+        debugName: 'get_manifest_with_validation',
+        argNames: ['fileBytes', 'format'],
+      );
+
+  @override
+  String? crateApiC2PaGetManifestWithValidationFromPath({
+    required final List<int> fileBytes,
+    required final String path,
+  }) => handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(fileBytes, serializer);
+          sse_encode_String(path, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 4)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_String,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiC2PaGetManifestWithValidationFromPathConstMeta,
+        argValues: [fileBytes, path],
+        apiImpl: this,
+      ),
+    );
+
+  TaskConstMeta get kCrateApiC2PaGetManifestWithValidationFromPathConstMeta =>
+      const TaskConstMeta(
+        debugName: 'get_manifest_with_validation_from_path',
+        argNames: ['fileBytes', 'path'],
       );
 
   @protected

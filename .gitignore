@@ -1,6 +1,7 @@
 # Miscellaneous
 *.class
 *.lock
+!rust/Cargo.lock
 *.log
 *.pyc
 *.swp
