@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:c2pa_view/c2pa_view.dart';
 
 class TestCase {
@@ -203,15 +206,23 @@ class ManifestViewerPage extends StatefulWidget {
 }
 
 class _ManifestViewerPageState extends State<ManifestViewerPage> {
-  late Future<ManifestStore?> _storeFuture;
+  late Future<({ManifestStore? store, Uint8List? bytes})> _dataFuture;
 
   @override
   void initState() {
     super.initState();
-    _storeFuture = ManifestStore.fromUrl(
+    _dataFuture = _fetchManifestAndBytes(
       widget.testCase.imageUrl,
-      format: widget.testCase.mimeType,
+      widget.testCase.mimeType,
     );
+  }
+
+  static Future<({ManifestStore? store, Uint8List? bytes})>
+      _fetchManifestAndBytes(String url, String format) async {
+    final response = await http.get(Uri.parse(url));
+    final bytes = Uint8List.fromList(response.bodyBytes);
+    final store = ManifestStore.fromBytes(response.bodyBytes, format);
+    return (store: store, bytes: bytes);
   }
 
   @override
@@ -220,8 +231,8 @@ class _ManifestViewerPageState extends State<ManifestViewerPage> {
 
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: FutureBuilder<ManifestStore?>(
-        future: _storeFuture,
+      body: FutureBuilder<({ManifestStore? store, Uint8List? bytes})>(
+        future: _dataFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -236,7 +247,8 @@ class _ManifestViewerPageState extends State<ManifestViewerPage> {
             );
           }
 
-          final store = snapshot.data;
+          final store = snapshot.data?.store;
+          final bytes = snapshot.data?.bytes;
           if (store == null) {
             return const Center(
                 child: Text('No manifest found in this file.'));
@@ -244,11 +256,15 @@ class _ManifestViewerPageState extends State<ManifestViewerPage> {
 
           try {
             final rootNode = ProvenanceMapper.mapToTree(store);
+            final mediaImage = bytes != null && bytes.isNotEmpty
+                ? MemoryImage(bytes)
+                : null;
             return C2paViewerTheme(
               data: const C2paViewerThemeData(),
               child: C2paManifestViewer(
                 rootNode: rootNode,
                 mimeType: widget.testCase.mimeType,
+                mediaImage: mediaImage,
               ),
             );
           } catch (e) {

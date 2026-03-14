@@ -19,6 +19,7 @@ class ManifestDetailPanel extends StatelessWidget {
   final VoidCallback? onThumbnailTap;
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
   final double? width;
+  final ImageProvider? mediaImage;
 
   const ManifestDetailPanel({
     super.key,
@@ -27,6 +28,7 @@ class ManifestDetailPanel extends StatelessWidget {
     this.onThumbnailTap,
     this.onIngredientTap,
     this.width,
+    this.mediaImage,
   });
 
   @override
@@ -46,6 +48,7 @@ class ManifestDetailPanel extends StatelessWidget {
               mimeType: mimeType,
               onThumbnailTap: onThumbnailTap,
               onIngredientTap: onIngredientTap,
+              mediaImage: mediaImage,
             ),
           ),
         ],
@@ -59,12 +62,14 @@ class _ScrollBody extends StatefulWidget {
   final String? mimeType;
   final VoidCallback? onThumbnailTap;
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
+  final ImageProvider? mediaImage;
 
   const _ScrollBody({
     required this.data,
     this.mimeType,
     this.onThumbnailTap,
     this.onIngredientTap,
+    this.mediaImage,
   });
 
   @override
@@ -120,7 +125,7 @@ class _ScrollBodyState extends State<_ScrollBody> {
             children: [
               ErrorBanner(result: widget.data.validationResult),
               ThumbnailSection(
-                thumbnail: widget.data.thumbnail,
+                thumbnail: widget.data.thumbnail ?? widget.mediaImage,
                 mimeType: widget.mimeType,
                 onTapFullScreen: widget.onThumbnailTap,
               ),

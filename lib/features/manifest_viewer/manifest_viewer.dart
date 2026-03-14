@@ -21,6 +21,9 @@ class C2paManifestViewer extends StatefulWidget {
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
   final String? mimeType;
   final bool showDetailPanel;
+  /// Optional image for the actual media file. When the manifest has no
+  /// embedded thumbnail, this is shown instead (detail panel and root tree node).
+  final ImageProvider? mediaImage;
 
   const C2paManifestViewer({
     super.key,
@@ -31,6 +34,7 @@ class C2paManifestViewer extends StatefulWidget {
     this.onIngredientTap,
     this.mimeType,
     this.showDetailPanel = true,
+    this.mediaImage,
   });
 
   @override
@@ -83,6 +87,7 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
             rootNode: widget.rootNode,
             selectedNodeId: _selectedNodeId,
             onNodeSelected: _onNodeSelected,
+            mediaImage: widget.mediaImage,
           ),
         ),
         if (widget.showDetailPanel && _selectedData != null) ...[
@@ -95,6 +100,7 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
             mimeType: widget.mimeType,
             onThumbnailTap: widget.onThumbnailTap,
             onIngredientTap: widget.onIngredientTap,
+            mediaImage: widget.mediaImage,
           ),
         ],
       ],

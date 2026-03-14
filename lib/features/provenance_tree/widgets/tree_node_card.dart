@@ -13,6 +13,7 @@ class TreeNodeCard extends StatelessWidget {
   final bool isSelected;
   final bool isOnPath;
   final VoidCallback? onTap;
+  final ImageProvider? mediaImage;
 
   const TreeNodeCard({
     super.key,
@@ -20,6 +21,7 @@ class TreeNodeCard extends StatelessWidget {
     this.isSelected = false,
     this.isOnPath = false,
     this.onTap,
+    this.mediaImage,
   });
 
   @override
@@ -56,7 +58,7 @@ class TreeNodeCard extends StatelessWidget {
           borderRadius: theme.cardRadius,
           child: Row(
             children: [
-              _NodeThumbnail(node: node, theme: theme),
+              _NodeThumbnail(node: node, theme: theme, mediaImage: mediaImage),
               Expanded(child: _NodeInfo(node: node, theme: theme)),
             ],
           ),
@@ -69,17 +71,23 @@ class TreeNodeCard extends StatelessWidget {
 class _NodeThumbnail extends StatelessWidget {
   final ProvenanceNode node;
   final C2paViewerThemeData theme;
+  final ImageProvider? mediaImage;
 
-  const _NodeThumbnail({required this.node, required this.theme});
+  const _NodeThumbnail({
+    required this.node,
+    required this.theme,
+    this.mediaImage,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final image = node.thumbnail ?? mediaImage;
     return SizedBox(
       width: theme.nodeHeight,
       height: theme.nodeHeight,
-      child: node.thumbnail != null
+      child: image != null
           ? Image(
-              image: node.thumbnail!,
+              image: image,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => _placeholder(),
             )

@@ -24,6 +24,7 @@ class ProvenanceTreeViewer extends StatefulWidget {
   final String? selectedNodeId;
   final ValueChanged<ProvenanceNode>? onNodeSelected;
   final Color? backgroundColor;
+  final ImageProvider? mediaImage;
 
   const ProvenanceTreeViewer({
     super.key,
@@ -31,6 +32,7 @@ class ProvenanceTreeViewer extends StatefulWidget {
     this.selectedNodeId,
     this.onNodeSelected,
     this.backgroundColor,
+    this.mediaImage,
   });
 
   @override
@@ -231,6 +233,9 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
                                 layoutNode.node.id != widget.selectedNodeId,
                         onTap: widget.onNodeSelected != null
                             ? () => widget.onNodeSelected!(layoutNode.node)
+                            : null,
+                        mediaImage: layoutNode.node.id == widget.rootNode.id
+                            ? widget.mediaImage
                             : null,
                       ),
                     ),
