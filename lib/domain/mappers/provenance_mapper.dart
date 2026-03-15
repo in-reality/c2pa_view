@@ -56,7 +56,8 @@ class ProvenanceMapper {
       }
     }
 
-    final viewData = ManifestViewDataMapper.map(manifest);
+    final rawJson = store.rawManifestJsons[label];
+    final viewData = ManifestViewDataMapper.map(manifest, rawJson: rawJson);
 
     return ProvenanceNode(
       id: label,

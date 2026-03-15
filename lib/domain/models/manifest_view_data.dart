@@ -32,6 +32,9 @@ class ManifestViewData {
   final List<CustomField> exifCustomFields;
   final List<CustomField> creativeWorkCustomFields;
 
+  /// The raw JSON map for this manifest. Used for the "copy JSON" feature.
+  final Map<String, dynamic>? rawJson;
+
   const ManifestViewData({
     this.title,
     this.thumbnail,
@@ -51,6 +54,7 @@ class ManifestViewData {
     this.customFields = const [],
     this.exifCustomFields = const [],
     this.creativeWorkCustomFields = const [],
+    this.rawJson,
   });
 }
 

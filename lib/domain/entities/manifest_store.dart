@@ -10,6 +10,7 @@ class ManifestStore extends Equatable {
   const ManifestStore({
     this.activeManifest,
     this.manifests = const {},
+    this.rawManifestJsons = const {},
     this.validationStatus = const [],
   });
 
@@ -27,6 +28,7 @@ class ManifestStore extends Equatable {
 
     // Parse manifests, propagating top-level validation to the active manifest
     final activeLabel = json['active_manifest'] as String?;
+    final rawManifestJsons = <String, Map<String, dynamic>>{};
     final manifests =
         (json['manifests'] as Map<String, dynamic>?)?.map((final k, final e) {
               final manifestJson = e as Map<String, dynamic>;
@@ -38,6 +40,7 @@ class ManifestStore extends Equatable {
                 manifestJson['validation_status'] =
                     (json['validation_status'] as List);
               }
+              rawManifestJsons[k] = manifestJson;
               return MapEntry(k, Manifest.fromJson(manifestJson));
             }) ??
             {};
@@ -45,6 +48,7 @@ class ManifestStore extends Equatable {
     return ManifestStore(
       activeManifest: activeLabel,
       manifests: manifests,
+      rawManifestJsons: rawManifestJsons,
       validationStatus: topLevelValidation,
     );
   }
@@ -82,6 +86,10 @@ class ManifestStore extends Equatable {
 
   /// A HashMap of Manifests.
   final Map<String, Manifest> manifests;
+
+  /// Raw JSON maps for each manifest, keyed by label.
+  /// Used to allow callers to copy or inspect the unprocessed manifest data.
+  final Map<String, Map<String, dynamic>> rawManifestJsons;
 
   /// Top-level validation status entries.
   final List<ValidationStatusEntry> validationStatus;

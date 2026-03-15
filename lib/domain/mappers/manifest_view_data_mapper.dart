@@ -28,7 +28,10 @@ const _knownActionParams = {
 
 /// Converts a [Manifest] domain entity into a [ManifestViewData] view model.
 class ManifestViewDataMapper {
-  static ManifestViewData map(Manifest manifest) {
+  static ManifestViewData map(
+    Manifest manifest, {
+    Map<String, dynamic>? rawJson,
+  }) {
     return ManifestViewData(
       title: manifest.title,
       thumbnail: _toImageProvider(manifest.thumbnail),
@@ -48,6 +51,7 @@ class ManifestViewDataMapper {
       customFields: manifest.customFields,
       exifCustomFields: manifest.exifData?.customFields ?? const [],
       creativeWorkCustomFields: manifest.creativeWork?.customFields ?? const [],
+      rawJson: rawJson,
     );
   }
 
