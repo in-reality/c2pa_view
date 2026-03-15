@@ -27,16 +27,6 @@ const _internalAssertionPrefixes = [
   'c2pa.hash.',
 ];
 
-/// Known action parameter keys.
-const _knownActionParams = {
-  'name',
-  'description',
-  'softwareAgent',
-  'digitalSourceType',
-  'when',
-  'changed',
-  'instanceId',
-};
 
 /// Domain entity representing a C2PA Content Credential Manifest.
 class Manifest extends Equatable {
@@ -136,7 +126,7 @@ class Manifest extends Equatable {
       return true;
     }).toList();
 
-    // Collect custom fields from remaining assertions
+    // Collect custom fields from remaining (unknown) assertions only
     final customFields = <CustomField>[];
     for (final assertion in filteredAssertions) {
       customFields.add(CustomField(
@@ -144,34 +134,6 @@ class Manifest extends Equatable {
         value: assertion.data,
         source: 'assertion',
       ));
-    }
-
-    // Collect custom fields from EXIF extensions
-    if (exifData != null) {
-      customFields.addAll(exifData.customFields);
-    }
-
-    // Collect custom fields from CreativeWork extensions
-    if (creativeWork != null) {
-      customFields.addAll(creativeWork.customFields);
-    }
-
-    // Collect custom fields from action parameters
-    if (actions != null) {
-      for (final action in actions) {
-        if (action.parameters != null) {
-          for (final entry in action.parameters!.entries) {
-            if (!_knownActionParams.contains(entry.key)) {
-              customFields.add(CustomField(
-                key: entry.key,
-                value: entry.value,
-                source: 'action_parameter',
-                parentLabel: action.action,
-              ));
-            }
-          }
-        }
-      }
     }
 
     // Parse structured signature info

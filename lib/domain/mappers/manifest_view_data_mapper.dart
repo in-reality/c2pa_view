@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart' hide Action;
 
 import 'package:c2pa_view/domain/entities/action.dart';
 import 'package:c2pa_view/domain/entities/creative_work.dart';
+import 'package:c2pa_view/domain/entities/custom_field.dart';
 import 'package:c2pa_view/domain/entities/exif_data.dart';
 import 'package:c2pa_view/domain/entities/ingredient.dart';
 import 'package:c2pa_view/domain/entities/manifest.dart';
@@ -12,6 +13,18 @@ import 'package:c2pa_view/domain/entities/thumbnail_data.dart';
 import 'package:c2pa_view/domain/entities/validation_status.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
 import 'package:c2pa_view/domain/models/validation_result.dart';
+
+/// Action parameter keys that are already represented as structured fields
+/// on [ActionDisplayInfo] and should not be treated as custom params.
+const _knownActionParams = {
+  'name',
+  'description',
+  'softwareAgent',
+  'digitalSourceType',
+  'when',
+  'changed',
+  'instanceId',
+};
 
 /// Converts a [Manifest] domain entity into a [ManifestViewData] view model.
 class ManifestViewDataMapper {
@@ -33,6 +46,8 @@ class ManifestViewDataMapper {
       doNotTrain: manifest.trainingMining?.doNotTrain ?? false,
       website: manifest.creativeWork?.website,
       customFields: manifest.customFields,
+      exifCustomFields: manifest.exifData?.customFields ?? const [],
+      creativeWorkCustomFields: manifest.creativeWork?.customFields ?? const [],
     );
   }
 
@@ -144,12 +159,27 @@ class ManifestViewDataMapper {
           (sourceType.toLowerCase().contains('trainedalgorithmicmedia') ||
               sourceType.toLowerCase().contains('algorithmicmedia'));
 
+      final customParams = <CustomField>[];
+      if (a.parameters != null) {
+        for (final entry in a.parameters!.entries) {
+          if (!_knownActionParams.contains(entry.key)) {
+            customParams.add(CustomField(
+              key: entry.key,
+              value: entry.value,
+              source: 'action_parameter',
+              parentLabel: a.action,
+            ));
+          }
+        }
+      }
+
       return ActionDisplayInfo(
         actionType: a.action,
         label: ActionDisplayInfo.humanLabel(a.action),
         when: a.when != null ? DateTime.tryParse(a.when!) : null,
         softwareAgent: a.parameters?['softwareAgent'] as String?,
         isAiGenerated: isAi,
+        customParams: customParams,
       );
     }).toList();
   }

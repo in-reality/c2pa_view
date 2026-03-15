@@ -29,6 +29,8 @@ class ManifestViewData {
   final String? website;
 
   final List<CustomField> customFields;
+  final List<CustomField> exifCustomFields;
+  final List<CustomField> creativeWorkCustomFields;
 
   const ManifestViewData({
     this.title,
@@ -47,6 +49,8 @@ class ManifestViewData {
     this.doNotTrain = false,
     this.website,
     this.customFields = const [],
+    this.exifCustomFields = const [],
+    this.creativeWorkCustomFields = const [],
   });
 }
 
@@ -104,6 +108,7 @@ class ActionDisplayInfo {
   final DateTime? when;
   final String? softwareAgent;
   final bool isAiGenerated;
+  final List<CustomField> customParams;
 
   const ActionDisplayInfo({
     required this.actionType,
@@ -111,6 +116,7 @@ class ActionDisplayInfo {
     this.when,
     this.softwareAgent,
     this.isAiGenerated = false,
+    this.customParams = const [],
   });
 
   static String humanLabel(String actionType) {

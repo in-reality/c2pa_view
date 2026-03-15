@@ -136,8 +136,15 @@ class _ScrollBodyState extends State<_ScrollBody> {
                   data: widget.data,
                   onIngredientTap: widget.onIngredientTap,
                 ),
-                CameraCaptureSection(exifData: widget.data.exifData),
-                AboutSection(data: widget.data),
+                CameraCaptureSection(
+                  exifData: widget.data.exifData,
+                  exifCustomFields: widget.data.exifCustomFields,
+                ),
+                AboutSection(
+                  data: widget.data,
+                  creativeWorkCustomFields:
+                      widget.data.creativeWorkCustomFields,
+                ),
                 if (widget.data.customFields.isNotEmpty)
                   CustomFieldsSection(fields: widget.data.customFields),
                 Divider(height: 1, color: theme.borderColor),

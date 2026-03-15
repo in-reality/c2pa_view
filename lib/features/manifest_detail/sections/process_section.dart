@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
+import 'package:c2pa_view/features/custom_fields/custom_fields_table.dart';
 import 'package:c2pa_view/features/shared/widgets/collapsible_section.dart';
 import 'package:c2pa_view/features/shared/widgets/ingredient_card.dart';
 import 'package:c2pa_view/features/shared/widgets/sub_section.dart';
@@ -136,55 +137,100 @@ class _ActionsSubSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = C2paViewerTheme.of(context);
-
     return SubSection(
       label: 'Edits and activity',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final action in data.actions)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
-                children: [
-                  Icon(
-                    _iconForAction(action.actionType),
-                    size: 16,
-                    color: action.isAiGenerated
-                        ? theme.unrecognizedColor
-                        : theme.iconColor,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      action.label,
-                      style: theme.bodyStyle.copyWith(
-                        color: theme.textPrimaryColor,
-                      ),
-                    ),
-                  ),
-                  if (action.isAiGenerated)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.unrecognizedColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'AI',
-                        style: theme.labelStyle.copyWith(
-                          color: theme.unrecognizedColor,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ),
-                ],
+          for (final action in data.actions) _ActionRow(action: action),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionRow extends StatefulWidget {
+  final ActionDisplayInfo action;
+  const _ActionRow({required this.action});
+
+  @override
+  State<_ActionRow> createState() => _ActionRowState();
+}
+
+class _ActionRowState extends State<_ActionRow> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = C2paViewerTheme.of(context);
+    final action = widget.action;
+    final hasParams = action.customParams.isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                _iconForAction(action.actionType),
+                size: 16,
+                color: action.isAiGenerated
+                    ? theme.unrecognizedColor
+                    : theme.iconColor,
               ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  action.label,
+                  style: theme.bodyStyle.copyWith(
+                    color: theme.textPrimaryColor,
+                  ),
+                ),
+              ),
+              if (action.isAiGenerated)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.unrecognizedColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'AI',
+                    style: theme.labelStyle.copyWith(
+                      color: theme.unrecognizedColor,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              if (hasParams)
+                InkWell(
+                  onTap: () => setState(() => _expanded = !_expanded),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(2),
+                    child: Icon(
+                      _expanded
+                          ? Icons.expand_less
+                          : Icons.expand_more,
+                      size: 18,
+                      color: theme.iconColor,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (hasParams && _expanded) ...[
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.only(left: 24),
+              child: CustomFieldsTable(fields: action.customParams),
             ),
+          ],
         ],
       ),
     );

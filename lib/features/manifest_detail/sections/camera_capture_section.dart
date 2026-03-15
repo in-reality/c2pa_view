@@ -2,21 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
+import 'package:c2pa_view/domain/entities/custom_field.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
+import 'package:c2pa_view/features/custom_fields/custom_fields_table.dart';
 import 'package:c2pa_view/features/shared/widgets/collapsible_section.dart';
 import 'package:c2pa_view/features/shared/widgets/sub_section.dart';
 
 /// Collapsible "Camera capture details" section showing EXIF data.
 class CameraCaptureSection extends StatelessWidget {
   final ExifDisplayData? exifData;
+  final List<CustomField> exifCustomFields;
 
-  const CameraCaptureSection({super.key, this.exifData});
+  const CameraCaptureSection({
+    super.key,
+    this.exifData,
+    this.exifCustomFields = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (exifData == null) return const SizedBox.shrink();
+    if (exifData == null && exifCustomFields.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
-    final exif = exifData!;
+    final exif = exifData;
 
     return CollapsibleSection(
       title: 'Camera capture details',
@@ -25,17 +34,24 @@ class CameraCaptureSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (exif.creator != null)
-            _TextSubSection(label: 'Creator', value: exif.creator!),
-          if (exif.copyright != null)
-            _TextSubSection(label: 'Copyright', value: exif.copyright!),
-          if (exif.captureDate != null)
-            _TextSubSection(
-              label: 'Capture date',
-              value: DateFormat.yMMMd().add_jm().format(exif.captureDate!),
+          if (exif != null) ...[
+            if (exif.creator != null)
+              _TextSubSection(label: 'Creator', value: exif.creator!),
+            if (exif.copyright != null)
+              _TextSubSection(label: 'Copyright', value: exif.copyright!),
+            if (exif.captureDate != null)
+              _TextSubSection(
+                label: 'Capture date',
+                value: DateFormat.yMMMd().add_jm().format(exif.captureDate!),
+              ),
+            _CameraInfoCard(exif: exif),
+            if (exif.hasLocation) _LocationInfo(exif: exif),
+          ],
+          if (exifCustomFields.isNotEmpty)
+            SubSection(
+              label: 'Additional EXIF data',
+              child: CustomFieldsTable(fields: exifCustomFields),
             ),
-          _CameraInfoCard(exif: exif),
-          if (exif.hasLocation) _LocationInfo(exif: exif),
         ],
       ),
     );

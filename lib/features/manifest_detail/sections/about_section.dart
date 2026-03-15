@@ -2,22 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
+import 'package:c2pa_view/domain/entities/custom_field.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
+import 'package:c2pa_view/features/custom_fields/custom_fields_table.dart';
 import 'package:c2pa_view/features/shared/widgets/collapsible_section.dart';
 import 'package:c2pa_view/features/shared/widgets/sub_section.dart';
 
 /// Collapsible "About this Content Credential" section.
 class AboutSection extends StatelessWidget {
   final ManifestViewData data;
+  final List<CustomField> creativeWorkCustomFields;
 
-  const AboutSection({super.key, required this.data});
+  const AboutSection({
+    super.key,
+    required this.data,
+    this.creativeWorkCustomFields = const [],
+  });
 
   bool get _hasContent =>
       data.issuer != null ||
       data.signedDate != null ||
       data.producer != null ||
       data.socialAccounts.isNotEmpty ||
-      data.doNotTrain;
+      data.doNotTrain ||
+      creativeWorkCustomFields.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +44,11 @@ class AboutSection extends StatelessWidget {
           if (data.socialAccounts.isNotEmpty)
             _SocialAccountsSubSection(accounts: data.socialAccounts),
           if (data.doNotTrain) const _DoNotTrainSubSection(),
+          if (creativeWorkCustomFields.isNotEmpty)
+            SubSection(
+              label: 'Additional metadata',
+              child: CustomFieldsTable(fields: creativeWorkCustomFields),
+            ),
         ],
       ),
     );
