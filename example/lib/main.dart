@@ -140,7 +140,15 @@ class MyApp extends StatelessWidget {
                       } else if (snapshot.hasError) {
                         return Center(child: Text('Error: ${snapshot.error}'));
                       } else if (snapshot.hasData) {
-                        return TestCaseList(testCases: snapshot.data!);
+                        return Column(
+                          children: [
+                            if (snapshot.data!.length >= 4)
+                              _PopupDemoCard(testCase: snapshot.data![3]),
+                            Expanded(
+                              child: TestCaseList(testCases: snapshot.data!),
+                            ),
+                          ],
+                        );
                       } else {
                         return const Center(
                             child: Text('No test cases found.'));
@@ -191,6 +199,152 @@ class TestCaseList extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Demo card showing an image thumbnail with a content-credentials button
+/// that opens a [showManifestDetailPopup].
+class _PopupDemoCard extends StatefulWidget {
+  final TestCase testCase;
+
+  const _PopupDemoCard({required this.testCase});
+
+  @override
+  State<_PopupDemoCard> createState() => _PopupDemoCardState();
+}
+
+class _PopupDemoCardState extends State<_PopupDemoCard> {
+  late Future<({ManifestStore? store, Uint8List? bytes})> _dataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _dataFuture = _fetchManifestAndBytes(
+      widget.testCase.imageUrl,
+      widget.testCase.mimeType,
+    );
+  }
+
+  static Future<({ManifestStore? store, Uint8List? bytes})>
+      _fetchManifestAndBytes(String url, String format) async {
+    final response = await http.get(Uri.parse(url));
+    final bytes = Uint8List.fromList(response.bodyBytes);
+    final store = ManifestStore.fromBytes(response.bodyBytes, format);
+    return (store: store, bytes: bytes);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: FutureBuilder<({ManifestStore? store, Uint8List? bytes})>(
+            future: _dataFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox(
+                  height: 120,
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 12),
+                        Text('Loading popup demo...'),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              if (snapshot.hasError || snapshot.data?.store == null) {
+                return SizedBox(
+                  height: 60,
+                  child: Center(
+                    child: Text(
+                      snapshot.hasError
+                          ? 'Demo load error: ${snapshot.error}'
+                          : 'No manifest found',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                );
+              }
+
+              final store = snapshot.data!.store!;
+              final bytes = snapshot.data!.bytes;
+              final manifest = store.manifests[store.activeManifest]!;
+              final viewData = ManifestViewDataMapper.map(manifest);
+              final mediaImage =
+                  bytes != null && bytes.isNotEmpty ? MemoryImage(bytes) : null;
+
+              return Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image(
+                      image: viewData.thumbnail ?? mediaImage ?? const AssetImage(''),
+                      height: 120,
+                      width: 120,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const SizedBox(
+                        height: 120,
+                        width: 120,
+                        child: Icon(Icons.image_not_supported, size: 40),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.testCase.title,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tap the icon to open manifest details as a popup',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Builder(
+                    builder: (buttonContext) {
+                      return IconButton(
+                        icon: const Icon(Icons.verified_user),
+                        tooltip: 'View Content Credentials',
+                        iconSize: 32,
+                        onPressed: () {
+                          showManifestDetailPopup(
+                            buttonContext,
+                            data: viewData,
+                            mimeType: widget.testCase.mimeType,
+                            mediaImage: mediaImage,
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 }

@@ -18,7 +18,9 @@ export 'domain/mappers/manifest_view_data_mapper.dart';
 // Features
 export 'features/manifest_viewer/manifest_viewer.dart';
 export 'features/provenance_tree/provenance_tree_viewer.dart';
+export 'features/manifest_detail/manifest_detail_content.dart';
 export 'features/manifest_detail/manifest_detail_panel.dart';
+export 'features/manifest_detail/manifest_detail_popup.dart';
 export 'features/custom_fields/custom_fields_table.dart';
 // Legacy API (still functional)
 export 'api.dart';
