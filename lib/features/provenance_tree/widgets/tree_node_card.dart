@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
+import 'package:c2pa_view/domain/models/manifest_summary.dart';
 import 'package:c2pa_view/domain/models/provenance_node.dart';
-import 'package:c2pa_view/features/shared/widgets/credential_indicator.dart';
+import 'package:c2pa_view/features/shared/widgets/manifest_summary_card.dart';
 
 /// A card representing a single node in the provenance tree.
 ///
-/// Shows a thumbnail, asset title, and credential status indicator.
-/// The border color changes based on selection state.
+/// Displays a [ManifestSummaryCard] (treeNode variant) inside a container
+/// whose border changes based on the selection state.  The card itself
+/// only knows about [node.summary] -- it has no access to parent or child
+/// information.
 class TreeNodeCard extends StatelessWidget {
   final ProvenanceNode node;
   final bool isSelected;
@@ -34,6 +37,17 @@ class TreeNodeCard extends StatelessWidget {
             ? theme.pathNodeBorderColor
             : theme.defaultNodeBorderColor;
 
+    // If a live media image is provided (for the root node) and the summary
+    // has no thumbnail yet, substitute it so the card still shows an image.
+    final summary = (mediaImage != null && node.summary.thumbnail == null)
+        ? ManifestSummary(
+            title: node.summary.title,
+            thumbnail: mediaImage,
+            validationResult: node.summary.validationResult,
+            issuer: node.summary.issuer,
+          )
+        : node.summary;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -56,97 +70,11 @@ class TreeNodeCard extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: theme.cardRadius,
-          child: Row(
-            children: [
-              _NodeThumbnail(node: node, theme: theme, mediaImage: mediaImage),
-              Expanded(child: _NodeInfo(node: node, theme: theme)),
-            ],
+          child: ManifestSummaryCard(
+            summary: summary,
+            variant: ManifestSummaryCardVariant.treeNode,
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _NodeThumbnail extends StatelessWidget {
-  final ProvenanceNode node;
-  final C2paViewerThemeData theme;
-  final ImageProvider? mediaImage;
-
-  const _NodeThumbnail({
-    required this.node,
-    required this.theme,
-    this.mediaImage,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final image = node.thumbnail ?? mediaImage;
-    return SizedBox(
-      width: theme.nodeHeight,
-      height: theme.nodeHeight,
-      child: image != null
-          ? Image(
-              image: image,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _placeholder(),
-            )
-          : _placeholder(),
-    );
-  }
-
-  Widget _placeholder() {
-    return Container(
-      color: theme.surfaceVariantColor,
-      child: Center(
-        child: Icon(
-          Icons.image_outlined,
-          size: 28,
-          color: theme.iconColor,
-        ),
-      ),
-    );
-  }
-}
-
-class _NodeInfo extends StatelessWidget {
-  final ProvenanceNode node;
-  final C2paViewerThemeData theme;
-
-  const _NodeInfo({required this.node, required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (node.title != null)
-            Text(
-              node.title!,
-              style: theme.titleSmallStyle.copyWith(
-                color: theme.textPrimaryColor,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          const SizedBox(height: 4),
-          CredentialIndicator(result: node.validationResult),
-          if (node.validationResult.isValid && node.issuer != null) ...[
-            const SizedBox(height: 2),
-            Text(
-              node.issuer!,
-              style: theme.bodySmallStyle.copyWith(
-                color: theme.textSecondaryColor,
-                fontSize: 10,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ],
       ),
     );
   }

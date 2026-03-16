@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:c2pa_view/domain/entities/custom_field.dart';
 
+import 'manifest_summary.dart';
 import 'validation_result.dart';
 
 /// Display-ready data for the manifest detail panel.
@@ -144,25 +145,33 @@ class ActionDisplayInfo {
 }
 
 /// Display info for an ingredient in the process section.
+///
+/// [summary] is the single source of truth for what to show in a card
+/// (thumbnail, title, credential status).  It is the same [ManifestSummary]
+/// that the corresponding [ProvenanceNode] carries, so the two widgets are
+/// structurally guaranteed to show identical information.
 @immutable
 class IngredientDisplayInfo {
-  final String? title;
-  final ImageProvider? thumbnail;
+  /// Display summary shared with the tree node for this ingredient.
+  /// Null when the ingredient has no resolved manifest (no credentials).
+  final ManifestSummary? summary;
+
   final String? format;
   final IngredientRelationship? relationship;
-  final bool hasManifest;
-  final String? issuer;
-  final DateTime? signedDate;
 
   const IngredientDisplayInfo({
-    this.title,
-    this.thumbnail,
+    this.summary,
     this.format,
     this.relationship,
-    this.hasManifest = false,
-    this.issuer,
-    this.signedDate,
   });
+
+  // Convenience accessors kept for call-sites that still read these directly.
+  String? get title => summary?.title;
+  ImageProvider? get thumbnail => summary?.thumbnail;
+  bool get hasManifest => summary != null;
+  String? get issuer => summary?.issuer;
+  ValidationResult get credentialResult =>
+      summary?.validationResult ?? const ValidationResult.noCredential();
 }
 
 enum IngredientRelationship {

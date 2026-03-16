@@ -6,6 +6,7 @@ export 'core/theme/c2pa_theme.dart';
 export 'domain/entities/entities.dart';
 
 // Domain models (view models)
+export 'domain/models/manifest_summary.dart';
 export 'domain/models/provenance_node.dart';
 export 'domain/models/manifest_view_data.dart';
 export 'domain/models/validation_result.dart';

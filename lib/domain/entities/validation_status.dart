@@ -19,8 +19,14 @@ class ValidationStatusEntry extends Equatable {
         explanation: json['explanation'] as String?,
       );
 
-  bool get isError =>
-      !code.contains('.validated') && !code.contains('.trusted');
+  static const _nonErrorSuffixes = {'.validated', '.trusted', '.untrusted'};
+
+  /// True when this entry represents a genuine validation failure.
+  /// Informational codes (*.validated, *.trusted, *.untrusted) are not errors.
+  bool get isError => !_nonErrorSuffixes.any((s) => code.endsWith(s));
+
+  /// True when the signing certificate is valid but not in any trust list.
+  bool get isUntrusted => code.endsWith('.untrusted');
 
   @override
   List<Object?> get props => [code, url, explanation];

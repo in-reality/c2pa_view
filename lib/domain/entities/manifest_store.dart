@@ -16,7 +16,7 @@ class ManifestStore extends Equatable {
 
   /// Creates a ManifestStore from a JSON map.
   factory ManifestStore.fromJson(final Map<String, dynamic> json) {
-    // Parse top-level validation status
+    // Parse top-level validation status entries.
     final topLevelValidation = <ValidationStatusEntry>[];
     if (json['validation_status'] is List) {
       for (final item in json['validation_status'] as List) {
@@ -26,19 +26,36 @@ class ManifestStore extends Equatable {
       }
     }
 
-    // Parse manifests, propagating top-level validation to the active manifest
     final activeLabel = json['active_manifest'] as String?;
+
+    // Group validation entries by the manifest label they reference.
+    // Entry URLs look like: self#jumbf=/c2pa/<manifestLabel>/c2pa.signature
+    // Entries that cannot be attributed to any specific manifest fall back
+    // to the active manifest.
+    final perManifestValidation = <String, List<Map<String, dynamic>>>{};
+    for (final entry in topLevelValidation) {
+      final manifestLabel = _extractManifestLabel(entry.url);
+      final key =
+          (manifestLabel != null) ? manifestLabel : (activeLabel ?? '');
+      perManifestValidation.putIfAbsent(key, () => []).add({
+        'code': entry.code,
+        if (entry.url != null) 'url': entry.url,
+        if (entry.explanation != null) 'explanation': entry.explanation,
+      });
+    }
+
     final rawManifestJsons = <String, Map<String, dynamic>>{};
     final manifests =
         (json['manifests'] as Map<String, dynamic>?)?.map((final k, final e) {
-              final manifestJson = e as Map<String, dynamic>;
-              // If this is the active manifest and it has no validation_status
-              // but there is a top-level one, inject it.
-              if (k == activeLabel &&
-                  manifestJson['validation_status'] == null &&
-                  topLevelValidation.isNotEmpty) {
-                manifestJson['validation_status'] =
-                    (json['validation_status'] as List);
+              final manifestJson =
+                  Map<String, dynamic>.from(e as Map<String, dynamic>);
+              // Inject the entries attributed to this manifest when the
+              // manifest JSON does not already carry its own validation_status.
+              if (manifestJson['validation_status'] == null) {
+                final entries = perManifestValidation[k];
+                if (entries != null && entries.isNotEmpty) {
+                  manifestJson['validation_status'] = entries;
+                }
               }
               rawManifestJsons[k] = manifestJson;
               return MapEntry(k, Manifest.fromJson(manifestJson));
@@ -51,6 +68,22 @@ class ManifestStore extends Equatable {
       rawManifestJsons: rawManifestJsons,
       validationStatus: topLevelValidation,
     );
+  }
+
+  /// Extracts the manifest label from a C2PA JUMBF URL.
+  ///
+  /// Input: `self#jumbf=/c2pa/contentauth:urn:uuid:XXXX/c2pa.signature`
+  /// Output: `contentauth:urn:uuid:XXXX`
+  static String? _extractManifestLabel(String? url) {
+    if (url == null) return null;
+    // Find the /c2pa/ prefix in the fragment or path.
+    const prefix = '/c2pa/';
+    final idx = url.indexOf(prefix);
+    if (idx == -1) return null;
+    final afterPrefix = url.substring(idx + prefix.length);
+    // The manifest label ends at the next '/' (if present).
+    final slashIdx = afterPrefix.indexOf('/');
+    return slashIdx == -1 ? afterPrefix : afterPrefix.substring(0, slashIdx);
   }
 
   /// Creates a ManifestStore from a local file path.

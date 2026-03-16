@@ -29,6 +29,9 @@ class CredentialIndicator extends StatelessWidget {
       case ValidationStatus.invalid:
         icon = Icons.dangerous;
         text = 'Invalid';
+      case ValidationStatus.untrusted:
+        icon = Icons.verified_outlined;
+        text = 'Untrusted signer';
       case ValidationStatus.unrecognized:
         icon = Icons.warning_amber_rounded;
         text = 'Unrecognized';

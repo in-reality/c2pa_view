@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import 'manifest_summary.dart';
 import 'manifest_view_data.dart';
 import 'validation_result.dart';
 
@@ -12,10 +13,7 @@ import 'validation_result.dart';
 @immutable
 class ProvenanceNode {
   final String id;
-  final String? title;
-  final ImageProvider? thumbnail;
-  final ValidationResult validationResult;
-  final String? issuer;
+  final ManifestSummary summary;
   final DateTime? signedDate;
   final List<ProvenanceNode> children;
 
@@ -25,14 +23,18 @@ class ProvenanceNode {
 
   const ProvenanceNode({
     required this.id,
-    this.title,
-    this.thumbnail,
-    this.validationResult = const ValidationResult.noCredential(),
-    this.issuer,
+    this.summary = const ManifestSummary(),
     this.signedDate,
     this.children = const [],
     this.manifestViewData,
   });
+
+  // Convenience accessors so call-sites that read these fields individually
+  // keep working without change.
+  String? get title => summary.title;
+  ImageProvider? get thumbnail => summary.thumbnail;
+  ValidationResult get validationResult => summary.validationResult;
+  String? get issuer => summary.issuer;
 
   bool get hasChildren => children.isNotEmpty;
 

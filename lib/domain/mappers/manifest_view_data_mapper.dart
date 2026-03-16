@@ -11,6 +11,7 @@ import 'package:c2pa_view/domain/entities/ingredient.dart';
 import 'package:c2pa_view/domain/entities/manifest.dart';
 import 'package:c2pa_view/domain/entities/thumbnail_data.dart';
 import 'package:c2pa_view/domain/entities/validation_status.dart';
+import 'package:c2pa_view/domain/models/manifest_summary.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
 import 'package:c2pa_view/domain/models/validation_result.dart';
 
@@ -31,6 +32,7 @@ class ManifestViewDataMapper {
   static ManifestViewData map(
     Manifest manifest, {
     Map<String, dynamic>? rawJson,
+    Map<String, ManifestSummary>? summaries,
   }) {
     return ManifestViewData(
       title: manifest.title,
@@ -41,7 +43,7 @@ class ManifestViewDataMapper {
       generativeInfo: _extractGenerativeInfo(manifest),
       claimGenerator: _mapClaimGenerator(manifest),
       actions: _mapActions(manifest.actions),
-      ingredients: _mapIngredients(manifest.ingredients),
+      ingredients: _mapIngredients(manifest.ingredients, summaries),
       aiToolsUsed: _extractAiTools(manifest),
       exifData: _mapExif(manifest.exifData),
       producer: manifest.creativeWork?.producer,
@@ -64,6 +66,11 @@ class ManifestViewDataMapper {
       final msg =
           statuses.where((s) => s.isError).map((s) => s.explanation).join('; ');
       return ValidationResult.invalid(msg.isEmpty ? null : msg);
+    }
+    // No genuine errors — check whether the signer is outside a trust list.
+    final hasUntrusted = statuses.any((s) => s.isUntrusted);
+    if (hasUntrusted) {
+      return const ValidationResult.untrusted();
     }
     return const ValidationResult.valid();
   }
@@ -190,6 +197,7 @@ class ManifestViewDataMapper {
 
   static List<IngredientDisplayInfo> _mapIngredients(
     List<Ingredient> ingredients,
+    Map<String, ManifestSummary>? summaries,
   ) {
     return ingredients.map((i) {
       IngredientRelationship? relationship;
@@ -204,12 +212,18 @@ class ManifestViewDataMapper {
         }
       }
 
+      // Look up the pre-computed summary for this ingredient's manifest.
+      // This is the same ManifestSummary that the corresponding ProvenanceNode
+      // carries, ensuring the ingredient list item and the tree node always
+      // show identical data.
+      final summary = (i.activeManifest != null && summaries != null)
+          ? summaries[i.activeManifest]
+          : null;
+
       return IngredientDisplayInfo(
-        title: i.title,
-        thumbnail: _toImageProvider(i.thumbnail),
+        summary: summary,
         format: i.format,
         relationship: relationship,
-        hasManifest: i.activeManifest != null,
       );
     }).toList();
   }
