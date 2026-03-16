@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -9,18 +10,12 @@ import 'widgets/tree_edge_painter.dart';
 import 'widgets/tree_node_card.dart';
 import 'widgets/zoom_controls.dart';
 
-/// The central provenance tree viewer showing an asset and its ingredients
-/// in a hierarchical tree layout.
+/// Displays a provenance DAG as a zoomable, pannable diagram.
 ///
-/// This is one of the two primary widgets in this package, mirroring the
-/// TreeView from the C2PA verify-site. It displays a zoomable, pannable
-/// tree where the root is the main asset and children are ingredients,
-/// each showing a thumbnail and credential status.
-///
-/// When a node is tapped, [onNodeSelected] is called with the selected
-/// [ProvenanceNode], which can be used to update the sidebar detail panel.
+/// Nodes with multiple parents (shared ingredients) appear once with
+/// edges from every parent.
 class ProvenanceTreeViewer extends StatefulWidget {
-  final ProvenanceNode rootNode;
+  final ProvenanceGraph graph;
   final String? selectedNodeId;
   final ValueChanged<ProvenanceNode>? onNodeSelected;
   final Color? backgroundColor;
@@ -28,7 +23,7 @@ class ProvenanceTreeViewer extends StatefulWidget {
 
   const ProvenanceTreeViewer({
     super.key,
-    required this.rootNode,
+    required this.graph,
     this.selectedNodeId,
     this.onNodeSelected,
     this.backgroundColor,
@@ -56,7 +51,7 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
   @override
   void didUpdateWidget(ProvenanceTreeViewer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.rootNode != widget.rootNode) {
+    if (oldWidget.graph != widget.graph) {
       _computeLayout();
     }
   }
@@ -67,13 +62,15 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
     super.dispose();
   }
 
+  // ---------------------------------------------------------------------------
+  // Layout
+  // ---------------------------------------------------------------------------
+
   void _computeLayout() {
     final theme = C2paViewerThemeData.defaults;
-    final nodes = <_LayoutNode>[];
-    final edges = <EdgeLine>[];
+    final graph = widget.graph;
 
-    final depthMap = <int, List<ProvenanceNode>>{};
-    _groupByDepth(widget.rootNode, 0, depthMap);
+    final depthMap = _assignDepths(graph);
 
     final maxNodesAtDepth = depthMap.values
         .map((list) => list.length)
@@ -90,6 +87,7 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
     const padding = 80.0;
 
     final nodePositions = <String, Offset>{};
+    final layoutNodes = <_LayoutNode>[];
 
     for (final entry in depthMap.entries) {
       final depth = entry.key;
@@ -102,13 +100,23 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
         final node = nodesAtDepth[i];
         final x = startX + i * (nodeW + spacingX);
         nodePositions[node.id] = Offset(x, y);
-        nodes.add(_LayoutNode(node: node, position: Offset(x, y)));
+        layoutNodes.add(_LayoutNode(node: node, position: Offset(x, y)));
       }
     }
 
-    _buildEdges(widget.rootNode, nodePositions, edges, nodeW, nodeH);
+    // Build edge lines from the graph's edge list.
+    final edges = <EdgeLine>[];
+    for (final edge in graph.edges) {
+      final parentPos = nodePositions[edge.parentId];
+      final childPos = nodePositions[edge.childId];
+      if (parentPos == null || childPos == null) continue;
+      edges.add(EdgeLine(
+        from: Offset(parentPos.dx + nodeW / 2, parentPos.dy + nodeH),
+        to: Offset(childPos.dx + nodeW / 2, childPos.dy),
+      ));
+    }
 
-    _layoutNodes = nodes;
+    _layoutNodes = layoutNodes;
     _edges = edges;
     _treeSize = Size(
       totalWidth + padding * 2,
@@ -116,60 +124,80 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
     );
   }
 
-  void _groupByDepth(
-    ProvenanceNode node,
-    int depth,
-    Map<int, List<ProvenanceNode>> map,
-  ) {
-    map.putIfAbsent(depth, () => []).add(node);
-    for (final child in node.children) {
-      _groupByDepth(child, depth + 1, map);
+  /// Assign each node a depth using BFS.  A shared node's depth is the
+  /// maximum depth any of its parents places it at (i.e. max-parent-depth + 1),
+  /// ensuring it sits below all parents.
+  Map<int, List<ProvenanceNode>> _assignDepths(ProvenanceGraph graph) {
+    final depths = <String, int>{};
+    final queue = Queue<String>();
+
+    depths[graph.rootId] = 0;
+    queue.add(graph.rootId);
+
+    // Build a quick child lookup.
+    final childrenOf = <String, List<String>>{};
+    for (final edge in graph.edges) {
+      childrenOf.putIfAbsent(edge.parentId, () => []).add(edge.childId);
     }
-  }
 
-  void _buildEdges(
-    ProvenanceNode node,
-    Map<String, Offset> positions,
-    List<EdgeLine> edges,
-    double nodeW,
-    double nodeH,
-  ) {
-    final parentPos = positions[node.id];
-    if (parentPos == null) return;
-
-    for (final child in node.children) {
-      final childPos = positions[child.id];
-      if (childPos == null) continue;
-
-      edges.add(EdgeLine(
-        from: Offset(parentPos.dx + nodeW / 2, parentPos.dy + nodeH),
-        to: Offset(childPos.dx + nodeW / 2, childPos.dy),
-      ));
-
-      _buildEdges(child, positions, edges, nodeW, nodeH);
-    }
-  }
-
-  Set<String> _pathToSelected() {
-    if (widget.selectedNodeId == null) return {};
-    final path = <String>{};
-    _findPath(widget.rootNode, widget.selectedNodeId!, path);
-    return path;
-  }
-
-  bool _findPath(ProvenanceNode node, String targetId, Set<String> path) {
-    if (node.id == targetId) {
-      path.add(node.id);
-      return true;
-    }
-    for (final child in node.children) {
-      if (_findPath(child, targetId, path)) {
-        path.add(node.id);
-        return true;
+    // BFS, but re-enqueue a child when we discover a deeper path.
+    while (queue.isNotEmpty) {
+      final id = queue.removeFirst();
+      final myDepth = depths[id]!;
+      for (final childId in childrenOf[id] ?? <String>[]) {
+        final proposedDepth = myDepth + 1;
+        if (!depths.containsKey(childId) || depths[childId]! < proposedDepth) {
+          depths[childId] = proposedDepth;
+          queue.add(childId);
+        }
       }
     }
-    return false;
+
+    final depthMap = <int, List<ProvenanceNode>>{};
+    for (final entry in depths.entries) {
+      final node = graph.nodes[entry.key];
+      if (node != null) {
+        depthMap.putIfAbsent(entry.value, () => []).add(node);
+      }
+    }
+    return depthMap;
   }
+
+  // ---------------------------------------------------------------------------
+  // Selection path highlighting
+  // ---------------------------------------------------------------------------
+
+  /// Walk edges backwards from the selected node to the root, collecting
+  /// all nodes on any path.
+  Set<String> _pathToSelected() {
+    if (widget.selectedNodeId == null) return {};
+    final graph = widget.graph;
+
+    // Build parent lookup.
+    final parentsOf = <String, List<String>>{};
+    for (final edge in graph.edges) {
+      parentsOf.putIfAbsent(edge.childId, () => []).add(edge.parentId);
+    }
+
+    final onPath = <String>{};
+    _collectAncestors(widget.selectedNodeId!, parentsOf, onPath);
+    return onPath;
+  }
+
+  void _collectAncestors(
+    String nodeId,
+    Map<String, List<String>> parentsOf,
+    Set<String> result,
+  ) {
+    if (!result.add(nodeId)) return;
+    for (final parentId in parentsOf[nodeId] ?? <String>[]) {
+      _collectAncestors(parentId, parentsOf, result);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Zoom controls
+  // ---------------------------------------------------------------------------
 
   void _zoomIn() {
     final matrix = _transformController.value.clone();
@@ -192,6 +220,10 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
   void _fitToView() {
     _transformController.value = Matrix4.identity();
   }
+
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -234,7 +266,7 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
                         onTap: widget.onNodeSelected != null
                             ? () => widget.onNodeSelected!(layoutNode.node)
                             : null,
-                        mediaImage: layoutNode.node.id == widget.rootNode.id
+                        mediaImage: layoutNode.node.id == widget.graph.rootId
                             ? widget.mediaImage
                             : null,
                       ),

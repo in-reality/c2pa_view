@@ -409,21 +409,21 @@ class _ManifestViewerPageState extends State<ManifestViewerPage> {
           }
 
           try {
-            final rootNode = ProvenanceMapper.mapToTree(store);
+            final graph = ProvenanceMapper.mapToGraph(store);
             final mediaImage = bytes != null && bytes.isNotEmpty
                 ? MemoryImage(bytes)
                 : null;
             return C2paViewerTheme(
               data: const C2paViewerThemeData(),
               child: C2paManifestViewer(
-                rootNode: rootNode,
+                graph: graph,
                 mimeType: widget.testCase.mimeType,
                 mediaImage: mediaImage,
               ),
             );
           } catch (e) {
             return Center(
-                child: Text('Error building provenance tree: $e'));
+                child: Text('Error building provenance graph: $e'));
           }
         },
       ),

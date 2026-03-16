@@ -6,7 +6,7 @@ import 'package:c2pa_view/domain/models/provenance_node.dart';
 import 'package:c2pa_view/features/manifest_detail/manifest_detail_panel.dart';
 import 'package:c2pa_view/features/provenance_tree/provenance_tree_viewer.dart';
 
-/// A combined viewer widget that shows the provenance tree on the left
+/// A combined viewer widget that shows the provenance DAG on the left
 /// and the manifest detail panel on the right, mirroring the layout of
 /// the C2PA verify-site.
 ///
@@ -14,7 +14,7 @@ import 'package:c2pa_view/features/provenance_tree/provenance_tree_viewer.dart';
 /// [ManifestDetailPanel]. You can also use those widgets independently
 /// for more flexible layouts.
 class C2paManifestViewer extends StatefulWidget {
-  final ProvenanceNode rootNode;
+  final ProvenanceGraph graph;
   final String? initialSelectedNodeId;
   final ValueChanged<ProvenanceNode>? onNodeSelected;
   final VoidCallback? onThumbnailTap;
@@ -27,7 +27,7 @@ class C2paManifestViewer extends StatefulWidget {
 
   const C2paManifestViewer({
     super.key,
-    required this.rootNode,
+    required this.graph,
     this.initialSelectedNodeId,
     this.onNodeSelected,
     this.onThumbnailTap,
@@ -48,24 +48,19 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
   @override
   void initState() {
     super.initState();
-    _selectedNodeId = widget.initialSelectedNodeId ?? widget.rootNode.id;
-    _selectedData = _findNode(_selectedNodeId)?.manifestViewData;
+    _selectedNodeId =
+        widget.initialSelectedNodeId ?? widget.graph.rootId;
+    _selectedData = widget.graph.findNode(_selectedNodeId)?.manifestViewData;
   }
 
   @override
   void didUpdateWidget(C2paManifestViewer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.rootNode != widget.rootNode) {
-      _selectedNodeId = widget.initialSelectedNodeId ?? widget.rootNode.id;
-      _selectedData = _findNode(_selectedNodeId)?.manifestViewData;
+    if (oldWidget.graph != widget.graph) {
+      _selectedNodeId =
+          widget.initialSelectedNodeId ?? widget.graph.rootId;
+      _selectedData = widget.graph.findNode(_selectedNodeId)?.manifestViewData;
     }
-  }
-
-  ProvenanceNode? _findNode(String id) {
-    for (final node in widget.rootNode.flatten()) {
-      if (node.id == id) return node;
-    }
-    return null;
   }
 
   void _onNodeSelected(ProvenanceNode node) {
@@ -85,7 +80,7 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
         children: [
         Expanded(
           child: ProvenanceTreeViewer(
-            rootNode: widget.rootNode,
+            graph: widget.graph,
             selectedNodeId: _selectedNodeId,
             onNodeSelected: _onNodeSelected,
             mediaImage: widget.mediaImage,
@@ -101,7 +96,7 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
             mimeType: widget.mimeType,
             onThumbnailTap: widget.onThumbnailTap,
             onIngredientTap: widget.onIngredientTap,
-            mediaImage: _selectedNodeId == widget.rootNode.id
+            mediaImage: _selectedNodeId == widget.graph.rootId
                 ? widget.mediaImage
                 : null,
           ),

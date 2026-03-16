@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:c2pa_view/domain/entities/entities.dart';
 import 'package:c2pa_view/domain/mappers/provenance_mapper.dart';
 import 'package:c2pa_view/domain/mappers/manifest_view_data_mapper.dart';
+import 'package:c2pa_view/domain/models/manifest_view_data.dart';
 import 'package:c2pa_view/domain/models/validation_result.dart';
 
 void main() {
@@ -194,7 +195,7 @@ void main() {
   });
 
   group('ProvenanceMapper', () {
-    test('mapToTree builds root node from active manifest', () {
+    test('mapToGraph builds root node from active manifest', () {
       final store = ManifestStore.fromJson({
         'active_manifest': 'urn:c2pa:main',
         'manifests': {
@@ -207,14 +208,14 @@ void main() {
         },
       });
 
-      final root = ProvenanceMapper.mapToTree(store);
+      final graph = ProvenanceMapper.mapToGraph(store);
 
-      expect(root.id, 'urn:c2pa:main');
-      expect(root.title, 'main.jpg');
-      expect(root.children, isEmpty);
+      expect(graph.rootId, 'urn:c2pa:main');
+      expect(graph.rootNode?.title, 'main.jpg');
+      expect(graph.edges, isEmpty);
     });
 
-    test('mapToTree builds children from ingredients with manifests', () {
+    test('mapToGraph builds children from ingredients with manifests', () {
       final store = ManifestStore.fromJson({
         'active_manifest': 'urn:c2pa:main',
         'manifests': {
@@ -245,16 +246,17 @@ void main() {
         },
       });
 
-      final root = ProvenanceMapper.mapToTree(store);
+      final graph = ProvenanceMapper.mapToGraph(store);
 
-      expect(root.children.length, 2);
-      expect(root.children[0].id, 'urn:c2pa:bg');
-      expect(root.children[0].title, 'background.jpg');
-      expect(root.children[1].id, 'urn:c2pa:overlay');
-      expect(root.children[1].title, 'overlay.png');
+      final childIds = graph.childIdsOf('urn:c2pa:main');
+      expect(childIds.length, 2);
+      expect(childIds, contains('urn:c2pa:bg'));
+      expect(childIds, contains('urn:c2pa:overlay'));
+      expect(graph.findNode('urn:c2pa:bg')?.title, 'background.jpg');
+      expect(graph.findNode('urn:c2pa:overlay')?.title, 'overlay.png');
     });
 
-    test('mapToTree handles leaf ingredients without manifests', () {
+    test('mapToGraph handles leaf ingredients without manifests', () {
       final store = ManifestStore.fromJson({
         'active_manifest': 'urn:c2pa:main',
         'manifests': {
@@ -268,17 +270,60 @@ void main() {
         },
       });
 
-      final root = ProvenanceMapper.mapToTree(store);
+      final graph = ProvenanceMapper.mapToGraph(store);
 
-      expect(root.children.length, 1);
-      expect(root.children[0].title, 'external.jpg');
-      expect(
-        root.children[0].validationResult.status,
-        ValidationStatus.noCredential,
-      );
+      final childIds = graph.childIdsOf('urn:c2pa:main');
+      expect(childIds.length, 1);
+      final leaf = graph.findNode(childIds.first);
+      expect(leaf?.title, 'external.jpg');
+      expect(leaf?.validationResult.status, ValidationStatus.noCredential);
     });
 
-    test('mapToTree prevents infinite loops from circular references', () {
+    test('mapToGraph deduplicates shared manifests', () {
+      final store = ManifestStore.fromJson({
+        'active_manifest': 'urn:c2pa:a',
+        'manifests': {
+          'urn:c2pa:a': {
+            'title': 'a.jpg',
+            'assertions': [],
+            'ingredients': [
+              {'title': 'b.jpg', 'active_manifest': 'urn:c2pa:b'},
+              {'title': 'c.jpg', 'active_manifest': 'urn:c2pa:c'},
+            ],
+          },
+          'urn:c2pa:b': {
+            'title': 'b.jpg',
+            'assertions': [],
+            'ingredients': [
+              {'title': 'shared.jpg', 'active_manifest': 'urn:c2pa:shared'},
+            ],
+          },
+          'urn:c2pa:c': {
+            'title': 'c.jpg',
+            'assertions': [],
+            'ingredients': [
+              {'title': 'shared.jpg', 'active_manifest': 'urn:c2pa:shared'},
+            ],
+          },
+          'urn:c2pa:shared': {
+            'title': 'shared.jpg',
+            'assertions': [],
+            'ingredients': [],
+          },
+        },
+      });
+
+      final graph = ProvenanceMapper.mapToGraph(store);
+
+      // shared.jpg appears only once as a node
+      expect(graph.nodes.length, 4);
+      // but has two parent edges
+      final parents = graph.parentIdsOf('urn:c2pa:shared');
+      expect(parents.length, 2);
+      expect(parents, containsAll(['urn:c2pa:b', 'urn:c2pa:c']));
+    });
+
+    test('mapToGraph prevents infinite loops from circular references', () {
       final store = ManifestStore.fromJson({
         'active_manifest': 'urn:c2pa:a',
         'manifests': {
@@ -299,29 +344,29 @@ void main() {
         },
       });
 
-      final root = ProvenanceMapper.mapToTree(store);
+      final graph = ProvenanceMapper.mapToGraph(store);
 
-      expect(root.id, 'urn:c2pa:a');
-      expect(root.children.length, 1);
-      expect(root.children[0].id, 'urn:c2pa:b');
-      // urn:c2pa:a is already visited so urn:c2pa:b's child should be a leaf
-      expect(root.children[0].children.length, 1);
-      expect(root.children[0].children[0].title, 'a.jpg');
+      expect(graph.rootId, 'urn:c2pa:a');
+      // Both nodes exist.
+      expect(graph.nodes.length, 2);
+      // b -> a edge is added (but a is already visited, so no re-recursion).
+      final bChildren = graph.childIdsOf('urn:c2pa:b');
+      expect(bChildren, contains('urn:c2pa:a'));
     });
 
-    test('mapToTree throws for missing active manifest', () {
+    test('mapToGraph throws for missing active manifest', () {
       final store = ManifestStore.fromJson({
         'active_manifest': 'nonexistent',
-        'manifests': {},
+        'manifests': <String, dynamic>{},
       });
 
       expect(
-        () => ProvenanceMapper.mapToTree(store),
+        () => ProvenanceMapper.mapToGraph(store),
         throwsStateError,
       );
     });
 
-    test('mapToTree attaches manifestViewData to nodes', () {
+    test('mapToGraph attaches manifestViewData to nodes', () {
       final store = ManifestStore.fromJson({
         'active_manifest': 'urn:c2pa:main',
         'manifests': {
@@ -334,13 +379,14 @@ void main() {
         },
       });
 
-      final root = ProvenanceMapper.mapToTree(store);
+      final graph = ProvenanceMapper.mapToGraph(store);
+      final root = graph.rootNode;
 
-      expect(root.manifestViewData, isNotNull);
-      expect(root.manifestViewData!.title, 'main.jpg');
+      expect(root?.manifestViewData, isNotNull);
+      expect(root?.manifestViewData!.title, 'main.jpg');
     });
 
-    test('flatten returns all nodes depth-first', () {
+    test('nodes map contains all nodes', () {
       final store = ManifestStore.fromJson({
         'active_manifest': 'urn:c2pa:main',
         'manifests': {
@@ -359,12 +405,10 @@ void main() {
         },
       });
 
-      final root = ProvenanceMapper.mapToTree(store);
-      final flat = root.flatten();
+      final graph = ProvenanceMapper.mapToGraph(store);
 
-      expect(flat.length, 2);
-      expect(flat[0].id, 'urn:c2pa:main');
-      expect(flat[1].id, 'urn:c2pa:child');
+      expect(graph.nodes.length, 2);
+      expect(graph.nodes.keys, containsAll(['urn:c2pa:main', 'urn:c2pa:child']));
     });
   });
 }
