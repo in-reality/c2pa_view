@@ -152,26 +152,29 @@ class ActionDisplayInfo {
 /// structurally guaranteed to show identical information.
 @immutable
 class IngredientDisplayInfo {
-  /// Display summary shared with the tree node for this ingredient.
-  /// Null when the ingredient has no resolved manifest (no credentials).
-  final ManifestSummary? summary;
+  /// Display summary (always non-null).  For ingredients without a resolved
+  /// manifest this still carries the ingredient's title so that the UI never
+  /// shows "Untitled".
+  final ManifestSummary summary;
+
+  /// Whether this ingredient has a resolved manifest in the store.
+  final bool hasManifest;
 
   final String? format;
   final IngredientRelationship? relationship;
 
   const IngredientDisplayInfo({
-    this.summary,
+    required this.summary,
+    this.hasManifest = false,
     this.format,
     this.relationship,
   });
 
   // Convenience accessors kept for call-sites that still read these directly.
-  String? get title => summary?.title;
-  ImageProvider? get thumbnail => summary?.thumbnail;
-  bool get hasManifest => summary != null;
-  String? get issuer => summary?.issuer;
-  ValidationResult get credentialResult =>
-      summary?.validationResult ?? const ValidationResult.noCredential();
+  String? get title => summary.title;
+  ImageProvider? get thumbnail => summary.thumbnail;
+  String? get issuer => summary.issuer;
+  ValidationResult get credentialResult => summary.validationResult;
 }
 
 enum IngredientRelationship {

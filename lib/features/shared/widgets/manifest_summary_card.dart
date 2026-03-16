@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/manifest_summary.dart';
-import 'package:c2pa_view/domain/models/validation_result.dart';
 
 import 'c2pa_thumbnail.dart';
 import 'credential_indicator.dart';
@@ -39,61 +38,68 @@ class ManifestSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return switch (variant) {
-      ManifestSummaryCardVariant.treeNode => _TreeNodeContent(summary: summary),
-      ManifestSummaryCardVariant.listItem =>
-        _ListItemContent(summary: summary),
-    };
+    return _SummaryContent(summary: summary, variant: variant);
   }
 }
 
 // ---------------------------------------------------------------------------
-// Tree-node variant
+// Unified content widget (used by both tree-node and list-item variants)
 // ---------------------------------------------------------------------------
 
-class _TreeNodeContent extends StatelessWidget {
+class _SummaryContent extends StatelessWidget {
   final ManifestSummary summary;
+  final ManifestSummaryCardVariant variant;
 
-  const _TreeNodeContent({required this.summary});
+  const _SummaryContent({required this.summary, required this.variant});
 
   @override
   Widget build(BuildContext context) {
     final theme = C2paViewerTheme.of(context);
 
+    final isTreeNode = variant == ManifestSummaryCardVariant.treeNode;
+
+    final thumbnail = _Thumbnail(
+      image: summary.thumbnail,
+      size: isTreeNode ? theme.nodeHeight : 48,
+      square: isTreeNode,
+      theme: theme,
+    );
+
     return Row(
       children: [
-        _Thumbnail(
-          image: summary.thumbnail,
-          size: theme.nodeHeight,
-          square: true,
-          theme: theme,
-        ),
+        thumbnail,
+        if (!isTreeNode) const SizedBox(width: 12),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: isTreeNode
+                ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
+                : EdgeInsets.zero,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: isTreeNode
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                if (summary.title != null)
-                  Text(
-                    summary.title!,
-                    style: theme.titleSmallStyle.copyWith(
-                      color: theme.textPrimaryColor,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                Text(
+                  summary.title ?? 'Untitled',
+                  style: theme.titleSmallStyle.copyWith(
+                    color: theme.textPrimaryColor,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 4),
                 CredentialIndicator(result: summary.validationResult),
-                if (summary.validationResult.isValid &&
-                    summary.issuer != null) ...[
+                if (summary.issuer != null &&
+                    (summary.validationResult.isValid ||
+                        summary.validationResult.isUntrusted)) ...[
                   const SizedBox(height: 2),
                   Text(
                     summary.issuer!,
                     style: theme.bodySmallStyle.copyWith(
                       color: theme.textSecondaryColor,
-                      fontSize: 10,
+                      fontSize: isTreeNode ? 10 : null,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -101,68 +107,6 @@ class _TreeNodeContent extends StatelessWidget {
                 ],
               ],
             ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// List-item variant
-// ---------------------------------------------------------------------------
-
-class _ListItemContent extends StatelessWidget {
-  final ManifestSummary summary;
-
-  const _ListItemContent({required this.summary});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = C2paViewerTheme.of(context);
-
-    return Row(
-      children: [
-        _Thumbnail(
-          image: summary.thumbnail,
-          size: 48,
-          square: false,
-          theme: theme,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                summary.title ?? 'Untitled',
-                style: theme.titleSmallStyle.copyWith(
-                  color: theme.textPrimaryColor,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (summary.issuer != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  summary.issuer!,
-                  style: theme.bodySmallStyle.copyWith(
-                    color: theme.textSecondaryColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              if (summary.validationResult.status !=
-                  ValidationStatus.noCredential) ...[
-                const SizedBox(height: 2),
-                CredentialIndicator(
-                  result: summary.validationResult,
-                  compact: false,
-                ),
-              ],
-            ],
           ),
         ),
       ],

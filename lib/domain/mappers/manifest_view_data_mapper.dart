@@ -216,12 +216,16 @@ class ManifestViewDataMapper {
       // This is the same ManifestSummary that the corresponding ProvenanceNode
       // carries, ensuring the ingredient list item and the tree node always
       // show identical data.
-      final summary = (i.activeManifest != null && summaries != null)
+      // When no manifest is resolved we still build a summary with the
+      // ingredient's title so that it shows the name rather than "Untitled".
+      final resolvedSummary = (i.activeManifest != null && summaries != null)
           ? summaries[i.activeManifest]
           : null;
+      final hasManifest = resolvedSummary != null || i.activeManifest != null;
 
       return IngredientDisplayInfo(
-        summary: summary,
+        summary: resolvedSummary ?? ManifestSummary(title: i.title),
+        hasManifest: hasManifest,
         format: i.format,
         relationship: relationship,
       );

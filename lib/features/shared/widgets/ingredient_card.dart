@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
-import 'package:c2pa_view/domain/models/manifest_summary.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
 
 import 'manifest_summary_card.dart';
@@ -27,11 +26,6 @@ class IngredientCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = C2paViewerTheme.of(context);
 
-    // When the ingredient has no resolved manifest, build an anonymous summary
-    // so the card still shows a title and "No Content Credential".
-    final summary = ingredient.summary ??
-        ManifestSummary(title: ingredient.title);
-
     return InkWell(
       onTap: onTap,
       borderRadius: theme.sectionRadius,
@@ -42,7 +36,7 @@ class IngredientCard extends StatelessWidget {
           borderRadius: theme.sectionRadius,
         ),
         child: ManifestSummaryCard(
-          summary: summary,
+          summary: ingredient.summary,
           variant: ManifestSummaryCardVariant.listItem,
         ),
       ),
