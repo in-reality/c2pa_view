@@ -1,0 +1,300 @@
+//! Integration test that validates every file in the C2PA conformance evidence
+//! corpus through `c2pa_view`'s `get_manifest_with_validation` API.
+//!
+//! The test reads `EVIDENCE_DIR` (env var, defaults to `<repo>/c2pa/evidence/`)
+//! and processes:
+//! - Signed files in `assets/` (media files whose stem does NOT end with `_unsigned`)
+//! - Third-party files in `third_party/**/*.{jpg,mp4,dng,...}`
+//!
+//! For each file it asserts:
+//! - A manifest was successfully extracted (non-None result).
+//! - The JSON contains `active_manifest`.
+//! - `validation_status` entries are either empty or contain only the expected
+//!   `signingCredential.untrusted` code (acceptable with test certs).
+//!
+//! For InReality-signed files (those in `assets/` without `_unsigned`), it
+//! additionally checks:
+//! - `claim_generator_info[0].name` == `"inreality-capture"`.
+//!
+//! Logs are written to `EVIDENCE_DIR/logs/c2pa_view_<id>.json`.
+
+use c2pa_view::api::c2pa::get_manifest_with_validation;
+use std::fs;
+use std::path::{Path, PathBuf};
+
+fn evidence_dir() -> PathBuf {
+    if let Ok(dir) = std::env::var("EVIDENCE_DIR") {
+        PathBuf::from(dir)
+    } else {
+        let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        manifest_dir
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("c2pa")
+            .join("evidence")
+    }
+}
+
+const MEDIA_EXTENSIONS: &[&str] = &["jpg", "jpeg", "heic", "dng", "png", "mp4", "m4v", "mov"];
+
+fn mime_for_extension(ext: &str) -> &str {
+    match ext.to_lowercase().as_str() {
+        "jpg" | "jpeg" => "image/jpeg",
+        "heic" | "heif" => "image/heif",
+        "png" => "image/png",
+        "dng" => "image/x-adobe-dng",
+        "mp4" | "m4v" => "video/mp4",
+        "mov" => "video/quicktime",
+        other => panic!("unknown extension: {other}"),
+    }
+}
+
+fn is_media_file(path: &Path) -> bool {
+    path.extension()
+        .and_then(|e| e.to_str())
+        .map(|ext| MEDIA_EXTENSIONS.contains(&ext.to_lowercase().as_str()))
+        .unwrap_or(false)
+}
+
+fn stem_ends_with_unsigned(path: &Path) -> bool {
+    path.file_stem()
+        .and_then(|s| s.to_str())
+        .map(|s| s.ends_with("_unsigned"))
+        .unwrap_or(false)
+}
+
+/// Collect signed media files from the flat `assets/` directory.
+///
+/// Signed files are media files whose stem does NOT end with `_unsigned`.
+fn collect_signed_assets(dir: &Path) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    if !dir.exists() {
+        return files;
+    }
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() && is_media_file(&path) && !stem_ends_with_unsigned(&path) {
+                files.push(path);
+            }
+        }
+    }
+    files.sort();
+    files
+}
+
+/// Collect media files recursively, skipping `manifests/` subdirectories.
+fn collect_recursive(dir: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            if path.file_name().map_or(false, |n| n == "manifests") {
+                continue;
+            }
+            collect_recursive(&path, out);
+        } else if path.is_file() && is_media_file(&path) {
+            out.push(path);
+        }
+    }
+}
+
+fn collect_third_party_files(dir: &Path) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    if dir.exists() {
+        collect_recursive(dir, &mut files);
+    }
+    files.sort();
+    files
+}
+
+struct ValidationResult {
+    file_name: String,
+    json: serde_json::Value,
+    validation_statuses: Vec<String>,
+}
+
+fn validate_file(path: &Path) -> ValidationResult {
+    let file_name = path.file_name().unwrap().to_string_lossy().to_string();
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("mp4");
+    let mime = mime_for_extension(ext);
+    let bytes = fs::read(path).unwrap_or_else(|e| panic!("cannot read {}: {e}", path.display()));
+
+    println!("  Validating: {file_name} ({mime}, {} bytes)", bytes.len());
+
+    let result = get_manifest_with_validation(bytes, mime.to_string());
+    let json_str = result
+        .unwrap_or_else(|e| panic!("  API error for {file_name}: {e}"))
+        .unwrap_or_else(|| panic!("  No manifest found in {file_name}"));
+
+    let json: serde_json::Value =
+        serde_json::from_str(&json_str).unwrap_or_else(|e| panic!("  Bad JSON for {file_name}: {e}"));
+
+    let statuses: Vec<String> = json
+        .get("validation_status")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|s| s.get("code").and_then(|c| c.as_str()).map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    ValidationResult {
+        file_name,
+        json,
+        validation_statuses: statuses,
+    }
+}
+
+fn save_log(logs_dir: &Path, id: &str, json: &serde_json::Value) {
+    let _ = fs::create_dir_all(logs_dir);
+    let path = logs_dir.join(format!("c2pa_view_{id}.json"));
+    let pretty = serde_json::to_string_pretty(json).unwrap_or_default();
+    fs::write(&path, pretty).unwrap_or_else(|e| {
+        eprintln!("  Warning: cannot write log {}: {e}", path.display());
+    });
+}
+
+const ALLOWED_UNTRUSTED_STATUSES: &[&str] = &[
+    "signingCredential.untrusted",
+];
+
+#[test]
+fn validate_signed_files() {
+    let edir = evidence_dir();
+    let logs_dir = edir.join("logs");
+    let assets_dir = edir.join("assets");
+
+    println!("\n=== c2pa_view: validating signed files in assets/ ===\n");
+
+    let files = collect_signed_assets(&assets_dir);
+    assert!(
+        !files.is_empty(),
+        "No signed files found in {}",
+        assets_dir.display()
+    );
+
+    let mut failures = Vec::new();
+
+    for path in &files {
+        let result = validate_file(path);
+        let id = path.file_stem().unwrap().to_string_lossy().to_string();
+        save_log(&logs_dir, &id, &result.json);
+
+        assert!(
+            result.json.get("active_manifest").is_some(),
+            "Missing active_manifest in {}",
+            result.file_name
+        );
+
+        let manifests = result.json.get("manifests").and_then(|m| m.as_object());
+        let active_id = result
+            .json
+            .get("active_manifest")
+            .and_then(|a| a.as_str())
+            .unwrap_or("");
+        if let Some(manifest) = manifests.and_then(|ms| ms.get(active_id)) {
+            let gen_name = manifest
+                .pointer("/claim_generator_info/0/name")
+                .and_then(|n| n.as_str())
+                .unwrap_or("");
+            assert_eq!(
+                gen_name, "inreality-capture",
+                "Wrong claim_generator name in {}: {gen_name}",
+                result.file_name
+            );
+        }
+
+        let unexpected: Vec<&String> = result
+            .validation_statuses
+            .iter()
+            .filter(|s| !ALLOWED_UNTRUSTED_STATUSES.contains(&s.as_str()))
+            .collect();
+
+        if !unexpected.is_empty() {
+            let msg = format!("{}: unexpected validation_status: {:?}", result.file_name, unexpected);
+            eprintln!("  FAIL: {msg}");
+            failures.push(msg);
+        } else {
+            println!(
+                "  OK: {} (statuses: {:?})",
+                result.file_name, result.validation_statuses
+            );
+        }
+    }
+
+    assert!(
+        failures.is_empty(),
+        "Validation failures:\n{}",
+        failures.join("\n")
+    );
+}
+
+#[test]
+fn validate_third_party_files() {
+    let edir = evidence_dir();
+    let logs_dir = edir.join("logs");
+    let tp_dir = edir.join("third_party");
+
+    println!("\n=== c2pa_view: validating third_party/ files ===\n");
+
+    let files = collect_third_party_files(&tp_dir);
+    if files.is_empty() {
+        println!("  No third-party files found -- skipping");
+        return;
+    }
+
+    let mut failures = Vec::new();
+
+    for path in &files {
+        let result = validate_file(path);
+
+        let safe_id = format!(
+            "3p_{}",
+            path.file_stem().unwrap().to_string_lossy()
+        );
+        save_log(&logs_dir, &safe_id, &result.json);
+
+        assert!(
+            result.json.get("active_manifest").is_some(),
+            "Missing active_manifest in third-party file {}",
+            result.file_name
+        );
+
+        let unexpected: Vec<&String> = result
+            .validation_statuses
+            .iter()
+            .filter(|s| !ALLOWED_UNTRUSTED_STATUSES.contains(&s.as_str()))
+            .collect();
+
+        if !unexpected.is_empty() {
+            let msg = format!(
+                "{}: unexpected validation_status: {:?}",
+                result.file_name, unexpected
+            );
+            eprintln!("  FAIL: {msg}");
+            failures.push(msg);
+        } else {
+            println!(
+                "  OK: {} (statuses: {:?})",
+                result.file_name, result.validation_statuses
+            );
+        }
+    }
+
+    assert!(
+        failures.is_empty(),
+        "Third-party validation failures:\n{}",
+        failures.join("\n")
+    );
+}
