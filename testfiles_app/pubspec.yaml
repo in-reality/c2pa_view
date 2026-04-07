@@ -1,5 +1,5 @@
-name: c2pa_view_example
-description: "Demonstrates how to use the c2pa_view plugin."
+name: c2pa_view_testfiles_app
+description: "Test files app for the c2pa_view plugin."
 publish_to: 'none'
 
 # Version
@@ -16,7 +16,7 @@ dependencies:
     # When depending on this package from a real application you should use:
     #   c2pa_view: ^x.y.z
     # See https://dart.dev/tools/pub/dependencies#version-constraints
-    # The example app is bundled with the plugin so we use a path dependency on
+    # The testfiles app is bundled with the plugin so we use a path dependency on
     # the parent directory to use the current plugin's version.
     path: ../
 

@@ -17,7 +17,7 @@ We are making these updates as breaking changes: no backward compatibility.
 5. [Phase 4 — Mapping Layer (Entities → View Models)](#5-phase-4--mapping-layer)
 6. [Phase 5 — Integrate New UI](#6-phase-5--integrate-new-ui)
 7. [Phase 6 — Delete `c2pa_viewer_new`](#7-phase-6--delete-c2pa_viewer_new)
-8. [Phase 7 — Example App & Tests](#8-phase-7--example-app--tests)
+8. [Phase 7 — Test Files App & Tests](#8-phase-7--test-files-app--tests)
 9. [Migration Notes](#9-migration-notes)
 
 ---
@@ -861,14 +861,14 @@ rm -rf c2pa_viewer_new/
 
 ---
 
-## 8. Phase 7 — Example App & Tests
+## 8. Phase 7 — Test Files App & Tests
 
 ### 8.1 Update Example App
 
-The example app should be updated to use the new UI:
+The testfiles_app should be updated to use the new UI:
 
 ```dart
-// example/lib/main.dart
+// testfiles_app/lib/main.dart
 import 'package:c2pa_view/c2pa_view.dart';
 
 Future<void> main() async {
@@ -919,7 +919,7 @@ Update existing integration tests and add new ones:
 
 ### Deliverables
 
-- [ ] Update example app to use new UI
+- [ ] Update testfiles_app to use new UI
 - [ ] Add entity parsing unit tests
 - [ ] Add custom field extraction tests
 - [ ] Add mapper unit tests
