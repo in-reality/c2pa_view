@@ -17,7 +17,7 @@ C2PA is an open technical standard that provides publishers, creators, and consu
 
 ## Example
 
-<img src="https://github.com/Township-Innovation/c2pa_view/blob/main/testfiles_app/screenshots/c2pa_view_screenshot.png?raw=true" />
+<img src="https://github.com/in-reality/c2pa_view/blob/main/screenshots/c2pa_view_screenshot.png?raw=true" />
 
 In the testfiles_app directory we use the following code to show a C2PA manifest from a local file:
 ```dart
