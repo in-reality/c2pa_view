@@ -1,87 +1,159 @@
 # c2pa_view
 
-A Flutter package for reading and displaying C2PA (Coalition for Content Provenance and Authenticity) manifests in your Flutter applications.
+A Flutter plugin for reading and displaying [C2PA](https://c2pa.org/) (Coalition for Content Provenance and Authenticity) content credentials. It extracts embedded C2PA manifests from media files using the official `c2pa-rs` Rust library and renders provenance data as interactive Flutter widgets.
 
-## Overview
+- 🗃️ Read C2PA manifests from local files, URLs, or raw bytes
+- 🌳 Display an interactive provenance tree with a detail panel
+- 📜 Show manifest details as a popup overlay from any button
+- 🔍 Access structured provenance data: actions, ingredients, signatures, EXIF, AI generation info, and more
+- ✅ Full validation with trust-list checking
 
-C2PA is an open technical standard that provides publishers, creators, and consumers with tools to trace the origin of different types of media. This Flutter package allows you to:
+## Setup
 
-- 📃 Read C2PA manifests from local files, URLs, or raw bytes
-- 🎨 Display content credentials in a customizable UI
-- 🔍 Access detailed information about media provenance, including:
-  - Content format and generator information
-  - Actions performed on the content
-  - Ingredients (source files) used
-  - Assertions about the content
-  - Signature information
+### Initialization
 
-## Example
+Before any C2PA operations, initialize the Rust library once at app startup:
 
-<img src="https://github.com/in-reality/c2pa_view/blob/main/screenshots/c2pa_view_screenshot.png?raw=true" />
-
-In the testfiles_app directory we use the following code to show a C2PA manifest from a local file:
 ```dart
-// We make a preview (optional) for showing the content with the manifest
-final preview = Image.file(
-  file,
-  height: 200,
-  fit: BoxFit.cover,
-  errorBuilder: (context, error, stackTrace) {
-    return const Text('Error loading image');
-  },
-);
+import 'package:c2pa_view/c2pa_view.dart';
 
-// Get manifest store from file
-final manifestStore = ManifestStore.fromLocalPath(file.path);
-
-// Check if manifest store is null (if there is no manifest)
-if (manifestStore == null) {
-  return const SingleChildScrollView(
-    child: Text('No manifest found'),
-  );
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await RustLib.init();
+  runApp(const MyApp());
 }
+```
 
-// Make content credentials widget with manifest store and preview
-// We wrap in scrollable as the manifest can be long
-final ccw = SingleChildScrollView(
-  child: ContentCredentialsWidget(
-    manifestStore: manifestStore,
-    contentPreview: preview,
+### Loading a ManifestStore
+
+A `ManifestStore` is the root object containing all C2PA manifests found in a file. Create one from any source:
+
+```dart
+// From a local file path
+final store = ManifestStore.fromLocalPath('/path/to/image.jpg');
+
+// From raw bytes and MIME type
+final store = ManifestStore.fromBytes(imageBytes, 'image/jpeg');
+
+// From a URL (async)
+final store = await ManifestStore.fromUrl('https://example.com/image.jpg');
+```
+
+All methods return `null` if no C2PA manifest is found.
+
+## Usage: Full Viewer
+
+`C2paManifestViewer` shows an interactive provenance tree on the left and a detail panel on the right. Clicking a tree node updates the detail panel.
+
+```dart
+import 'package:c2pa_view/c2pa_view.dart';
+
+// 1. Load the manifest store
+final store = ManifestStore.fromBytes(imageBytes, 'image/jpeg');
+if (store == null) return const Text('No manifest found');
+
+// 2. Build the provenance graph (DAG of all manifests)
+final graph = ProvenanceMapper.mapToGraph(store);
+
+// 3. Display the full viewer wrapped in a theme
+C2paViewerTheme(
+  data: const C2paViewerThemeData(),
+  child: C2paManifestViewer(
+    graph: graph,
+    mimeType: 'image/jpeg',
+    mediaImage: MemoryImage(imageBytes), // fallback when no embedded thumbnail
   ),
 );
 ```
 
-The `ManifestStrore` can be created in multiple ways:
-```dart
-// From a local path
-final store = ManifestStore.fromLocalPath('/local/path/to/file.jpg');
+See [`testfiles_app/lib/main.dart`](testfiles_app/lib/main.dart) — the `ManifestViewerPage` class demonstrates this pattern with network-loaded images.
 
-// From bytes and format / mime-type
-final bytes = [...]; // Your image bytes
-final store4 = ManifestStore.fromBytes(bytes, 'image/jpeg');
+## Usage: Popup from an Icon Button
 
-// From a URL
-final store = await ManifestStore.fromUrl('https://example.com/image.jpg');
-```
-
-## Customization
-
-The `ContentCredentialsWidget` supports various styling options:
+`showManifestDetailPopup` opens a positioned overlay anchored to any widget. This is useful for adding a "content credentials" button to image thumbnails.
 
 ```dart
-ContentCredentialsWidget(
-  source: path,
-  contentPreview: preview,
-  titleStyle: TextStyle(...),
-  sectionTitleStyle: TextStyle(...),
-  contentLabelStyle: TextStyle(...),
-  contentStyle: TextStyle(...),
-)
+import 'package:c2pa_view/c2pa_view.dart';
+
+// 1. Load the manifest store
+final store = ManifestStore.fromBytes(imageBytes, 'image/jpeg');
+if (store == null) return;
+
+// 2. Get the active manifest and map it to a view model
+final manifest = store.manifests[store.activeManifest]!;
+final viewData = ManifestViewDataMapper.map(manifest);
+
+// 3. Use a Builder to get a BuildContext anchored to the button
+Builder(
+  builder: (buttonContext) {
+    return IconButton(
+      icon: const Icon(Icons.verified_user),
+      onPressed: () {
+        showManifestDetailPopup(
+          buttonContext,
+          data: viewData,
+          mimeType: 'image/jpeg',
+          mediaImage: MemoryImage(imageBytes),
+        );
+      },
+    );
+  },
+);
 ```
 
-## Note
+See [`testfiles_app/lib/main.dart`](testfiles_app/lib/main.dart) — the `_PopupDemoCard` class demonstrates this pattern with a thumbnail and icon button.
 
-This package was created during a Hackathon sprint and is in a very early stage.
-We hope to develop further and provide more features in the future 😁
+## Theming
 
+Wrap your widget tree with `C2paViewerTheme` to customize the appearance. All c2pa_view widgets read from this theme, falling back to defaults when absent.
 
+```dart
+C2paViewerTheme(
+  data: const C2paViewerThemeData(
+    validColor: Color(0xFF1B8D3E),
+    invalidColor: Color(0xFFD93025),
+    sidebarWidth: 400,
+  ),
+  child: C2paManifestViewer(graph: graph),
+);
+
+// Dark mode
+C2paViewerTheme(
+  data: C2paViewerThemeData.dark(),
+  child: C2paManifestViewer(graph: graph),
+);
+```
+
+`C2paViewerThemeData` controls: validation status colors, surface/border/text colors, six text style tiers, layout dimensions (sidebar width, thumbnail size, node spacing), and border radii.
+
+## Data-Only Usage
+
+You can use the package purely for data extraction without any widgets:
+
+```dart
+final store = ManifestStore.fromLocalPath('/path/to/image.jpg');
+if (store == null) return;
+
+final manifest = store.manifests[store.activeManifest]!;
+
+// Access structured data
+print(manifest.title);
+print(manifest.signatureInfo?.issuer);
+print(manifest.ingredients.length);
+print(manifest.actions?.map((a) => a.action));
+
+// Or get the raw JSON string
+final json = C2paBridgeService.getManifestJsonFromFile('/path/to/image.jpg');
+```
+
+## Platforms
+
+This is an FFI plugin with native Rust code compiled for all platforms:
+
+| Platform | Status |
+|----------|--------|
+| Android  | Supported |
+| iOS      | Supported |
+| Linux    | Supported |
+| macOS    | Supported |
+| Windows  | Supported |
