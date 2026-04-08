@@ -16,7 +16,8 @@ class CustomFieldsSection extends StatelessWidget {
 
     return CollapsibleSection(
       title: 'Custom Fields',
-      description: 'Additional vendor-specific or non-standard data '
+      description:
+          'Additional vendor-specific or non-standard data '
           'found in this Content Credential.',
       initiallyExpanded: false,
       child: Padding(

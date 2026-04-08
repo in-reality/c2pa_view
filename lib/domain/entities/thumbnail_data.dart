@@ -8,11 +8,7 @@ class ThumbnailData extends Equatable {
   final String? identifier;
   final Uint8List? data;
 
-  const ThumbnailData({
-    required this.format,
-    this.identifier,
-    this.data,
-  });
+  const ThumbnailData({required this.format, this.identifier, this.data});
 
   factory ThumbnailData.fromJson(final Map<String, dynamic> json) =>
       ThumbnailData(

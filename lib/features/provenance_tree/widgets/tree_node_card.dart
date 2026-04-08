@@ -31,22 +31,24 @@ class TreeNodeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = C2paViewerTheme.of(context);
 
-    final borderColor = isSelected
-        ? theme.selectedNodeBorderColor
-        : isOnPath
+    final borderColor =
+        isSelected
+            ? theme.selectedNodeBorderColor
+            : isOnPath
             ? theme.pathNodeBorderColor
             : theme.defaultNodeBorderColor;
 
     // If a live media image is provided (for the root node) and the summary
     // has no thumbnail yet, substitute it so the card still shows an image.
-    final summary = (mediaImage != null && node.summary.thumbnail == null)
-        ? ManifestSummary(
-            title: node.summary.title,
-            thumbnail: mediaImage,
-            validationResult: node.summary.validationResult,
-            issuer: node.summary.issuer,
-          )
-        : node.summary;
+    final summary =
+        (mediaImage != null && node.summary.thumbnail == null)
+            ? ManifestSummary(
+              title: node.summary.title,
+              thumbnail: mediaImage,
+              validationResult: node.summary.validationResult,
+              issuer: node.summary.issuer,
+            )
+            : node.summary;
 
     return GestureDetector(
       onTap: onTap,
@@ -56,10 +58,7 @@ class TreeNodeCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.surfaceColor,
           borderRadius: theme.cardRadius,
-          border: Border.all(
-            color: borderColor,
-            width: isSelected ? 2.5 : 1.5,
-          ),
+          border: Border.all(color: borderColor, width: isSelected ? 2.5 : 1.5),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.06),

@@ -47,10 +47,9 @@ Future<void> showManifestDetailPopup(
           position: Tween<Offset>(
             begin: const Offset(0, 0.02),
             end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-          )),
+          ).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+          ),
           child: child,
         ),
       );
@@ -100,8 +99,7 @@ class _ManifestDetailPopupLayout extends StatelessWidget {
     final theme = C2paViewerTheme.of(context);
     final w = popupWidth ?? _kDefaultPopupWidth;
 
-    final popupMaxH = maxHeight ??
-        (screen.height - 2 * _kScreenMargin);
+    final popupMaxH = maxHeight ?? (screen.height - 2 * _kScreenMargin);
     final popupH = math.min(popupMaxH, screen.height - 2 * _kScreenMargin);
 
     // Horizontal: prefer right of trigger, fall back to left, then center.
@@ -118,8 +116,10 @@ class _ManifestDetailPopupLayout extends StatelessWidget {
     }
 
     // Vertical: align top with trigger, clamped to screen bounds.
-    final top = triggerPosition.dy
-        .clamp(_kScreenMargin, screen.height - popupH - _kScreenMargin);
+    final top = triggerPosition.dy.clamp(
+      _kScreenMargin,
+      screen.height - popupH - _kScreenMargin,
+    );
 
     return Stack(
       children: [

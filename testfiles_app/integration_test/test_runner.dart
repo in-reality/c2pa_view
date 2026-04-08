@@ -9,8 +9,8 @@ void main() {
 
   group('C2PA Tests', () {
     setUpAll(setupTestEnvironment);
-    
+
     runManifestParsingTest();
     runManifestTest();
   });
-} 
+}

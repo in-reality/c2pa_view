@@ -13,11 +13,7 @@ class ProcessSection extends StatelessWidget {
   final ManifestViewData data;
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
 
-  const ProcessSection({
-    super.key,
-    required this.data,
-    this.onIngredientTap,
-  });
+  const ProcessSection({super.key, required this.data, this.onIngredientTap});
 
   bool get _hasContent =>
       data.claimGenerator != null ||
@@ -31,7 +27,8 @@ class ProcessSection extends StatelessWidget {
 
     return CollapsibleSection(
       title: 'Process',
-      description: 'The app or device used to produce this content '
+      description:
+          'The app or device used to produce this content '
           'recorded the following information:',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -70,11 +67,9 @@ class _AppDeviceSubSection extends StatelessWidget {
                 image: gen.icon!,
                 width: 24,
                 height: 24,
-                errorBuilder: (_, __, ___) => Icon(
-                  Icons.apps,
-                  size: 24,
-                  color: theme.iconColor,
-                ),
+                errorBuilder:
+                    (_, __, ___) =>
+                        Icon(Icons.apps, size: 24, color: theme.iconColor),
               ),
             ),
             const SizedBox(width: 8),
@@ -176,9 +171,10 @@ class _ActionRowState extends State<_ActionRow> {
               Icon(
                 _iconForAction(action.actionType),
                 size: 16,
-                color: action.isAiGenerated
-                    ? theme.unrecognizedColor
-                    : theme.iconColor,
+                color:
+                    action.isAiGenerated
+                        ? theme.unrecognizedColor
+                        : theme.iconColor,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -214,9 +210,7 @@ class _ActionRowState extends State<_ActionRow> {
                   child: Padding(
                     padding: const EdgeInsets.all(2),
                     child: Icon(
-                      _expanded
-                          ? Icons.expand_less
-                          : Icons.expand_more,
+                      _expanded ? Icons.expand_less : Icons.expand_more,
                       size: 18,
                       color: theme.iconColor,
                     ),
@@ -259,10 +253,7 @@ class _IngredientsSubSection extends StatelessWidget {
   final ManifestViewData data;
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
 
-  const _IngredientsSubSection({
-    required this.data,
-    this.onIngredientTap,
-  });
+  const _IngredientsSubSection({required this.data, this.onIngredientTap});
 
   @override
   Widget build(BuildContext context) {
@@ -274,9 +265,10 @@ class _IngredientsSubSection extends StatelessWidget {
             if (i > 0) const SizedBox(height: 8),
             IngredientCard(
               ingredient: data.ingredients[i],
-              onTap: onIngredientTap != null
-                  ? () => onIngredientTap!(data.ingredients[i])
-                  : null,
+              onTap:
+                  onIngredientTap != null
+                      ? () => onIngredientTap!(data.ingredients[i])
+                      : null,
             ),
           ],
         ],

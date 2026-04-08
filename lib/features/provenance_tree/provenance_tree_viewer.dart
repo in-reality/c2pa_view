@@ -110,18 +110,17 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
       final parentPos = nodePositions[edge.parentId];
       final childPos = nodePositions[edge.childId];
       if (parentPos == null || childPos == null) continue;
-      edges.add(EdgeLine(
-        from: Offset(parentPos.dx + nodeW / 2, parentPos.dy + nodeH),
-        to: Offset(childPos.dx + nodeW / 2, childPos.dy),
-      ));
+      edges.add(
+        EdgeLine(
+          from: Offset(parentPos.dx + nodeW / 2, parentPos.dy + nodeH),
+          to: Offset(childPos.dx + nodeW / 2, childPos.dy),
+        ),
+      );
     }
 
     _layoutNodes = layoutNodes;
     _edges = edges;
-    _treeSize = Size(
-      totalWidth + padding * 2,
-      totalHeight + padding * 2,
-    );
+    _treeSize = Size(totalWidth + padding * 2, totalHeight + padding * 2);
   }
 
   /// Assign each node a depth using BFS.  A shared node's depth is the
@@ -258,17 +257,18 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
                       top: layoutNode.position.dy,
                       child: TreeNodeCard(
                         node: layoutNode.node,
-                        isSelected:
-                            layoutNode.node.id == widget.selectedNodeId,
+                        isSelected: layoutNode.node.id == widget.selectedNodeId,
                         isOnPath:
                             pathNodeIds.contains(layoutNode.node.id) &&
-                                layoutNode.node.id != widget.selectedNodeId,
-                        onTap: widget.onNodeSelected != null
-                            ? () => widget.onNodeSelected!(layoutNode.node)
-                            : null,
-                        mediaImage: layoutNode.node.id == widget.graph.rootId
-                            ? widget.mediaImage
-                            : null,
+                            layoutNode.node.id != widget.selectedNodeId,
+                        onTap:
+                            widget.onNodeSelected != null
+                                ? () => widget.onNodeSelected!(layoutNode.node)
+                                : null,
+                        mediaImage:
+                            layoutNode.node.id == widget.graph.rootId
+                                ? widget.mediaImage
+                                : null,
                       ),
                     ),
                 ],

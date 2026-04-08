@@ -57,14 +57,14 @@ class ManifestViewDataMapper {
     );
   }
 
-  static ValidationResult mapValidation(
-    List<ValidationStatusEntry> statuses,
-  ) {
+  static ValidationResult mapValidation(List<ValidationStatusEntry> statuses) {
     if (statuses.isEmpty) return const ValidationResult.noCredential();
     final hasError = statuses.any((s) => s.isError);
     if (hasError) {
-      final msg =
-          statuses.where((s) => s.isError).map((s) => s.explanation).join('; ');
+      final msg = statuses
+          .where((s) => s.isError)
+          .map((s) => s.explanation)
+          .join('; ');
       return ValidationResult.invalid(msg.isEmpty ? null : msg);
     }
     // No genuine errors — check whether the signer is outside a trust list.
@@ -105,7 +105,8 @@ class ManifestViewDataMapper {
     final agents = <String>[];
 
     for (final action in manifest.actions!) {
-      final sourceType = action.sourceType ??
+      final sourceType =
+          action.sourceType ??
           action.parameters?['digitalSourceType'] as String?;
 
       if (sourceType != null) {
@@ -146,10 +147,7 @@ class ManifestViewDataMapper {
   static ClaimGeneratorDisplayInfo? _mapClaimGenerator(Manifest manifest) {
     if (manifest.claimGeneratorInfo.isNotEmpty) {
       final info = manifest.claimGeneratorInfo.first;
-      return ClaimGeneratorDisplayInfo(
-        name: info.name,
-        version: info.version,
-      );
+      return ClaimGeneratorDisplayInfo(name: info.name, version: info.version);
     }
     if (manifest.claimGenerator != null) {
       final parts = manifest.claimGenerator!.split('/');
@@ -166,7 +164,8 @@ class ManifestViewDataMapper {
     return actions.map<ActionDisplayInfo>((a) {
       final sourceType =
           a.sourceType ?? a.parameters?['digitalSourceType'] as String?;
-      final isAi = sourceType != null &&
+      final isAi =
+          sourceType != null &&
           (sourceType.toLowerCase().contains('trainedalgorithmicmedia') ||
               sourceType.toLowerCase().contains('algorithmicmedia'));
 
@@ -174,12 +173,14 @@ class ManifestViewDataMapper {
       if (a.parameters != null) {
         for (final entry in a.parameters!.entries) {
           if (!_knownActionParams.contains(entry.key)) {
-            customParams.add(CustomField(
-              key: entry.key,
-              value: entry.value,
-              source: 'action_parameter',
-              parentLabel: a.action,
-            ));
+            customParams.add(
+              CustomField(
+                key: entry.key,
+                value: entry.value,
+                source: 'action_parameter',
+                parentLabel: a.action,
+              ),
+            );
           }
         }
       }
@@ -218,9 +219,10 @@ class ManifestViewDataMapper {
       // show identical data.
       // When no manifest is resolved we still build a summary with the
       // ingredient's title so that it shows the name rather than "Untitled".
-      final resolvedSummary = (i.activeManifest != null && summaries != null)
-          ? summaries[i.activeManifest]
-          : null;
+      final resolvedSummary =
+          (i.activeManifest != null && summaries != null)
+              ? summaries[i.activeManifest]
+              : null;
       final hasManifest = resolvedSummary != null || i.activeManifest != null;
 
       return IngredientDisplayInfo(
@@ -237,7 +239,8 @@ class ManifestViewDataMapper {
     final tools = <String>{};
     for (final action in manifest.actions!) {
       final sourceType =
-          action.sourceType ?? action.parameters?['digitalSourceType'] as String?;
+          action.sourceType ??
+          action.parameters?['digitalSourceType'] as String?;
       if (sourceType != null &&
           sourceType.toLowerCase().contains('trainedalgorithmicmedia')) {
         final agent = action.parameters?['softwareAgent'] as String?;

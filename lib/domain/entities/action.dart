@@ -17,19 +17,20 @@ class Action extends Equatable {
 
   /// Creates an Action from a JSON map.
   factory Action.fromJson(final Map<String, dynamic> json) => Action(
-      action: json['action'] as String,
-      when: json['when'] as String?,
-      changed: json['changed'] as String?,
-      parameters: json['parameters'] as Map<String, dynamic>?,
-      creators: (json['creators'] as List?)
-          ?.map((final e) => e as String).toList(),
-      sourceType: json['source_type'] as String?,
-      related: (json['related'] as List?)
-          ?.map((final e) => Action.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      reason: json['reason'] as String?,
-      description: json['description'] as String?,
-    );
+    action: json['action'] as String,
+    when: json['when'] as String?,
+    changed: json['changed'] as String?,
+    parameters: json['parameters'] as Map<String, dynamic>?,
+    creators:
+        (json['creators'] as List?)?.map((final e) => e as String).toList(),
+    sourceType: json['source_type'] as String?,
+    related:
+        (json['related'] as List?)
+            ?.map((final e) => Action.fromJson(e as Map<String, dynamic>))
+            .toList(),
+    reason: json['reason'] as String?,
+    description: json['description'] as String?,
+  );
 
   /// The label associated with this action. See ([`c2pa_action`]).
   final String action;

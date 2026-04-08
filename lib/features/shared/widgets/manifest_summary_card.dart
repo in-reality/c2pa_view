@@ -71,14 +71,16 @@ class _SummaryContent extends StatelessWidget {
         if (!isTreeNode) const SizedBox(width: 12),
         Expanded(
           child: Padding(
-            padding: isTreeNode
-                ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
-                : EdgeInsets.zero,
+            padding:
+                isTreeNode
+                    ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
+                    : EdgeInsets.zero,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: isTreeNode
-                  ? MainAxisAlignment.center
-                  : MainAxisAlignment.start,
+              mainAxisAlignment:
+                  isTreeNode
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
@@ -143,13 +145,14 @@ class _Thumbnail extends StatelessWidget {
       return SizedBox(
         width: size,
         height: size,
-        child: image != null
-            ? Image(
-                image: image!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _placeholder(),
-              )
-            : _placeholder(),
+        child:
+            image != null
+                ? Image(
+                  image: image!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _placeholder(),
+                )
+                : _placeholder(),
       );
     }
 

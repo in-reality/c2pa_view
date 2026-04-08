@@ -16,17 +16,20 @@ class ErrorBanner extends StatelessWidget {
     final theme = C2paViewerTheme.of(context);
     final isInvalid = result.isInvalid;
 
-    final backgroundColor = isInvalid
-        ? theme.invalidColor.withValues(alpha: 0.1)
-        : theme.unrecognizedColor.withValues(alpha: 0.1);
-    final borderColor = isInvalid
-        ? theme.invalidColor.withValues(alpha: 0.3)
-        : theme.unrecognizedColor.withValues(alpha: 0.3);
+    final backgroundColor =
+        isInvalid
+            ? theme.invalidColor.withValues(alpha: 0.1)
+            : theme.unrecognizedColor.withValues(alpha: 0.1);
+    final borderColor =
+        isInvalid
+            ? theme.invalidColor.withValues(alpha: 0.3)
+            : theme.unrecognizedColor.withValues(alpha: 0.3);
     final iconColor = isInvalid ? theme.invalidColor : theme.unrecognizedColor;
 
     final icon = isInvalid ? Icons.error : Icons.warning_amber_rounded;
 
-    final message = result.message ??
+    final message =
+        result.message ??
         (isInvalid
             ? 'This file may have been tampered with after the Content '
                 'Credential was issued, or the Content Credential has errors.'

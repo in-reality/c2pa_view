@@ -32,11 +32,7 @@ class ProvenanceMapper {
       edges: edges,
     );
 
-    return ProvenanceGraph(
-      rootId: activeLabel,
-      nodes: nodes,
-      edges: edges,
-    );
+    return ProvenanceGraph(rootId: activeLabel, nodes: nodes, edges: edges);
   }
 
   /// Pre-compute a [ManifestSummary] for every manifest in [store].
@@ -51,8 +47,9 @@ class ProvenanceMapper {
       result[entry.key] = ManifestSummary(
         title: manifest.title,
         thumbnail: viewData.thumbnail,
-        validationResult:
-            ManifestViewDataMapper.mapValidation(manifest.validationStatus),
+        validationResult: ManifestViewDataMapper.mapValidation(
+          manifest.validationStatus,
+        ),
         issuer: manifest.signatureInfo?.issuer,
       );
     }
@@ -93,11 +90,13 @@ class ProvenanceMapper {
 
     nodes[label] = ProvenanceNode(
       id: label,
-      summary: summaries[label] ??
+      summary:
+          summaries[label] ??
           ManifestSummary(
             title: manifest.title,
-            validationResult:
-                ManifestViewDataMapper.mapValidation(manifest.validationStatus),
+            validationResult: ManifestViewDataMapper.mapValidation(
+              manifest.validationStatus,
+            ),
             issuer: manifest.signatureInfo?.issuer,
           ),
       signedDate: manifest.signatureInfo?.time,

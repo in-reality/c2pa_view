@@ -62,23 +62,25 @@ class ExifData extends Equatable {
   };
 
   factory ExifData.fromAssertionData(final Map<String, dynamic> data) {
-    final customEntries = data.entries
-        .where((e) => !_knownKeys.contains(e.key))
-        .map(
-          (e) => CustomField(
-            key: e.key,
-            value: e.value,
-            source: 'exif_extension',
-          ),
-        )
-        .toList();
+    final customEntries =
+        data.entries
+            .where((e) => !_knownKeys.contains(e.key))
+            .map(
+              (e) => CustomField(
+                key: e.key,
+                value: e.value,
+                source: 'exif_extension',
+              ),
+            )
+            .toList();
 
     return ExifData(
       creator: _extractString(data['dc:creator']),
       copyright: _extractString(data['dc:rights']),
-      captureDate: data['exif:DateTimeOriginal'] != null
-          ? DateTime.tryParse(data['exif:DateTimeOriginal'] as String)
-          : null,
+      captureDate:
+          data['exif:DateTimeOriginal'] != null
+              ? DateTime.tryParse(data['exif:DateTimeOriginal'] as String)
+              : null,
       cameraMake: data['tiff:Make'] as String?,
       cameraModel: data['tiff:Model'] as String?,
       lensMake: data['exif:LensMake'] as String?,
@@ -117,21 +119,21 @@ class ExifData extends Equatable {
 
   @override
   List<Object?> get props => [
-        creator,
-        copyright,
-        captureDate,
-        cameraMake,
-        cameraModel,
-        lensMake,
-        lensModel,
-        exposureTime,
-        fNumber,
-        focalLength,
-        iso,
-        width,
-        height,
-        latitude,
-        longitude,
-        customFields,
-      ];
+    creator,
+    copyright,
+    captureDate,
+    cameraMake,
+    cameraModel,
+    lensMake,
+    lensModel,
+    exposureTime,
+    fNumber,
+    focalLength,
+    iso,
+    width,
+    height,
+    latitude,
+    longitude,
+    customFields,
+  ];
 }

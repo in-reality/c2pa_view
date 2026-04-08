@@ -22,11 +22,7 @@ const _routedAssertionLabels = {
 };
 
 /// Prefixes for assertions that are not custom.
-const _internalAssertionPrefixes = [
-  'c2pa.thumbnail.',
-  'c2pa.hash.',
-];
-
+const _internalAssertionPrefixes = ['c2pa.thumbnail.', 'c2pa.hash.'];
 
 /// Domain entity representing a C2PA Content Credential Manifest.
 class Manifest extends Equatable {
@@ -52,7 +48,8 @@ class Manifest extends Equatable {
   /// Parses a Manifest from a JSON map.
   factory Manifest.fromJson(final Map<String, dynamic> json) {
     // Parse all assertions
-    final allAssertions = (json['assertions'] as List?)
+    final allAssertions =
+        (json['assertions'] as List?)
             ?.map(
               (final e) =>
                   ManifestAssertion.fromJson(e as Map<String, dynamic>),
@@ -61,15 +58,18 @@ class Manifest extends Equatable {
         [];
 
     // Extract c2pa.actions or c2pa.actions.v2 assertion
-    final actionsAssertion = allAssertions
-        .where((a) =>
-            a.label == 'c2pa.actions' || a.label == 'c2pa.actions.v2')
-        .toList();
+    final actionsAssertion =
+        allAssertions
+            .where(
+              (a) => a.label == 'c2pa.actions' || a.label == 'c2pa.actions.v2',
+            )
+            .toList();
     List<Action>? actions;
     if (actionsAssertion.isNotEmpty) {
-      actions = (actionsAssertion.first.data['actions'] as List?)
-          ?.map((final e) => Action.fromJson(e as Map<String, dynamic>))
-          .toList();
+      actions =
+          (actionsAssertion.first.data['actions'] as List?)
+              ?.map((final e) => Action.fromJson(e as Map<String, dynamic>))
+              .toList();
     }
 
     // Extract EXIF data
@@ -82,58 +82,66 @@ class Manifest extends Equatable {
 
     // Extract CreativeWork
     CreativeWork? creativeWork;
-    final cwAssertions = allAssertions
-        .where((a) => a.label == 'stds.schema-org.CreativeWork')
-        .toList();
+    final cwAssertions =
+        allAssertions
+            .where((a) => a.label == 'stds.schema-org.CreativeWork')
+            .toList();
     if (cwAssertions.isNotEmpty) {
       creativeWork = CreativeWork.fromAssertionData(cwAssertions.first.data);
     }
 
     // Extract TrainingMining
     TrainingMining? trainingMining;
-    final tmAssertions = allAssertions
-        .where((a) => a.label == 'c2pa.training-mining')
-        .toList();
+    final tmAssertions =
+        allAssertions.where((a) => a.label == 'c2pa.training-mining').toList();
     if (tmAssertions.isNotEmpty) {
-      trainingMining =
-          TrainingMining.fromAssertionData(tmAssertions.first.data);
+      trainingMining = TrainingMining.fromAssertionData(
+        tmAssertions.first.data,
+      );
     }
 
     // Extract thumbnail from assertions
     ThumbnailData? thumbnail;
     if (json['thumbnail'] is Map<String, dynamic>) {
-      thumbnail =
-          ThumbnailData.fromJson(json['thumbnail'] as Map<String, dynamic>);
+      thumbnail = ThumbnailData.fromJson(
+        json['thumbnail'] as Map<String, dynamic>,
+      );
     } else {
-      final thumbAssertions = allAssertions
-          .where((a) => a.label.startsWith('c2pa.thumbnail.'))
-          .toList();
+      final thumbAssertions =
+          allAssertions
+              .where((a) => a.label.startsWith('c2pa.thumbnail.'))
+              .toList();
       if (thumbAssertions.isNotEmpty) {
         thumbnail = ThumbnailData(
-          format: thumbAssertions.first.label
-              .replaceFirst('c2pa.thumbnail.claim.', 'image/'),
+          format: thumbAssertions.first.label.replaceFirst(
+            'c2pa.thumbnail.claim.',
+            'image/',
+          ),
           identifier: thumbAssertions.first.label,
         );
       }
     }
 
     // Filter assertions: keep only custom/unknown ones
-    final filteredAssertions = allAssertions.where((a) {
-      if (_routedAssertionLabels.contains(a.label)) return false;
-      for (final prefix in _internalAssertionPrefixes) {
-        if (a.label.startsWith(prefix)) return false;
-      }
-      return true;
-    }).toList();
+    final filteredAssertions =
+        allAssertions.where((a) {
+          if (_routedAssertionLabels.contains(a.label)) return false;
+          for (final prefix in _internalAssertionPrefixes) {
+            if (a.label.startsWith(prefix)) return false;
+          }
+          return true;
+        }).toList();
 
     // Collect custom fields from remaining (unknown) assertions only
     final customFields = <CustomField>[];
     for (final assertion in filteredAssertions) {
-      customFields.add(CustomField(
-        key: assertion.label,
-        value: assertion.data,
-        source: 'assertion',
-      ));
+      customFields.add(
+        CustomField(
+          key: assertion.label,
+          value: assertion.data,
+          source: 'assertion',
+        ),
+      );
     }
 
     // Parse structured signature info
@@ -170,10 +178,9 @@ class Manifest extends Equatable {
       format: json['format'] as String?,
       label: json['label'] as String?,
       instanceId: json['instance_id'] as String?,
-      ingredients: (json['ingredients'] as List?)
-              ?.map(
-                (final e) => Ingredient.fromJson(e as Map<String, dynamic>),
-              )
+      ingredients:
+          (json['ingredients'] as List?)
+              ?.map((final e) => Ingredient.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       assertions: filteredAssertions,
@@ -240,21 +247,21 @@ class Manifest extends Equatable {
 
   @override
   List<Object?> get props => [
-        claimGenerator,
-        title,
-        format,
-        label,
-        instanceId,
-        ingredients,
-        assertions,
-        actions,
-        signatureInfo,
-        claimGeneratorInfo,
-        thumbnail,
-        exifData,
-        creativeWork,
-        trainingMining,
-        validationStatus,
-        customFields,
-      ];
+    claimGenerator,
+    title,
+    format,
+    label,
+    instanceId,
+    ingredients,
+    assertions,
+    actions,
+    signatureInfo,
+    claimGeneratorInfo,
+    thumbnail,
+    exifData,
+    creativeWork,
+    trainingMining,
+    validationStatus,
+    customFields,
+  ];
 }

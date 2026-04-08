@@ -20,9 +20,11 @@ class TrainingMining extends Equatable {
       for (final entry in data['entries'] as List) {
         if (entry is Map<String, dynamic>) {
           final use = entry['use'] as String?;
-          final allowed = entry['constraint_info'] is Map
-              ? (entry['constraint_info'] as Map)['allowed'] as bool? ?? true
-              : true;
+          final allowed =
+              entry['constraint_info'] is Map
+                  ? (entry['constraint_info'] as Map)['allowed'] as bool? ??
+                      true
+                  : true;
 
           if (use == 'notAllowed') {
             doNotTrain = true;

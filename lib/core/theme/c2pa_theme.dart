@@ -99,54 +99,54 @@ class C2paViewerThemeData {
   static const C2paViewerThemeData defaults = C2paViewerThemeData();
 
   factory C2paViewerThemeData.dark() => const C2paViewerThemeData(
-        surfaceColor: Color(0xFF1E1E1E),
-        surfaceVariantColor: Color(0xFF2D2D2D),
-        borderColor: Color(0xFF424242),
-        textPrimaryColor: Color(0xFFE0E0E0),
-        textSecondaryColor: Color(0xFF9E9E9E),
-        iconColor: Color(0xFF9E9E9E),
-        selectedNodeBorderColor: Color(0xFF8AB4F8),
-        pathNodeBorderColor: Color(0xFF9AA0A6),
-        defaultNodeBorderColor: Color(0xFF5F6368),
-        edgeColor: Color(0xFF5F6368),
-        titleLargeStyle: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          height: 1.3,
-          color: Color(0xFFE0E0E0),
-        ),
-        titleMediumStyle: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-          height: 1.3,
-          color: Color(0xFFE0E0E0),
-        ),
-        titleSmallStyle: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          height: 1.3,
-          color: Color(0xFFE0E0E0),
-        ),
-        bodyStyle: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          height: 1.5,
-          color: Color(0xFFE0E0E0),
-        ),
-        bodySmallStyle: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
-          height: 1.4,
-          color: Color(0xFF9E9E9E),
-        ),
-        labelStyle: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.5,
-          height: 1.3,
-          color: Color(0xFF9E9E9E),
-        ),
-      );
+    surfaceColor: Color(0xFF1E1E1E),
+    surfaceVariantColor: Color(0xFF2D2D2D),
+    borderColor: Color(0xFF424242),
+    textPrimaryColor: Color(0xFFE0E0E0),
+    textSecondaryColor: Color(0xFF9E9E9E),
+    iconColor: Color(0xFF9E9E9E),
+    selectedNodeBorderColor: Color(0xFF8AB4F8),
+    pathNodeBorderColor: Color(0xFF9AA0A6),
+    defaultNodeBorderColor: Color(0xFF5F6368),
+    edgeColor: Color(0xFF5F6368),
+    titleLargeStyle: TextStyle(
+      fontSize: 18,
+      fontWeight: FontWeight.w600,
+      height: 1.3,
+      color: Color(0xFFE0E0E0),
+    ),
+    titleMediumStyle: TextStyle(
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+      height: 1.3,
+      color: Color(0xFFE0E0E0),
+    ),
+    titleSmallStyle: TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      height: 1.3,
+      color: Color(0xFFE0E0E0),
+    ),
+    bodyStyle: TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      height: 1.5,
+      color: Color(0xFFE0E0E0),
+    ),
+    bodySmallStyle: TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      height: 1.4,
+      color: Color(0xFF9E9E9E),
+    ),
+    labelStyle: TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0.5,
+      height: 1.3,
+      color: Color(0xFF9E9E9E),
+    ),
+  );
 
   Color colorForStatus(ValidationStatus status) {
     switch (status) {
@@ -168,15 +168,10 @@ class C2paViewerThemeData {
 class C2paViewerTheme extends InheritedWidget {
   final C2paViewerThemeData data;
 
-  const C2paViewerTheme({
-    super.key,
-    required this.data,
-    required super.child,
-  });
+  const C2paViewerTheme({super.key, required this.data, required super.child});
 
   static C2paViewerThemeData of(BuildContext context) {
-    final theme =
-        context.dependOnInheritedWidgetOfExactType<C2paViewerTheme>();
+    final theme = context.dependOnInheritedWidgetOfExactType<C2paViewerTheme>();
     return theme?.data ?? C2paViewerThemeData.defaults;
   }
 

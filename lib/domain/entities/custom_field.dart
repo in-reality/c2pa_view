@@ -36,10 +36,7 @@ class CustomField extends Equatable {
     return [MapEntry(fullKey, value.toString())];
   }
 
-  static List<MapEntry<String, String>> _flattenMap(
-    Map map,
-    String prefix,
-  ) {
+  static List<MapEntry<String, String>> _flattenMap(Map map, String prefix) {
     final entries = <MapEntry<String, String>>[];
     for (final entry in map.entries) {
       final key = '$prefix.${entry.key}';
@@ -54,10 +51,7 @@ class CustomField extends Equatable {
     return entries;
   }
 
-  static List<MapEntry<String, String>> _flattenList(
-    List list,
-    String prefix,
-  ) {
+  static List<MapEntry<String, String>> _flattenList(List list, String prefix) {
     final entries = <MapEntry<String, String>>[];
     for (var i = 0; i < list.length; i++) {
       final key = '$prefix[$i]';

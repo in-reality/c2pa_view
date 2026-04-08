@@ -27,9 +27,7 @@ class SubSection extends StatelessWidget {
         children: [
           Text(
             label.toUpperCase(),
-            style: theme.labelStyle.copyWith(
-              color: theme.textSecondaryColor,
-            ),
+            style: theme.labelStyle.copyWith(color: theme.textSecondaryColor),
           ),
           const SizedBox(height: 6),
           child,

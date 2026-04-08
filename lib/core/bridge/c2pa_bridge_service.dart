@@ -35,8 +35,7 @@ class C2paBridgeService {
   static String? getManifestJsonFromBytes({
     required List<int> fileBytes,
     required String format,
-  }) =>
-      getManifestWithValidation(fileBytes: fileBytes, format: format);
+  }) => getManifestWithValidation(fileBytes: fileBytes, format: format);
 
   /// Load a [ManifestStore] from a local file path.
   static ManifestStore? loadFromFile(String path) {

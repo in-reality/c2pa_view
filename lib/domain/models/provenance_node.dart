@@ -71,6 +71,5 @@ class ProvenanceGraph {
   List<String> parentIdsOf(String childId) =>
       edges.where((e) => e.childId == childId).map((e) => e.parentId).toList();
 
-  bool hasChildren(String nodeId) =>
-      edges.any((e) => e.parentId == nodeId);
+  bool hasChildren(String nodeId) => edges.any((e) => e.parentId == nodeId);
 }

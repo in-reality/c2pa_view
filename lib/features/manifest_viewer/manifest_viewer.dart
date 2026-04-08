@@ -21,6 +21,7 @@ class C2paManifestViewer extends StatefulWidget {
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
   final String? mimeType;
   final bool showDetailPanel;
+
   /// Optional image for the actual media file. When the manifest has no
   /// embedded thumbnail, this is shown instead (detail panel and root tree node).
   final ImageProvider? mediaImage;
@@ -48,8 +49,7 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
   @override
   void initState() {
     super.initState();
-    _selectedNodeId =
-        widget.initialSelectedNodeId ?? widget.graph.rootId;
+    _selectedNodeId = widget.initialSelectedNodeId ?? widget.graph.rootId;
     _selectedData = widget.graph.findNode(_selectedNodeId)?.manifestViewData;
   }
 
@@ -57,8 +57,7 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
   void didUpdateWidget(C2paManifestViewer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.graph != widget.graph) {
-      _selectedNodeId =
-          widget.initialSelectedNodeId ?? widget.graph.rootId;
+      _selectedNodeId = widget.initialSelectedNodeId ?? widget.graph.rootId;
       _selectedData = widget.graph.findNode(_selectedNodeId)?.manifestViewData;
     }
   }
@@ -78,30 +77,28 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
     return SelectionArea(
       child: Row(
         children: [
-        Expanded(
-          child: ProvenanceTreeViewer(
-            graph: widget.graph,
-            selectedNodeId: _selectedNodeId,
-            onNodeSelected: _onNodeSelected,
-            mediaImage: widget.mediaImage,
+          Expanded(
+            child: ProvenanceTreeViewer(
+              graph: widget.graph,
+              selectedNodeId: _selectedNodeId,
+              onNodeSelected: _onNodeSelected,
+              mediaImage: widget.mediaImage,
+            ),
           ),
-        ),
-        if (widget.showDetailPanel && _selectedData != null) ...[
-          Container(
-            width: 1,
-            color: theme.borderColor,
-          ),
-          ManifestDetailPanel(
-            data: _selectedData!,
-            mimeType: widget.mimeType,
-            onThumbnailTap: widget.onThumbnailTap,
-            onIngredientTap: widget.onIngredientTap,
-            mediaImage: _selectedNodeId == widget.graph.rootId
-                ? widget.mediaImage
-                : null,
-          ),
+          if (widget.showDetailPanel && _selectedData != null) ...[
+            Container(width: 1, color: theme.borderColor),
+            ManifestDetailPanel(
+              data: _selectedData!,
+              mimeType: widget.mimeType,
+              onThumbnailTap: widget.onThumbnailTap,
+              onIngredientTap: widget.onIngredientTap,
+              mediaImage:
+                  _selectedNodeId == widget.graph.rootId
+                      ? widget.mediaImage
+                      : null,
+            ),
+          ],
         ],
-      ],
       ),
     );
   }

@@ -74,14 +74,11 @@ class _IssuedBySubSection extends StatelessWidget {
             ),
           ),
           Tooltip(
-            message: 'This is the organization, device, or individual '
+            message:
+                'This is the organization, device, or individual '
                 'that recorded the details above and signed this '
                 'Content Credential.',
-            child: Icon(
-              Icons.help_outline,
-              size: 16,
-              color: theme.iconColor,
-            ),
+            child: Icon(Icons.help_outline, size: 16, color: theme.iconColor),
           ),
         ],
       ),
@@ -174,9 +171,7 @@ class _DoNotTrainSubSection extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             'The creator does not want this content used for AI training.',
-            style: theme.bodySmallStyle.copyWith(
-              color: theme.textPrimaryColor,
-            ),
+            style: theme.bodySmallStyle.copyWith(color: theme.textPrimaryColor),
           ),
         ],
       ),

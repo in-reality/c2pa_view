@@ -35,8 +35,7 @@ class ManifestStore extends Equatable {
     final perManifestValidation = <String, List<Map<String, dynamic>>>{};
     for (final entry in topLevelValidation) {
       final manifestLabel = _extractManifestLabel(entry.url);
-      final key =
-          (manifestLabel != null) ? manifestLabel : (activeLabel ?? '');
+      final key = (manifestLabel != null) ? manifestLabel : (activeLabel ?? '');
       perManifestValidation.putIfAbsent(key, () => []).add({
         'code': entry.code,
         if (entry.url != null) 'url': entry.url,
@@ -47,20 +46,21 @@ class ManifestStore extends Equatable {
     final rawManifestJsons = <String, Map<String, dynamic>>{};
     final manifests =
         (json['manifests'] as Map<String, dynamic>?)?.map((final k, final e) {
-              final manifestJson =
-                  Map<String, dynamic>.from(e as Map<String, dynamic>);
-              // Inject the entries attributed to this manifest when the
-              // manifest JSON does not already carry its own validation_status.
-              if (manifestJson['validation_status'] == null) {
-                final entries = perManifestValidation[k];
-                if (entries != null && entries.isNotEmpty) {
-                  manifestJson['validation_status'] = entries;
-                }
-              }
-              rawManifestJsons[k] = manifestJson;
-              return MapEntry(k, Manifest.fromJson(manifestJson));
-            }) ??
-            {};
+          final manifestJson = Map<String, dynamic>.from(
+            e as Map<String, dynamic>,
+          );
+          // Inject the entries attributed to this manifest when the
+          // manifest JSON does not already carry its own validation_status.
+          if (manifestJson['validation_status'] == null) {
+            final entries = perManifestValidation[k];
+            if (entries != null && entries.isNotEmpty) {
+              manifestJson['validation_status'] = entries;
+            }
+          }
+          rawManifestJsons[k] = manifestJson;
+          return MapEntry(k, Manifest.fromJson(manifestJson));
+        }) ??
+        {};
 
     return ManifestStore(
       activeManifest: activeLabel,
@@ -108,8 +108,10 @@ class ManifestStore extends Equatable {
     final List<int> fileBytes,
     final String format,
   ) {
-    final manifestJson =
-        getManifestJsonFromBytes(fileBytes: fileBytes, format: format);
+    final manifestJson = getManifestJsonFromBytes(
+      fileBytes: fileBytes,
+      format: format,
+    );
     if (manifestJson == null) return null;
     return ManifestStore.fromJson(json.decode(manifestJson));
   }

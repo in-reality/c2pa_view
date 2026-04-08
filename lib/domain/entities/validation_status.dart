@@ -6,11 +6,7 @@ class ValidationStatusEntry extends Equatable {
   final String? url;
   final String? explanation;
 
-  const ValidationStatusEntry({
-    required this.code,
-    this.url,
-    this.explanation,
-  });
+  const ValidationStatusEntry({required this.code, this.url, this.explanation});
 
   factory ValidationStatusEntry.fromJson(final Map<String, dynamic> json) =>
       ValidationStatusEntry(

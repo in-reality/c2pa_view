@@ -24,10 +24,11 @@ class SignatureInfo extends Equatable {
 
     List<CertificateInfo>? chain;
     if (json['cert_chain'] is List) {
-      chain = (json['cert_chain'] as List)
-          .whereType<Map<String, dynamic>>()
-          .map(CertificateInfo.fromJson)
-          .toList();
+      chain =
+          (json['cert_chain'] as List)
+              .whereType<Map<String, dynamic>>()
+              .map(CertificateInfo.fromJson)
+              .toList();
     }
 
     return SignatureInfo(
@@ -41,12 +42,12 @@ class SignatureInfo extends Equatable {
 
   @override
   List<Object?> get props => [
-        issuer,
-        certSerialNumber,
-        time,
-        algorithm,
-        certificateChain,
-      ];
+    issuer,
+    certSerialNumber,
+    time,
+    algorithm,
+    certificateChain,
+  ];
 }
 
 /// Information about a certificate in the signing chain.
@@ -69,15 +70,23 @@ class CertificateInfo extends Equatable {
       CertificateInfo(
         subject: json['subject'] as String?,
         issuer: json['issuer'] as String?,
-        notBefore: json['not_before'] != null
-            ? DateTime.tryParse(json['not_before'] as String)
-            : null,
-        notAfter: json['not_after'] != null
-            ? DateTime.tryParse(json['not_after'] as String)
-            : null,
+        notBefore:
+            json['not_before'] != null
+                ? DateTime.tryParse(json['not_before'] as String)
+                : null,
+        notAfter:
+            json['not_after'] != null
+                ? DateTime.tryParse(json['not_after'] as String)
+                : null,
         serialNumber: json['serial_number'] as String?,
       );
 
   @override
-  List<Object?> get props => [subject, issuer, notBefore, notAfter, serialNumber];
+  List<Object?> get props => [
+    subject,
+    issuer,
+    notBefore,
+    notAfter,
+    serialNumber,
+  ];
 }

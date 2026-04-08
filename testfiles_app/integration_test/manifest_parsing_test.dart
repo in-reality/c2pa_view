@@ -13,9 +13,10 @@ void runManifestParsingTest() {
     expect(
       manifestResponse.statusCode,
       200,
-      reason: "Failed to get c2pa test manifest: ${manifestResponse.statusCode}"
-        "\nLooked for: $manifestUrl"
-        "\nCheck here for info: $testDataUrl",
+      reason:
+          "Failed to get c2pa test manifest: ${manifestResponse.statusCode}"
+          "\nLooked for: $manifestUrl"
+          "\nCheck here for info: $testDataUrl",
     );
     Map<String, dynamic> trueManifest = json.decode(manifestResponse.body);
 
@@ -26,8 +27,10 @@ void runManifestParsingTest() {
     expect(trueManifestStore.activeManifest, trueManifest['active_manifest']);
 
     // Get set of manifests for both
-    final Set<String> activeManifests = trueManifestStore.manifests.keys.toSet();
-    final Set<String> trueActiveManifests = trueManifest['manifests'].keys.toSet();
+    final Set<String> activeManifests =
+        trueManifestStore.manifests.keys.toSet();
+    final Set<String> trueActiveManifests =
+        trueManifest['manifests'].keys.toSet();
 
     // Check that the active manifests are the same
     expect(
@@ -36,4 +39,4 @@ void runManifestParsingTest() {
       reason: "Active manifests do not match expected active manifests",
     );
   });
-} 
+}

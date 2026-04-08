@@ -30,5 +30,4 @@ Future<String?> getManifestJsonFromURL(
 String? getManifestJsonFromBytes({
   required final List<int> fileBytes,
   required final String format,
-}) =>
-    getManifestWithValidation(fileBytes: fileBytes, format: format);
+}) => getManifestWithValidation(fileBytes: fileBytes, format: format);

@@ -35,9 +35,7 @@ class C2paExampleApp extends StatelessWidget {
       ),
       home: C2paViewerTheme(
         data: const C2paViewerThemeData(),
-        child: SelectionArea(
-          child: HomePage(initError: initError),
-        ),
+        child: SelectionArea(child: HomePage(initError: initError)),
       ),
     );
   }
@@ -162,9 +160,7 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.all(16.0),
               child: Text(
                 _error!,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                ),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
           Expanded(
@@ -209,16 +205,16 @@ class _InitErrorBanner extends StatelessWidget {
           Text(
             'Rust library failed to load',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Colors.orange.shade900,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Colors.orange.shade900,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 4),
           SelectableText(
             message,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.orange.shade900,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: Colors.orange.shade900),
           ),
           if (kIsWeb)
             Padding(
@@ -227,9 +223,9 @@ class _InitErrorBanner extends StatelessWidget {
                 'On web, the Rust/WASM build may be missing or CORS may '
                 'block loading. See flutter_rust_bridge web documentation.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.orange.shade800,
-                      fontStyle: FontStyle.italic,
-                    ),
+                  color: Colors.orange.shade800,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ),
         ],
@@ -246,12 +242,9 @@ class _SelectFilePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor =
-        isDragging ? Colors.blue : Colors.grey.shade400;
-    final bgColor =
-        isDragging ? Colors.blue.shade50 : Colors.grey.shade100;
-    final iconColor =
-        isDragging ? Colors.blue : Colors.grey.shade600;
+    final borderColor = isDragging ? Colors.blue : Colors.grey.shade400;
+    final bgColor = isDragging ? Colors.blue.shade50 : Colors.grey.shade100;
+    final iconColor = isDragging ? Colors.blue : Colors.grey.shade600;
 
     return CustomPaint(
       painter: _DashedRoundedRectPainter(
@@ -270,24 +263,24 @@ class _SelectFilePanel extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.upload_file, size: 48, color: iconColor),
-            const SizedBox(height: 16),
-            Text(
-              'Select file',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Click to choose a file, or drag and drop here',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey.shade700,
-                  ),
-            ),
-          ],
-        ),
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.upload_file, size: 48, color: iconColor),
+              const SizedBox(height: 16),
+              Text(
+                'Select file',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Click to choose a file, or drag and drop here',
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Colors.grey.shade700),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -318,10 +311,7 @@ class _DashedRoundedRectPainter extends CustomPainter {
       size.width - strokeWidth,
       size.height - strokeWidth,
     );
-    final rrect = RRect.fromRectAndRadius(
-      rect,
-      Radius.circular(radius),
-    );
+    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(radius));
     final path = Path()..addRRect(rrect);
 
     const dashLength = 8.0;
@@ -379,11 +369,8 @@ class _ManifestViewScaffold extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (initError != null)
-            _InitErrorBanner(message: initError!),
-          Expanded(
-            child: _buildBody(context, store, mimeType),
-          ),
+          if (initError != null) _InitErrorBanner(message: initError!),
+          Expanded(child: _buildBody(context, store, mimeType)),
         ],
       ),
     );

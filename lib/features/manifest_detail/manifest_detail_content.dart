@@ -128,9 +128,7 @@ class _ScrollBodyState extends State<_ScrollBody> {
                 mimeType: widget.mimeType,
                 onTapFullScreen: widget.onThumbnailTap,
               ),
-              ContentSummarySection(
-                generativeInfo: widget.data.generativeInfo,
-              ),
+              ContentSummarySection(generativeInfo: widget.data.generativeInfo),
               ProcessSection(
                 data: widget.data,
                 onIngredientTap: widget.onIngredientTap,
@@ -141,8 +139,7 @@ class _ScrollBodyState extends State<_ScrollBody> {
               ),
               AboutSection(
                 data: widget.data,
-                creativeWorkCustomFields:
-                    widget.data.creativeWorkCustomFields,
+                creativeWorkCustomFields: widget.data.creativeWorkCustomFields,
               ),
               if (widget.data.customFields.isNotEmpty)
                 CustomFieldsSection(fields: widget.data.customFields),

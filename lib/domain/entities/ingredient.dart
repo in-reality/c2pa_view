@@ -27,8 +27,9 @@ class Ingredient extends Equatable {
   factory Ingredient.fromJson(final Map<String, dynamic> json) {
     ThumbnailData? thumbnail;
     if (json['thumbnail'] is Map<String, dynamic>) {
-      thumbnail =
-          ThumbnailData.fromJson(json['thumbnail'] as Map<String, dynamic>);
+      thumbnail = ThumbnailData.fromJson(
+        json['thumbnail'] as Map<String, dynamic>,
+      );
     }
 
     final validationStatus = <ValidationStatusEntry>[];
@@ -102,19 +103,19 @@ class Ingredient extends Equatable {
 
   @override
   List<Object?> get props => [
-        title,
-        format,
-        documentId,
-        instanceId,
-        provenance,
-        hash,
-        activeManifest,
-        description,
-        informationalUri,
-        label,
-        relationship,
-        thumbnail,
-        validationStatus,
-        metadata,
-      ];
+    title,
+    format,
+    documentId,
+    instanceId,
+    provenance,
+    hash,
+    activeManifest,
+    description,
+    informationalUri,
+    label,
+    relationship,
+    thumbnail,
+    validationStatus,
+    metadata,
+  ];
 }

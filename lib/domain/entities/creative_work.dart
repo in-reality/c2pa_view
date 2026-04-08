@@ -44,28 +44,29 @@ class CreativeWork extends Equatable {
     if (data['sameAs'] is List) {
       for (final item in data['sameAs'] as List) {
         if (item is Map<String, dynamic>) {
-          final platform = item['@type'] as String? ??
-              item['name'] as String? ??
-              'Unknown';
+          final platform =
+              item['@type'] as String? ?? item['name'] as String? ?? 'Unknown';
           final url = item['url'] as String? ?? '';
           socialAccounts.add(SocialAccount(platform: platform, url: url));
         } else if (item is String) {
-          socialAccounts
-              .add(SocialAccount(platform: _guessPlatform(item), url: item));
+          socialAccounts.add(
+            SocialAccount(platform: _guessPlatform(item), url: item),
+          );
         }
       }
     }
 
-    final customEntries = data.entries
-        .where((e) => !_knownKeys.contains(e.key))
-        .map(
-          (e) => CustomField(
-            key: e.key,
-            value: e.value,
-            source: 'creative_work_extension',
-          ),
-        )
-        .toList();
+    final customEntries =
+        data.entries
+            .where((e) => !_knownKeys.contains(e.key))
+            .map(
+              (e) => CustomField(
+                key: e.key,
+                value: e.value,
+                source: 'creative_work_extension',
+              ),
+            )
+            .toList();
 
     return CreativeWork(
       author: _extractPersonName(data['author']),
@@ -85,7 +86,8 @@ class CreativeWork extends Equatable {
     if (value is Map<String, dynamic>) {
       return value['name'] as String? ?? value['@value'] as String?;
     }
-    if (value is List && value.isNotEmpty) return _extractPersonName(value.first);
+    if (value is List && value.isNotEmpty)
+      return _extractPersonName(value.first);
     return null;
   }
 
@@ -104,16 +106,16 @@ class CreativeWork extends Equatable {
 
   @override
   List<Object?> get props => [
-        author,
-        copyrightNotice,
-        copyrightHolder,
-        producer,
-        creditText,
-        website,
-        socialAccounts,
-        rawData,
-        customFields,
-      ];
+    author,
+    copyrightNotice,
+    copyrightHolder,
+    producer,
+    creditText,
+    website,
+    socialAccounts,
+    rawData,
+    customFields,
+  ];
 }
 
 /// A social media account reference.

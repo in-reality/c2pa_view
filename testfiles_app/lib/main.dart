@@ -38,8 +38,9 @@ class TestCase {
 }
 
 Future<List<TestCase>> loadTestCases() async {
-  final String contents =
-      await rootBundle.loadString('assets/c2pa_test_data.dsv');
+  final String contents = await rootBundle.loadString(
+    'assets/c2pa_test_data.dsv',
+  );
   final lines = contents.split('\n');
   return lines
       .skip(1)
@@ -72,11 +73,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: C2paViewerTheme(
-          data: const C2paViewerThemeData(),
-          child: Scaffold(
-            appBar: AppBar(title: const Text('C2PA Test Cases')),
-            body: SelectionArea(
-              child: Column(
+        data: const C2paViewerThemeData(),
+        child: Scaffold(
+          appBar: AppBar(title: const Text('C2PA Test Cases')),
+          body: SelectionArea(
+            child: Column(
               children: [
                 if (initError != null)
                   Container(
@@ -89,19 +90,18 @@ class MyApp extends StatelessWidget {
                       children: [
                         Text(
                           'Rust library failed to load',
-                          style:
-                              Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    color: Colors.orange.shade900,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleSmall?.copyWith(
+                            color: Colors.orange.shade900,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           initError!,
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.orange.shade900,
-                                  ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: Colors.orange.shade900),
                         ),
                         if (kIsWeb)
                           Padding(
@@ -110,13 +110,12 @@ class MyApp extends StatelessWidget {
                               'On web, the Rust/WASM build may be missing or '
                               'CORS may block loading. See flutter_rust_bridge '
                               'web documentation.',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: Colors.orange.shade800,
-                                    fontStyle: FontStyle.italic,
-                                  ),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.copyWith(
+                                color: Colors.orange.shade800,
+                                fontStyle: FontStyle.italic,
+                              ),
                             ),
                           ),
                       ],
@@ -151,16 +150,17 @@ class MyApp extends StatelessWidget {
                         );
                       } else {
                         return const Center(
-                            child: Text('No test cases found.'));
+                          child: Text('No test cases found.'),
+                        );
                       }
                     },
                   ),
                 ),
               ],
-              ),
             ),
           ),
         ),
+      ),
     );
   }
 }
@@ -189,9 +189,7 @@ class TestCaseList extends StatelessWidget {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => ManifestViewerPage(
-                      testCase: testCase,
-                    ),
+                    builder: (_) => ManifestViewerPage(testCase: testCase),
                   ),
                 );
               },
@@ -227,7 +225,7 @@ class _PopupDemoCardState extends State<_PopupDemoCard> {
   }
 
   static Future<({ManifestStore? store, Uint8List? bytes})>
-      _fetchManifestAndBytes(String url, String format) async {
+  _fetchManifestAndBytes(String url, String format) async {
     final response = await http.get(Uri.parse(url));
     final bytes = Uint8List.fromList(response.bodyBytes);
     final store = ManifestStore.fromBytes(response.bodyBytes, format);
@@ -240,9 +238,7 @@ class _PopupDemoCardState extends State<_PopupDemoCard> {
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Card(
         elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: FutureBuilder<({ManifestStore? store, Uint8List? bytes})>(
@@ -294,15 +290,19 @@ class _PopupDemoCardState extends State<_PopupDemoCard> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image(
-                      image: viewData.thumbnail ?? mediaImage ?? const AssetImage(''),
+                      image:
+                          viewData.thumbnail ??
+                          mediaImage ??
+                          const AssetImage(''),
                       height: 120,
                       width: 120,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const SizedBox(
-                        height: 120,
-                        width: 120,
-                        child: Icon(Icons.image_not_supported, size: 40),
-                      ),
+                      errorBuilder:
+                          (_, __, ___) => const SizedBox(
+                            height: 120,
+                            width: 120,
+                            child: Icon(Icons.image_not_supported, size: 40),
+                          ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -372,7 +372,7 @@ class _ManifestViewerPageState extends State<ManifestViewerPage> {
   }
 
   static Future<({ManifestStore? store, Uint8List? bytes})>
-      _fetchManifestAndBytes(String url, String format) async {
+  _fetchManifestAndBytes(String url, String format) async {
     final response = await http.get(Uri.parse(url));
     final bytes = Uint8List.fromList(response.bodyBytes);
     final store = ManifestStore.fromBytes(response.bodyBytes, format);
@@ -404,15 +404,13 @@ class _ManifestViewerPageState extends State<ManifestViewerPage> {
           final store = snapshot.data?.store;
           final bytes = snapshot.data?.bytes;
           if (store == null) {
-            return const Center(
-                child: Text('No manifest found in this file.'));
+            return const Center(child: Text('No manifest found in this file.'));
           }
 
           try {
             final graph = ProvenanceMapper.mapToGraph(store);
-            final mediaImage = bytes != null && bytes.isNotEmpty
-                ? MemoryImage(bytes)
-                : null;
+            final mediaImage =
+                bytes != null && bytes.isNotEmpty ? MemoryImage(bytes) : null;
             return C2paViewerTheme(
               data: const C2paViewerThemeData(),
               child: C2paManifestViewer(
@@ -422,8 +420,7 @@ class _ManifestViewerPageState extends State<ManifestViewerPage> {
               ),
             );
           } catch (e) {
-            return Center(
-                child: Text('Error building provenance graph: $e'));
+            return Center(child: Text('Error building provenance graph: $e'));
           }
         },
       ),

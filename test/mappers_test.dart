@@ -12,10 +12,7 @@ void main() {
         claimGenerator: 'TestApp/1.0',
         title: 'test.jpg',
         format: 'image/jpeg',
-        signatureInfo: SignatureInfo(
-          issuer: 'Test Issuer',
-          time: null,
-        ),
+        signatureInfo: SignatureInfo(issuer: 'Test Issuer', time: null),
       );
 
       final viewData = ManifestViewDataMapper.map(manifest);
@@ -40,9 +37,7 @@ void main() {
     });
 
     test('maps claim generator from string', () {
-      const manifest = Manifest(
-        claimGenerator: 'Adobe_Photoshop/25.0',
-      );
+      const manifest = Manifest(claimGenerator: 'Adobe_Photoshop/25.0');
 
       final viewData = ManifestViewDataMapper.map(manifest);
 
@@ -114,10 +109,7 @@ void main() {
           producer: 'Test Producer',
           website: 'https://example.com',
           socialAccounts: [
-            SocialAccount(
-              platform: 'Twitter',
-              url: 'https://twitter.com/user',
-            ),
+            SocialAccount(platform: 'Twitter', url: 'https://twitter.com/user'),
           ],
         ),
       );
@@ -223,14 +215,8 @@ void main() {
             'title': 'composite.jpg',
             'assertions': [],
             'ingredients': [
-              {
-                'title': 'background.jpg',
-                'active_manifest': 'urn:c2pa:bg',
-              },
-              {
-                'title': 'overlay.png',
-                'active_manifest': 'urn:c2pa:overlay',
-              },
+              {'title': 'background.jpg', 'active_manifest': 'urn:c2pa:bg'},
+              {'title': 'overlay.png', 'active_manifest': 'urn:c2pa:overlay'},
             ],
           },
           'urn:c2pa:bg': {
@@ -360,10 +346,7 @@ void main() {
         'manifests': <String, dynamic>{},
       });
 
-      expect(
-        () => ProvenanceMapper.mapToGraph(store),
-        throwsStateError,
-      );
+      expect(() => ProvenanceMapper.mapToGraph(store), throwsStateError);
     });
 
     test('mapToGraph attaches manifestViewData to nodes', () {
@@ -408,7 +391,10 @@ void main() {
       final graph = ProvenanceMapper.mapToGraph(store);
 
       expect(graph.nodes.length, 2);
-      expect(graph.nodes.keys, containsAll(['urn:c2pa:main', 'urn:c2pa:child']));
+      expect(
+        graph.nodes.keys,
+        containsAll(['urn:c2pa:main', 'urn:c2pa:child']),
+      );
     });
   });
 }

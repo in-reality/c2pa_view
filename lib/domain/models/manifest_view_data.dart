@@ -65,10 +65,7 @@ class GenerativeInfo {
   final GenerativeType type;
   final List<String> softwareAgents;
 
-  const GenerativeInfo({
-    required this.type,
-    this.softwareAgents = const [],
-  });
+  const GenerativeInfo({required this.type, this.softwareAgents = const []});
 
   String get description {
     switch (type) {
@@ -83,11 +80,7 @@ class GenerativeInfo {
   }
 }
 
-enum GenerativeType {
-  aiGenerated,
-  compositeWithAi,
-  legacy,
-}
+enum GenerativeType { aiGenerated, compositeWithAi, legacy }
 
 /// Display info for the claim generator (app/device).
 @immutable
@@ -177,11 +170,7 @@ class IngredientDisplayInfo {
   ValidationResult get credentialResult => summary.validationResult;
 }
 
-enum IngredientRelationship {
-  parentOf,
-  componentOf,
-  inputTo,
-}
+enum IngredientRelationship { parentOf, componentOf, inputTo }
 
 /// Display-ready EXIF / camera capture data.
 @immutable
@@ -248,8 +237,5 @@ class SocialAccountDisplayInfo {
   final String platform;
   final String url;
 
-  const SocialAccountDisplayInfo({
-    required this.platform,
-    required this.url,
-  });
+  const SocialAccountDisplayInfo({required this.platform, required this.url});
 }

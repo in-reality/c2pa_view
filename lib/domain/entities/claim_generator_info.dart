@@ -6,11 +6,7 @@ class ClaimGeneratorInfo extends Equatable {
   final String? version;
   final Map<String, dynamic>? icon;
 
-  const ClaimGeneratorInfo({
-    required this.name,
-    this.version,
-    this.icon,
-  });
+  const ClaimGeneratorInfo({required this.name, this.version, this.icon});
 
   factory ClaimGeneratorInfo.fromJson(final Map<String, dynamic> json) =>
       ClaimGeneratorInfo(

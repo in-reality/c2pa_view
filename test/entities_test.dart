@@ -33,11 +33,7 @@ void main() {
       final json = {
         'issuer': 'Test',
         'cert_chain': [
-          {
-            'subject': 'CN=Test',
-            'issuer': 'CN=Root',
-            'serial_number': 'ABC',
-          },
+          {'subject': 'CN=Test', 'issuer': 'CN=Root', 'serial_number': 'ABC'},
         ],
       };
 
@@ -75,8 +71,7 @@ void main() {
     });
 
     test('isError returns true for error codes', () {
-      final entry =
-          ValidationStatusEntry(code: 'assertion.hashedURI.mismatch');
+      final entry = ValidationStatusEntry(code: 'assertion.hashedURI.mismatch');
       expect(entry.isError, true);
     });
   });
@@ -139,10 +134,7 @@ void main() {
     });
 
     test('fromAssertionData captures unknown fields as custom', () {
-      final data = {
-        'tiff:Make': 'Canon',
-        'custom:VendorField': 'vendor_value',
-      };
+      final data = {'tiff:Make': 'Canon', 'custom:VendorField': 'vendor_value'};
 
       final exif = ExifData.fromAssertionData(data);
 
@@ -204,9 +196,7 @@ void main() {
     test('fromAssertionData detects do-not-train', () {
       final data = {
         'entries': [
-          {
-            'use': 'notAllowed',
-          },
+          {'use': 'notAllowed'},
         ],
       };
 
@@ -266,7 +256,10 @@ void main() {
     test('toFlatEntries flattens nested maps', () {
       final field = CustomField(
         key: 'parent',
-        value: {'child': 'value', 'nested': {'deep': 42}},
+        value: {
+          'child': 'value',
+          'nested': {'deep': 42},
+        },
         source: 's',
       );
       final entries = field.toFlatEntries();
@@ -305,7 +298,7 @@ void main() {
               'actions': [
                 {'action': 'c2pa.created'},
                 {'action': 'c2pa.edited'},
-              ]
+              ],
             },
           },
         ],
@@ -328,10 +321,7 @@ void main() {
         'assertions': [
           {
             'label': 'stds.exif',
-            'data': {
-              'tiff:Make': 'Nikon',
-              'tiff:Model': 'D850',
-            },
+            'data': {'tiff:Make': 'Nikon', 'tiff:Model': 'D850'},
           },
         ],
         'ingredients': [],
@@ -341,10 +331,7 @@ void main() {
 
       expect(manifest.exifData, isNotNull);
       expect(manifest.exifData!.cameraMake, 'Nikon');
-      expect(
-        manifest.assertions.where((a) => a.label == 'stds.exif'),
-        isEmpty,
-      );
+      expect(manifest.assertions.where((a) => a.label == 'stds.exif'), isEmpty);
     });
 
     test('fromJson routes creative work assertion', () {
@@ -352,9 +339,7 @@ void main() {
         'assertions': [
           {
             'label': 'stds.schema-org.CreativeWork',
-            'data': {
-              'author': 'Jane',
-            },
+            'data': {'author': 'Jane'},
           },
         ],
         'ingredients': [],
@@ -456,8 +441,7 @@ void main() {
       final manifest = Manifest.fromJson(json);
 
       expect(manifest.validationStatus.length, 1);
-      expect(manifest.validationStatus.first.code,
-          'claimSignature.validated');
+      expect(manifest.validationStatus.first.code, 'claimSignature.validated');
     });
 
     test('fromJson extracts custom action parameters', () {
@@ -474,7 +458,7 @@ void main() {
                     'vendorCustomParam': 'custom_value',
                   },
                 },
-              ]
+              ],
             },
           },
         ],
@@ -483,9 +467,10 @@ void main() {
 
       final manifest = Manifest.fromJson(json);
 
-      final customActionFields = manifest.customFields
-          .where((f) => f.source == 'action_parameter')
-          .toList();
+      final customActionFields =
+          manifest.customFields
+              .where((f) => f.source == 'action_parameter')
+              .toList();
       expect(customActionFields.length, 1);
       expect(customActionFields.first.key, 'vendorCustomParam');
       expect(customActionFields.first.parentLabel, 'c2pa.created');
@@ -514,10 +499,7 @@ void main() {
     test('fromJson parses thumbnail', () {
       final json = {
         'title': 'test.jpg',
-        'thumbnail': {
-          'format': 'image/jpeg',
-          'identifier': 'thumb-1',
-        },
+        'thumbnail': {'format': 'image/jpeg', 'identifier': 'thumb-1'},
       };
 
       final ingredient = Ingredient.fromJson(json);
@@ -565,10 +547,7 @@ void main() {
       final store = ManifestStore.fromJson(json);
 
       expect(store.validationStatus.length, 1);
-      expect(
-        store.manifests['urn:c2pa:main']!.validationStatus.length,
-        1,
-      );
+      expect(store.manifests['urn:c2pa:main']!.validationStatus.length, 1);
     });
   });
 }

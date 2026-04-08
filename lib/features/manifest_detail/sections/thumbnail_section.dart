@@ -23,9 +23,10 @@ class ThumbnailSection extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
       child: MouseRegion(
-        cursor: onTapFullScreen != null
-            ? SystemMouseCursors.click
-            : MouseCursor.defer,
+        cursor:
+            onTapFullScreen != null
+                ? SystemMouseCursors.click
+                : MouseCursor.defer,
         child: GestureDetector(
           onTap: onTapFullScreen,
           child: Stack(

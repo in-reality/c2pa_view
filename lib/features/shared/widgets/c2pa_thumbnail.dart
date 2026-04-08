@@ -40,15 +40,16 @@ class C2paThumbnail extends StatelessWidget {
       child: SizedBox(
         width: size,
         height: size,
-        child: image != null
-            ? Image(
-                image: image!,
-                width: size,
-                height: size,
-                fit: fit,
-                errorBuilder: (_, __, ___) => _placeholder(theme),
-              )
-            : _placeholder(theme),
+        child:
+            image != null
+                ? Image(
+                  image: image!,
+                  width: size,
+                  height: size,
+                  fit: fit,
+                  errorBuilder: (_, __, ___) => _placeholder(theme),
+                )
+                : _placeholder(theme),
       ),
     );
   }
@@ -57,11 +58,7 @@ class C2paThumbnail extends StatelessWidget {
     return Container(
       color: theme.surfaceVariantColor,
       child: Center(
-        child: Icon(
-          _placeholderIcon,
-          size: size * 0.4,
-          color: theme.iconColor,
-        ),
+        child: Icon(_placeholderIcon, size: size * 0.4, color: theme.iconColor),
       ),
     );
   }

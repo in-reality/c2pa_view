@@ -47,16 +47,17 @@ class _DetailHeaderState extends State<DetailHeader> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: data.title != null
-                    ? Text(
-                        data.title!,
-                        style: theme.titleLargeStyle.copyWith(
-                          color: theme.textPrimaryColor,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      )
-                    : const SizedBox.shrink(),
+                child:
+                    data.title != null
+                        ? Text(
+                          data.title!,
+                          style: theme.titleLargeStyle.copyWith(
+                            color: theme.textPrimaryColor,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        )
+                        : const SizedBox.shrink(),
               ),
               if (data.rawJson != null)
                 Tooltip(
@@ -67,13 +68,10 @@ class _DetailHeaderState extends State<DetailHeader> {
                     padding: const EdgeInsets.all(6),
                     constraints: const BoxConstraints(),
                     style: IconButton.styleFrom(
-                      foregroundColor: _copied
-                          ? theme.validColor
-                          : theme.iconColor,
+                      foregroundColor:
+                          _copied ? theme.validColor : theme.iconColor,
                     ),
-                    icon: Icon(
-                      _copied ? Icons.check : Icons.copy_outlined,
-                    ),
+                    icon: Icon(_copied ? Icons.check : Icons.copy_outlined),
                   ),
                 ),
             ],

@@ -29,7 +29,8 @@ class CameraCaptureSection extends StatelessWidget {
 
     return CollapsibleSection(
       title: 'Camera capture details',
-      description: 'Additional data sourced from the camera used to take an '
+      description:
+          'Additional data sourced from the camera used to take an '
           'image or video. EXIF data can be edited by the content producer.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

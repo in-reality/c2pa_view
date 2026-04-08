@@ -16,11 +16,7 @@ class IngredientCard extends StatelessWidget {
   final IngredientDisplayInfo ingredient;
   final VoidCallback? onTap;
 
-  const IngredientCard({
-    super.key,
-    required this.ingredient,
-    this.onTap,
-  });
+  const IngredientCard({super.key, required this.ingredient, this.onTap});
 
   @override
   Widget build(BuildContext context) {
