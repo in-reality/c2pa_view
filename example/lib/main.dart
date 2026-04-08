@@ -1,122 +1,427 @@
+import 'package:c2pa_view/c2pa_view.dart';
+import 'package:desktop_drop/desktop_drop.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mime/mime.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  String? initError;
+  try {
+    await RustLib.init().timeout(
+      const Duration(seconds: 15),
+      onTimeout: () => throw Exception('RustLib.init timed out after 15s'),
+    );
+  } catch (e, st) {
+    initError = e.toString();
+    debugPrint('RustLib.init failed: $e\n$st');
+  }
+  runApp(C2paExampleApp(initError: initError));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+/// Root app with [C2paViewerTheme] so viewer widgets resolve theme.
+class C2paExampleApp extends StatelessWidget {
+  const C2paExampleApp({super.key, this.initError});
 
-  // This widget is the root of your application.
+  final String? initError;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'c2pa_view example',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: C2paViewerTheme(
+        data: const C2paViewerThemeData(),
+        child: HomePage(initError: initError),
+      ),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key, this.initError});
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+  final String? initError;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _HomePageState extends State<HomePage> {
+  Uint8List? _fileBytes;
+  String? _fileName;
+  bool _isDragging = false;
+  String? _error;
 
-  void _incrementCounter() {
+  void _clearFile() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _fileBytes = null;
+      _fileName = null;
+      _error = null;
     });
+  }
+
+  Future<void> _loadFile(Uint8List bytes, String name) async {
+    setState(() {
+      _fileBytes = bytes;
+      _fileName = name;
+      _error = null;
+    });
+  }
+
+  Future<void> _pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) {
+      return;
+    }
+    final f = result.files.single;
+    final bytes = f.bytes;
+    if (bytes == null) {
+      setState(() {
+        _error = 'Could not read file bytes (try a smaller file on web).';
+      });
+      return;
+    }
+    await _loadFile(bytes, f.name);
+  }
+
+  DropItem? _firstLeafFile(List<DropItem> items) {
+    for (final item in items) {
+      if (item is DropItemDirectory) {
+        final nested = _firstLeafFile(item.children);
+        if (nested != null) {
+          return nested;
+        }
+      } else {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _onDropDone(DropDoneDetails detail) async {
+    setState(() => _isDragging = false);
+    if (detail.files.isEmpty) {
+      return;
+    }
+    final file = _firstLeafFile(detail.files);
+    if (file == null) {
+      setState(() {
+        _error = 'No file found in the drop (folders are not supported).';
+      });
+      return;
+    }
+    try {
+      final bytes = await file.readAsBytes();
+      await _loadFile(bytes, file.name);
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to read dropped file: $e';
+      });
+    }
+  }
+
+  String _mimeTypeForFileName(String name) {
+    return lookupMimeType(name) ?? 'application/octet-stream';
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    if (_fileBytes != null && _fileName != null) {
+      return _ManifestViewScaffold(
+        fileBytes: _fileBytes!,
+        fileName: _fileName!,
+        initError: widget.initError,
+        onBack: _clearFile,
+        mimeTypeForFileName: _mimeTypeForFileName,
+      );
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      appBar: AppBar(title: const Text('c2pa_view example')),
+      body: SelectionArea(
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
           children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            if (widget.initError != null)
+              _InitErrorBanner(message: widget.initError!),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            Expanded(
+              child: Center(
+                child: DropTarget(
+                  onDragEntered: (_) {
+                    setState(() => _isDragging = true);
+                  },
+                  onDragExited: (_) {
+                    setState(() => _isDragging = false);
+                  },
+                  onDragDone: _onDropDone,
+                  child: GestureDetector(
+                    onTap: _pickFile,
+                    behavior: HitTestBehavior.opaque,
+                    child: _SelectFilePanel(isDragging: _isDragging),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+    );
+  }
+}
+
+class _InitErrorBanner extends StatelessWidget {
+  const _InitErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16.0),
+      color: Colors.orange.shade100,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Rust library failed to load',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Colors.orange.shade900,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 4),
+          SelectableText(
+            message,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.orange.shade900,
+                ),
+          ),
+          if (kIsWeb)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text(
+                'On web, the Rust/WASM build may be missing or CORS may '
+                'block loading. See flutter_rust_bridge web documentation.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.orange.shade800,
+                      fontStyle: FontStyle.italic,
+                    ),
+              ),
+            ),
+        ],
       ),
     );
+  }
+}
+
+/// Center "Select file" area with dashed border and drag-hover styling.
+class _SelectFilePanel extends StatelessWidget {
+  const _SelectFilePanel({required this.isDragging});
+
+  final bool isDragging;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor =
+        isDragging ? Colors.blue : Colors.grey.shade400;
+    final bgColor =
+        isDragging ? Colors.blue.shade50 : Colors.grey.shade100;
+    final iconColor =
+        isDragging ? Colors.blue : Colors.grey.shade600;
+
+    return CustomPaint(
+      painter: _DashedRoundedRectPainter(
+        color: borderColor,
+        strokeWidth: 2,
+        radius: 12,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Container(
+          width: 304,
+          height: 204,
+          padding: const EdgeInsets.all(24.0),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.upload_file, size: 48, color: iconColor),
+            const SizedBox(height: 16),
+            Text(
+              'Select file',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Click to choose a file, or drag and drop here',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey.shade700,
+                  ),
+            ),
+          ],
+        ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashedRoundedRectPainter extends CustomPainter {
+  _DashedRoundedRectPainter({
+    required this.color,
+    required this.strokeWidth,
+    required this.radius,
+  });
+
+  final Color color;
+  final double strokeWidth;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final rect = Rect.fromLTWH(
+      strokeWidth / 2,
+      strokeWidth / 2,
+      size.width - strokeWidth,
+      size.height - strokeWidth,
+    );
+    final rrect = RRect.fromRectAndRadius(
+      rect,
+      Radius.circular(radius),
+    );
+    final path = Path()..addRRect(rrect);
+
+    const dashLength = 8.0;
+    const gapLength = 4.0;
+
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final double len = dashLength;
+        final double next = (distance + len).clamp(0.0, metric.length);
+        canvas.drawPath(metric.extractPath(distance, next), paint);
+        distance = next + gapLength;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRoundedRectPainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.radius != radius;
+  }
+}
+
+class _ManifestViewScaffold extends StatelessWidget {
+  const _ManifestViewScaffold({
+    required this.fileBytes,
+    required this.fileName,
+    required this.initError,
+    required this.onBack,
+    required this.mimeTypeForFileName,
+  });
+
+  final Uint8List fileBytes;
+  final String fileName;
+  final String? initError;
+  final VoidCallback onBack;
+  final String Function(String name) mimeTypeForFileName;
+
+  @override
+  Widget build(BuildContext context) {
+    final mimeType = mimeTypeForFileName(fileName);
+    final store = ManifestStore.fromBytes(fileBytes, mimeType);
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: onBack,
+        ),
+        title: Text(fileName),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (initError != null)
+            _InitErrorBanner(message: initError!),
+          Expanded(
+            child: _buildBody(context, store, mimeType),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody(
+    BuildContext context,
+    ManifestStore? store,
+    String mimeType,
+  ) {
+    if (store == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('No C2PA manifest found in this file.'),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: onBack,
+                child: const Text('Choose another file'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    try {
+      final graph = ProvenanceMapper.mapToGraph(store);
+      final mediaImage = MemoryImage(fileBytes);
+      return C2paManifestViewer(
+        graph: graph,
+        mimeType: mimeType,
+        mediaImage: mediaImage,
+      );
+    } catch (e, st) {
+      debugPrint('C2paManifestViewer build error: $e\n$st');
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: SelectableText(
+            'Could not build manifest viewer:\n$e',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ),
+      );
+    }
   }
 }

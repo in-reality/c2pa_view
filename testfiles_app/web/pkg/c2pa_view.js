@@ -26,14 +26,17 @@ let wasm_bindgen = (function(exports) {
          * @param {number | null} [initial]
          * @param {string | null} [script_src]
          * @param {string | null} [worker_js_preamble]
+         * @param {string | null} [wasm_bindgen_name]
          * @returns {WorkerPool}
          */
-        static new(initial, script_src, worker_js_preamble) {
+        static new(initial, script_src, worker_js_preamble, wasm_bindgen_name) {
             var ptr0 = isLikeNone(script_src) ? 0 : passStringToWasm0(script_src, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
             var len0 = WASM_VECTOR_LEN;
             var ptr1 = isLikeNone(worker_js_preamble) ? 0 : passStringToWasm0(worker_js_preamble, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
             var len1 = WASM_VECTOR_LEN;
-            const ret = wasm.workerpool_new(isLikeNone(initial) ? 0x100000001 : (initial) >>> 0, ptr0, len0, ptr1, len1);
+            var ptr2 = isLikeNone(wasm_bindgen_name) ? 0 : passStringToWasm0(wasm_bindgen_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            var len2 = WASM_VECTOR_LEN;
+            const ret = wasm.workerpool_new(isLikeNone(initial) ? 0x100000001 : (initial) >>> 0, ptr0, len0, ptr1, len1, ptr2, len2);
             if (ret[2]) {
                 throw takeFromExternrefTable0(ret[1]);
             }
@@ -53,13 +56,16 @@ let wasm_bindgen = (function(exports) {
          * @param {number} initial
          * @param {string} script_src
          * @param {string} worker_js_preamble
+         * @param {string} wasm_bindgen_name
          */
-        constructor(initial, script_src, worker_js_preamble) {
+        constructor(initial, script_src, worker_js_preamble, wasm_bindgen_name) {
             const ptr0 = passStringToWasm0(script_src, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
             const len0 = WASM_VECTOR_LEN;
             const ptr1 = passStringToWasm0(worker_js_preamble, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
             const len1 = WASM_VECTOR_LEN;
-            const ret = wasm.workerpool_new_raw(initial, ptr0, len0, ptr1, len1);
+            const ptr2 = passStringToWasm0(wasm_bindgen_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            const len2 = WASM_VECTOR_LEN;
+            const ret = wasm.workerpool_new_raw(initial, ptr0, len0, ptr1, len1, ptr2, len2);
             if (ret[2]) {
                 throw takeFromExternrefTable0(ret[1]);
             }
@@ -229,7 +235,7 @@ let wasm_bindgen = (function(exports) {
                 const ret = arg0.data;
                 return ret;
             },
-            __wbg_error_58701d99f55d2b25: function(arg0, arg1) {
+            __wbg_error_7bfe3b7ebaaa5936: function(arg0, arg1) {
                 console.error(getStringFromWasm0(arg0, arg1));
             },
             __wbg_error_a6fa202b58aa1cd3: function(arg0, arg1) {
@@ -338,7 +344,7 @@ let wasm_bindgen = (function(exports) {
             __wbg_postMessage_564f0071531c08c3: function() { return handleError(function (arg0, arg1) {
                 arg0.postMessage(arg1);
             }, arguments); },
-            __wbg_postMessage_c8f441bbd786152a: function() { return handleError(function (arg0, arg1) {
+            __wbg_postMessage_59736484efc322cf: function() { return handleError(function (arg0, arg1) {
                 arg0.postMessage(arg1);
             }, arguments); },
             __wbg_postMessage_edb4c90a528e5a8c: function() { return handleError(function (arg0, arg1) {
@@ -351,6 +357,10 @@ let wasm_bindgen = (function(exports) {
                 const ret = arg0.push(arg1);
                 return ret;
             },
+            __wbg_set_7eaa4f96924fd6b3: function() { return handleError(function (arg0, arg1, arg2) {
+                const ret = Reflect.set(arg0, arg1, arg2);
+                return ret;
+            }, arguments); },
             __wbg_set_onerror_492780fd0d8591f5: function(arg0, arg1) {
                 arg0.onerror = arg1;
             },
@@ -385,7 +395,7 @@ let wasm_bindgen = (function(exports) {
             },
             __wbindgen_cast_0000000000000001: function(arg0, arg1) {
                 // Cast intrinsic for `Closure(Closure { dtor_idx: 84, function: Function { arguments: [NamedExternref("Event")], shim_idx: 85, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-                const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h00497460cc20b1c4, wasm_bindgen__convert__closures_____invoke__ha53861230158eac1);
+                const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h663b45208c203647, wasm_bindgen__convert__closures_____invoke__h6886975c9bc89e64);
                 return ret;
             },
             __wbindgen_cast_0000000000000002: function(arg0) {
@@ -414,8 +424,8 @@ let wasm_bindgen = (function(exports) {
         };
     }
 
-    function wasm_bindgen__convert__closures_____invoke__ha53861230158eac1(arg0, arg1, arg2) {
-        wasm.wasm_bindgen__convert__closures_____invoke__ha53861230158eac1(arg0, arg1, arg2);
+    function wasm_bindgen__convert__closures_____invoke__h6886975c9bc89e64(arg0, arg1, arg2) {
+        wasm.wasm_bindgen__convert__closures_____invoke__h6886975c9bc89e64(arg0, arg1, arg2);
     }
 
     const WorkerPoolFinalization = (typeof FinalizationRegistry === 'undefined')

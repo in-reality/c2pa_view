@@ -1,0 +1,11 @@
+{
+  "name": "c2pa_view",
+  "version": "0.1.0",
+  "files": [
+    "c2pa_view_bg.wasm",
+    "c2pa_view.js",
+    "c2pa_view.d.ts"
+  ],
+  "browser": "c2pa_view.js",
+  "types": "c2pa_view.d.ts"
+}

@@ -8,7 +8,7 @@ crate-type = ["cdylib", "staticlib", "lib"]
 
 [dependencies]
 c2pa = {git = "ssh://git@github.com/NorthGuard/c2pa-rs.git", branch = "main", features = ["file_io", "rust_native_crypto"] }
-flutter_rust_bridge = "=2.11.1"
+flutter_rust_bridge = "=2.12.0"
 mime_guess = "2.0.5"
 serde_json = "1"
 

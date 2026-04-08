@@ -1,20 +1,18 @@
-//! Integration test that validates every file in the C2PA conformance evidence
-//! corpus through `c2pa_view`'s `get_manifest_with_validation` API.
+//! Integration tests that validate the C2PA conformance evidence corpus through
+//! `c2pa_view`'s `get_manifest_with_validation` API.
 //!
-//! The test reads `EVIDENCE_DIR` (env var, defaults to `<repo>/c2pa/evidence/`)
-//! and processes:
-//! - Signed files in `assets/` (media files whose stem does NOT end with `_unsigned`)
-//! - Third-party files in `third_party/**/*.{jpg,mp4,dng,...}`
+//! The tests read `EVIDENCE_DIR` (env var, defaults to `<repo>/c2pa/evidence/`)
+//! and cover four categories:
 //!
-//! For each file it asserts:
-//! - A manifest was successfully extracted (non-None result).
-//! - The JSON contains `active_manifest`.
-//! - `validation_status` entries are either empty or contain only the expected
-//!   `signingCredential.untrusted` code (acceptable with test certs).
-//!
-//! For InReality-signed files (those in `assets/` without `_unsigned`), it
-//! additionally checks:
-//! - `claim_generator_info[0].name` == `"inreality-capture"`.
+//! 1. **Positive (own outputs)** — `assets/`: signed files must have
+//!    `active_manifest`, `claim_generator_info[0].name == "inreality-capture"`,
+//!    and only `signingCredential.untrusted` in `validation_status`.
+//! 2. **Positive (third-party)** — `third_party/`: signed files from other
+//!    vendors must have `active_manifest` and only untrusted-cert statuses.
+//! 3. **Negative (error detection)** — `negative/E-*` and `CIE-*`: files with
+//!    intentional errors must produce specific error codes in `validation_status`.
+//! 4. **No manifest** — `negative/*-A.jpg`: plain files without C2PA data must
+//!    return `Ok(None)`.
 //!
 //! Logs are written to `EVIDENCE_DIR/logs/c2pa_view_<id>.json`.
 
@@ -295,6 +293,227 @@ fn validate_third_party_files() {
     assert!(
         failures.is_empty(),
         "Third-party validation failures:\n{}",
+        failures.join("\n")
+    );
+}
+
+// ── Negative / error-detection tests ─────────────────────────────────
+
+/// Each entry maps a filename in `negative/` to the error codes that MUST
+/// appear in `validation_status`. The file may also contain informational
+/// statuses (e.g. `signingCredential.untrusted`); those are ignored.
+const NEGATIVE_EXPECTATIONS: &[(&str, &[&str])] = &[
+    (
+        "adobe-20220124-E-dat-CA.jpg",
+        &["assertion.dataHash.mismatch"],
+    ),
+    (
+        "adobe-20220124-E-sig-CA.jpg",
+        &["claimSignature.mismatch"],
+    ),
+    (
+        "adobe-20220124-E-uri-CA.jpg",
+        &["assertion.hashedURI.mismatch"],
+    ),
+    (
+        "adobe-20220124-E-clm-CAICAI.jpg",
+        &["claim.missing"],
+    ),
+    (
+        "adobe-20220124-E-uri-CIE-sig-CA.jpg",
+        &["assertion.hashedURI.mismatch"],
+    ),
+];
+
+/// Files in `negative/` that have a C2PA manifest but are NOT expected to
+/// produce error-level validation statuses (ingredient-level issues may not
+/// surface as top-level errors depending on the c2pa-rs version).
+const NEGATIVE_NON_ERROR_FILES: &[&str] = &[
+    "adobe-20220124-CIE-sig-CA.jpg",
+];
+
+/// Files in `negative/` that contain no C2PA manifest at all.
+const NO_MANIFEST_FILES: &[&str] = &[
+    "adobe-20220124-A.jpg",
+];
+
+fn is_error_status(code: &str) -> bool {
+    !code.ends_with(".validated")
+        && !code.ends_with(".trusted")
+        && !code.ends_with(".untrusted")
+        && !code.ends_with(".match")
+}
+
+/// Try to extract a manifest, returning the parsed JSON and statuses,
+/// or `None` if no manifest was found.
+fn try_validate_file(path: &Path) -> Option<ValidationResult> {
+    let file_name = path.file_name().unwrap().to_string_lossy().to_string();
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("jpg");
+    let mime = mime_for_extension(ext);
+    let bytes = fs::read(path).unwrap_or_else(|e| panic!("cannot read {}: {e}", path.display()));
+
+    println!("  Validating: {file_name} ({mime}, {} bytes)", bytes.len());
+
+    let result = get_manifest_with_validation(bytes, mime.to_string());
+    let json_str = match result {
+        Ok(Some(s)) => s,
+        Ok(None) => return None,
+        Err(e) => {
+            println!("  API returned Err (expected for some files): {e}");
+            return None;
+        }
+    };
+
+    let json: serde_json::Value = serde_json::from_str(&json_str)
+        .unwrap_or_else(|e| panic!("  Bad JSON for {file_name}: {e}"));
+
+    let statuses: Vec<String> = json
+        .get("validation_status")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|s| s.get("code").and_then(|c| c.as_str()).map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    Some(ValidationResult {
+        file_name,
+        json,
+        validation_statuses: statuses,
+    })
+}
+
+#[test]
+fn validate_negative_files() {
+    let edir = evidence_dir();
+    let logs_dir = edir.join("logs");
+    let neg_dir = edir.join("negative");
+
+    println!("\n=== c2pa_view: validating negative/ error files ===\n");
+
+    if !neg_dir.exists() {
+        println!("  No negative/ directory found -- skipping");
+        return;
+    }
+
+    let mut failures = Vec::new();
+
+    for &(filename, expected_errors) in NEGATIVE_EXPECTATIONS {
+        let path = neg_dir.join(filename);
+        if !path.exists() {
+            let msg = format!("{filename}: file not found");
+            eprintln!("  FAIL: {msg}");
+            failures.push(msg);
+            continue;
+        }
+
+        let result = try_validate_file(&path)
+            .unwrap_or_else(|| panic!("  {filename}: expected manifest with errors, got None"));
+
+        let safe_id = format!("neg_{}", path.file_stem().unwrap().to_string_lossy());
+        save_log(&logs_dir, &safe_id, &result.json);
+
+        for &expected in expected_errors {
+            if !result.validation_statuses.iter().any(|s| s == expected) {
+                let msg = format!(
+                    "{filename}: missing expected error code \"{expected}\", got: {:?}",
+                    result.validation_statuses
+                );
+                eprintln!("  FAIL: {msg}");
+                failures.push(msg);
+            }
+        }
+
+        let error_codes: Vec<&String> = result
+            .validation_statuses
+            .iter()
+            .filter(|s| is_error_status(s))
+            .collect();
+
+        if error_codes.is_empty() {
+            let msg = format!(
+                "{filename}: expected at least one error status, got only: {:?}",
+                result.validation_statuses
+            );
+            eprintln!("  FAIL: {msg}");
+            failures.push(msg);
+        } else {
+            println!(
+                "  OK: {filename} (errors: {:?}, all: {:?})",
+                error_codes, result.validation_statuses
+            );
+        }
+    }
+
+    for &filename in NEGATIVE_NON_ERROR_FILES {
+        let path = neg_dir.join(filename);
+        if !path.exists() {
+            continue;
+        }
+        if let Some(result) = try_validate_file(&path) {
+            let safe_id = format!("neg_{}", path.file_stem().unwrap().to_string_lossy());
+            save_log(&logs_dir, &safe_id, &result.json);
+            println!(
+                "  OK: {filename} (manifest found, statuses: {:?})",
+                result.validation_statuses
+            );
+        } else {
+            println!("  OK: {filename} (no manifest returned)");
+        }
+    }
+
+    assert!(
+        failures.is_empty(),
+        "Negative validation failures:\n{}",
+        failures.join("\n")
+    );
+}
+
+#[test]
+fn validate_no_manifest_files() {
+    let edir = evidence_dir();
+    let neg_dir = edir.join("negative");
+
+    println!("\n=== c2pa_view: validating no-manifest files ===\n");
+
+    if !neg_dir.exists() {
+        println!("  No negative/ directory found -- skipping");
+        return;
+    }
+
+    let mut failures = Vec::new();
+
+    for &filename in NO_MANIFEST_FILES {
+        let path = neg_dir.join(filename);
+        if !path.exists() {
+            let msg = format!("{filename}: file not found");
+            eprintln!("  FAIL: {msg}");
+            failures.push(msg);
+            continue;
+        }
+
+        match try_validate_file(&path) {
+            None => {
+                println!("  OK: {filename} (correctly returned no manifest)");
+            }
+            Some(result) => {
+                let msg = format!(
+                    "{filename}: expected no manifest, but got one with statuses: {:?}",
+                    result.validation_statuses
+                );
+                eprintln!("  FAIL: {msg}");
+                failures.push(msg);
+            }
+        }
+    }
+
+    assert!(
+        failures.is_empty(),
+        "No-manifest validation failures:\n{}",
         failures.join("\n")
     );
 }

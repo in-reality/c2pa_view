@@ -5,7 +5,7 @@ declare namespace wasm_bindgen {
     export class WorkerPool {
         free(): void;
         [Symbol.dispose](): void;
-        static new(initial?: number | null, script_src?: string | null, worker_js_preamble?: string | null): WorkerPool;
+        static new(initial?: number | null, script_src?: string | null, worker_js_preamble?: string | null, wasm_bindgen_name?: string | null): WorkerPool;
         /**
          * Creates a new `WorkerPool` which immediately creates `initial` workers.
          *
@@ -18,7 +18,7 @@ declare namespace wasm_bindgen {
          * Returns any error that may happen while a JS web worker is created and a
          * message is sent to it.
          */
-        constructor(initial: number, script_src: string, worker_js_preamble: string);
+        constructor(initial: number, script_src: string, worker_js_preamble: string, wasm_bindgen_name: string);
     }
 
     export function frb_dart_fn_deliver_output(call_id: number, ptr_: any, rust_vec_len_: number, data_len_: number): void;
@@ -61,18 +61,18 @@ declare interface InitOutput {
     readonly frb_pde_ffi_dispatcher_primary: (a: number, b: any, c: any, d: number, e: number) => void;
     readonly frb_pde_ffi_dispatcher_sync: (a: number, b: any, c: number, d: number) => any;
     readonly __wbg_workerpool_free: (a: number, b: number) => void;
-    readonly workerpool_new: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
-    readonly workerpool_new_raw: (a: number, b: number, c: number, d: number, e: number) => [number, number, number];
+    readonly workerpool_new: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number, number];
+    readonly workerpool_new_raw: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number, number];
+    readonly frb_dart_opaque_dart2rust_encode: (a: any, b: any) => number;
     readonly frb_dart_opaque_drop_thread_box_persistent_handle: (a: number) => void;
     readonly wasm_start_callback: () => void;
-    readonly receive_transfer_closure: (a: number, b: number, c: number) => [number, number];
-    readonly frb_dart_opaque_dart2rust_encode: (a: any, b: any) => number;
     readonly frb_dart_opaque_rust2dart_decode: (a: number) => any;
+    readonly receive_transfer_closure: (a: number, b: number, c: number) => [number, number];
     readonly frb_rust_vec_u8_free: (a: number, b: number) => void;
     readonly frb_rust_vec_u8_new: (a: number) => number;
     readonly frb_rust_vec_u8_resize: (a: number, b: number, c: number) => number;
-    readonly wasm_bindgen__closure__destroy__h00497460cc20b1c4: (a: number, b: number) => void;
-    readonly wasm_bindgen__convert__closures_____invoke__ha53861230158eac1: (a: number, b: number, c: any) => void;
+    readonly wasm_bindgen__closure__destroy__h663b45208c203647: (a: number, b: number) => void;
+    readonly wasm_bindgen__convert__closures_____invoke__h6886975c9bc89e64: (a: number, b: number, c: any) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;

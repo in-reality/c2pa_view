@@ -1,5 +1,5 @@
 name: example
-description: "A new Flutter project."
+description: "Minimal c2pa_view demo: pick a file and view its C2PA manifest."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -31,9 +31,11 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
+  c2pa_view:
+    path: ..
+  file_picker: ^8.0.0
+  desktop_drop: ^0.5.0
+  mime: ^2.0.0
 
 dev_dependencies:
   flutter_test:
