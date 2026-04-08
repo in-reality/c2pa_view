@@ -11,7 +11,7 @@ import 'package:http/http.dart' as http;
 /// files, URLs, or raw bytes.
 class C2paBridgeService {
   /// Get raw manifest JSON from a local file path.
-  static String? getManifestJsonFromFile(String path) {
+  static String? getManifestJsonFromFile(final String path) {
     final file = File(path);
     return getManifestWithValidationFromPath(
       fileBytes: file.readAsBytesSync(),
@@ -21,8 +21,8 @@ class C2paBridgeService {
 
   /// Get raw manifest JSON from a URL.
   static Future<String?> getManifestJsonFromUrl(
-    String url, {
-    String? format,
+    final String url, {
+    final String? format,
   }) async {
     final response = await http.get(Uri.parse(url));
     return getManifestWithValidation(
@@ -33,34 +33,40 @@ class C2paBridgeService {
 
   /// Get raw manifest JSON from bytes.
   static String? getManifestJsonFromBytes({
-    required List<int> fileBytes,
-    required String format,
+    required final List<int> fileBytes,
+    required final String format,
   }) => getManifestWithValidation(fileBytes: fileBytes, format: format);
 
   /// Load a [ManifestStore] from a local file path.
-  static ManifestStore? loadFromFile(String path) {
+  static ManifestStore? loadFromFile(final String path) {
     final json = getManifestJsonFromFile(path);
-    if (json == null) return null;
+    if (json == null) {
+      return null;
+    }
     return ManifestStore.fromJson(jsonDecode(json));
   }
 
   /// Load a [ManifestStore] from a URL.
   static Future<ManifestStore?> loadFromUrl(
-    String url, {
-    String? format,
+    final String url, {
+    final String? format,
   }) async {
     final json = await getManifestJsonFromUrl(url, format: format);
-    if (json == null) return null;
+    if (json == null) {
+      return null;
+    }
     return ManifestStore.fromJson(jsonDecode(json));
   }
 
   /// Load a [ManifestStore] from raw bytes.
   static ManifestStore? loadFromBytes({
-    required List<int> fileBytes,
-    required String format,
+    required final List<int> fileBytes,
+    required final String format,
   }) {
     final json = getManifestJsonFromBytes(fileBytes: fileBytes, format: format);
-    if (json == null) return null;
+    if (json == null) {
+      return null;
+    }
     return ManifestStore.fromJson(jsonDecode(json));
   }
 }

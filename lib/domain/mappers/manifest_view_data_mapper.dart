@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter/widgets.dart' hide Action;
-
 import 'package:c2pa_view/domain/entities/action.dart';
 import 'package:c2pa_view/domain/entities/creative_work.dart';
 import 'package:c2pa_view/domain/entities/custom_field.dart';
@@ -14,6 +12,7 @@ import 'package:c2pa_view/domain/entities/validation_status.dart';
 import 'package:c2pa_view/domain/models/manifest_summary.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
 import 'package:c2pa_view/domain/models/validation_result.dart';
+import 'package:flutter/widgets.dart' hide Action;
 
 /// Action parameter keys that are already represented as structured fields
 /// on [ActionDisplayInfo] and should not be treated as custom params.
@@ -30,11 +29,10 @@ const _knownActionParams = {
 /// Converts a [Manifest] domain entity into a [ManifestViewData] view model.
 class ManifestViewDataMapper {
   static ManifestViewData map(
-    Manifest manifest, {
-    Map<String, dynamic>? rawJson,
-    Map<String, ManifestSummary>? summaries,
-  }) {
-    return ManifestViewData(
+    final Manifest manifest, {
+    final Map<String, dynamic>? rawJson,
+    final Map<String, ManifestSummary>? summaries,
+  }) => ManifestViewData(
       title: manifest.title,
       thumbnail: _toImageProvider(manifest.thumbnail),
       validationResult: mapValidation(manifest.validationStatus),
@@ -55,28 +53,31 @@ class ManifestViewDataMapper {
       creativeWorkCustomFields: manifest.creativeWork?.customFields ?? const [],
       rawJson: rawJson,
     );
-  }
 
-  static ValidationResult mapValidation(List<ValidationStatusEntry> statuses) {
-    if (statuses.isEmpty) return const ValidationResult.noCredential();
-    final hasError = statuses.any((s) => s.isError);
+  static ValidationResult mapValidation(final List<ValidationStatusEntry> statuses) {
+    if (statuses.isEmpty) {
+      return const ValidationResult.noCredential();
+    }
+    final hasError = statuses.any((final s) => s.isError);
     if (hasError) {
       final msg = statuses
-          .where((s) => s.isError)
-          .map((s) => s.explanation)
+          .where((final s) => s.isError)
+          .map((final s) => s.explanation)
           .join('; ');
       return ValidationResult.invalid(msg.isEmpty ? null : msg);
     }
     // No genuine errors — check whether the signer is outside a trust list.
-    final hasUntrusted = statuses.any((s) => s.isUntrusted);
+    final hasUntrusted = statuses.any((final s) => s.isUntrusted);
     if (hasUntrusted) {
       return const ValidationResult.untrusted();
     }
     return const ValidationResult.valid();
   }
 
-  static ImageProvider? _toImageProvider(ThumbnailData? thumbnailData) {
-    if (thumbnailData == null) return null;
+  static ImageProvider? _toImageProvider(final ThumbnailData? thumbnailData) {
+    if (thumbnailData == null) {
+      return null;
+    }
     if (thumbnailData.data != null && thumbnailData.data!.isNotEmpty) {
       return MemoryImage(thumbnailData.data!);
     }
@@ -97,8 +98,10 @@ class ManifestViewDataMapper {
     return null;
   }
 
-  static GenerativeInfo? _extractGenerativeInfo(Manifest manifest) {
-    if (manifest.actions == null) return null;
+  static GenerativeInfo? _extractGenerativeInfo(final Manifest manifest) {
+    if (manifest.actions == null) {
+      return null;
+    }
 
     var hasAiGeneration = false;
     var hasComposite = false;
@@ -144,7 +147,7 @@ class ManifestViewDataMapper {
     return null;
   }
 
-  static ClaimGeneratorDisplayInfo? _mapClaimGenerator(Manifest manifest) {
+  static ClaimGeneratorDisplayInfo? _mapClaimGenerator(final Manifest manifest) {
     if (manifest.claimGeneratorInfo.isNotEmpty) {
       final info = manifest.claimGeneratorInfo.first;
       return ClaimGeneratorDisplayInfo(name: info.name, version: info.version);
@@ -159,9 +162,11 @@ class ManifestViewDataMapper {
     return null;
   }
 
-  static List<ActionDisplayInfo> _mapActions(List<Action>? actions) {
-    if (actions == null) return [];
-    return actions.map<ActionDisplayInfo>((a) {
+  static List<ActionDisplayInfo> _mapActions(final List<Action>? actions) {
+    if (actions == null) {
+      return [];
+    }
+    return actions.map<ActionDisplayInfo>((final a) {
       final sourceType =
           a.sourceType ?? a.parameters?['digitalSourceType'] as String?;
       final isAi =
@@ -197,10 +202,9 @@ class ManifestViewDataMapper {
   }
 
   static List<IngredientDisplayInfo> _mapIngredients(
-    List<Ingredient> ingredients,
-    Map<String, ManifestSummary>? summaries,
-  ) {
-    return ingredients.map((i) {
+    final List<Ingredient> ingredients,
+    final Map<String, ManifestSummary>? summaries,
+  ) => ingredients.map((final i) {
       IngredientRelationship? relationship;
       if (i.relationship != null) {
         switch (i.relationship) {
@@ -232,10 +236,11 @@ class ManifestViewDataMapper {
         relationship: relationship,
       );
     }).toList();
-  }
 
-  static List<String> _extractAiTools(Manifest manifest) {
-    if (manifest.actions == null) return [];
+  static List<String> _extractAiTools(final Manifest manifest) {
+    if (manifest.actions == null) {
+      return [];
+    }
     final tools = <String>{};
     for (final action in manifest.actions!) {
       final sourceType =
@@ -244,14 +249,18 @@ class ManifestViewDataMapper {
       if (sourceType != null &&
           sourceType.toLowerCase().contains('trainedalgorithmicmedia')) {
         final agent = action.parameters?['softwareAgent'] as String?;
-        if (agent != null) tools.add(agent);
+        if (agent != null) {
+          tools.add(agent);
+        }
       }
     }
     return tools.toList();
   }
 
-  static ExifDisplayData? _mapExif(ExifData? exifData) {
-    if (exifData == null) return null;
+  static ExifDisplayData? _mapExif(final ExifData? exifData) {
+    if (exifData == null) {
+      return null;
+    }
     return ExifDisplayData(
       creator: exifData.creator,
       copyright: exifData.copyright,
@@ -272,11 +281,13 @@ class ManifestViewDataMapper {
   }
 
   static List<SocialAccountDisplayInfo> _mapSocial(
-    List<SocialAccount>? accounts,
+    final List<SocialAccount>? accounts,
   ) {
-    if (accounts == null) return [];
+    if (accounts == null) {
+      return [];
+    }
     return accounts
-        .map((a) => SocialAccountDisplayInfo(platform: a.platform, url: a.url))
+        .map((final a) => SocialAccountDisplayInfo(platform: a.platform, url: a.url))
         .toList();
   }
 }

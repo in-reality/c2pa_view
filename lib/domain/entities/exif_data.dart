@@ -1,25 +1,8 @@
+import 'package:c2pa_view/domain/entities/custom_field.dart';
 import 'package:equatable/equatable.dart';
-
-import 'custom_field.dart';
 
 /// Parsed EXIF data from the `stds.exif` assertion.
 class ExifData extends Equatable {
-  final String? creator;
-  final String? copyright;
-  final DateTime? captureDate;
-  final String? cameraMake;
-  final String? cameraModel;
-  final String? lensMake;
-  final String? lensModel;
-  final String? exposureTime;
-  final String? fNumber;
-  final String? focalLength;
-  final String? iso;
-  final int? width;
-  final int? height;
-  final double? latitude;
-  final double? longitude;
-  final List<CustomField> customFields;
 
   const ExifData({
     this.creator,
@@ -40,33 +23,12 @@ class ExifData extends Equatable {
     this.customFields = const [],
   });
 
-  static const _knownKeys = {
-    '@context',
-    'dc:creator',
-    'dc:rights',
-    'exif:DateTimeOriginal',
-    'tiff:Make',
-    'tiff:Model',
-    'exif:LensMake',
-    'exif:LensModel',
-    'exif:ExposureTime',
-    'exif:FNumber',
-    'exif:FocalLength',
-    'exif:ISOSpeedRatings',
-    'exif:PixelXDimension',
-    'exif:PixelYDimension',
-    'exif:GPSLatitude',
-    'exif:GPSLongitude',
-    'exif:GPSLatitudeRef',
-    'exif:GPSLongitudeRef',
-  };
-
   factory ExifData.fromAssertionData(final Map<String, dynamic> data) {
     final customEntries =
         data.entries
-            .where((e) => !_knownKeys.contains(e.key))
+            .where((final e) => !_knownKeys.contains(e.key))
             .map(
-              (e) => CustomField(
+              (final e) => CustomField(
                 key: e.key,
                 value: e.value,
                 source: 'exif_extension',
@@ -96,24 +58,77 @@ class ExifData extends Equatable {
       customFields: customEntries,
     );
   }
+  final String? creator;
+  final String? copyright;
+  final DateTime? captureDate;
+  final String? cameraMake;
+  final String? cameraModel;
+  final String? lensMake;
+  final String? lensModel;
+  final String? exposureTime;
+  final String? fNumber;
+  final String? focalLength;
+  final String? iso;
+  final int? width;
+  final int? height;
+  final double? latitude;
+  final double? longitude;
+  final List<CustomField> customFields;
 
-  static String? _extractString(dynamic value) {
-    if (value is String) return value;
-    if (value is List && value.isNotEmpty) return value.first?.toString();
+  static const _knownKeys = {
+    '@context',
+    'dc:creator',
+    'dc:rights',
+    'exif:DateTimeOriginal',
+    'tiff:Make',
+    'tiff:Model',
+    'exif:LensMake',
+    'exif:LensModel',
+    'exif:ExposureTime',
+    'exif:FNumber',
+    'exif:FocalLength',
+    'exif:ISOSpeedRatings',
+    'exif:PixelXDimension',
+    'exif:PixelYDimension',
+    'exif:GPSLatitude',
+    'exif:GPSLongitude',
+    'exif:GPSLatitudeRef',
+    'exif:GPSLongitudeRef',
+  };
+
+  static String? _extractString(final value) {
+    if (value is String) {
+      return value;
+    }
+    if (value is List && value.isNotEmpty) {
+      return value.first?.toString();
+    }
     return value?.toString();
   }
 
-  static int? _toInt(dynamic value) {
-    if (value is int) return value;
-    if (value is double) return value.toInt();
-    if (value is String) return int.tryParse(value);
+  static int? _toInt(final value) {
+    if (value is int) {
+      return value;
+    }
+    if (value is double) {
+      return value.toInt();
+    }
+    if (value is String) {
+      return int.tryParse(value);
+    }
     return null;
   }
 
-  static double? _toDouble(dynamic value) {
-    if (value is double) return value;
-    if (value is int) return value.toDouble();
-    if (value is String) return double.tryParse(value);
+  static double? _toDouble(final value) {
+    if (value is double) {
+      return value;
+    }
+    if (value is int) {
+      return value.toDouble();
+    }
+    if (value is String) {
+      return double.tryParse(value);
+    }
     return null;
   }
 

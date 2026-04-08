@@ -1,21 +1,20 @@
-import 'package:flutter/material.dart';
-
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/validation_result.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 /// A small indicator showing credential status with icon and text.
 class CredentialIndicator extends StatelessWidget {
+
+  const CredentialIndicator({
+    required this.result, super.key,
+    this.compact = false,
+  });
   final ValidationResult result;
   final bool compact;
 
-  const CredentialIndicator({
-    super.key,
-    required this.result,
-    this.compact = false,
-  });
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
     final color = theme.colorForStatus(result.status);
 
@@ -58,5 +57,12 @@ class CredentialIndicator extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<ValidationResult>('result', result))
+    ..add(DiagnosticsProperty<bool>('compact', compact));
   }
 }

@@ -1,17 +1,19 @@
-import 'package:flutter/material.dart';
-
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/validation_result.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 /// A colored banner displaying validation errors or warnings.
 class ErrorBanner extends StatelessWidget {
+
+  const ErrorBanner({required this.result, super.key});
   final ValidationResult result;
 
-  const ErrorBanner({super.key, required this.result});
-
   @override
-  Widget build(BuildContext context) {
-    if (result.isValid || !result.hasCredential) return const SizedBox.shrink();
+  Widget build(final BuildContext context) {
+    if (result.isValid || !result.hasCredential) {
+      return const SizedBox.shrink();
+    }
 
     final theme = C2paViewerTheme.of(context);
     final isInvalid = result.isInvalid;
@@ -60,5 +62,11 @@ class ErrorBanner extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<ValidationResult>('result', result));
   }
 }

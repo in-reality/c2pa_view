@@ -1,9 +1,9 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:c2pa_view/domain/entities/entities.dart';
-import 'package:c2pa_view/domain/mappers/provenance_mapper.dart';
 import 'package:c2pa_view/domain/mappers/manifest_view_data_mapper.dart';
+import 'package:c2pa_view/domain/mappers/provenance_mapper.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
 import 'package:c2pa_view/domain/models/validation_result.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ManifestViewDataMapper', () {
@@ -12,7 +12,7 @@ void main() {
         claimGenerator: 'TestApp/1.0',
         title: 'test.jpg',
         format: 'image/jpeg',
-        signatureInfo: SignatureInfo(issuer: 'Test Issuer', time: null),
+        signatureInfo: SignatureInfo(issuer: 'Test Issuer'),
       );
 
       final viewData = ManifestViewDataMapper.map(manifest);
@@ -188,7 +188,7 @@ void main() {
 
   group('ProvenanceMapper', () {
     test('mapToGraph builds root node from active manifest', () {
-      final store = ManifestStore.fromJson({
+      final store = ManifestStore.fromJson(const {
         'active_manifest': 'urn:c2pa:main',
         'manifests': {
           'urn:c2pa:main': {
@@ -208,7 +208,7 @@ void main() {
     });
 
     test('mapToGraph builds children from ingredients with manifests', () {
-      final store = ManifestStore.fromJson({
+      final store = ManifestStore.fromJson(const {
         'active_manifest': 'urn:c2pa:main',
         'manifests': {
           'urn:c2pa:main': {
@@ -243,7 +243,7 @@ void main() {
     });
 
     test('mapToGraph handles leaf ingredients without manifests', () {
-      final store = ManifestStore.fromJson({
+      final store = ManifestStore.fromJson(const {
         'active_manifest': 'urn:c2pa:main',
         'manifests': {
           'urn:c2pa:main': {
@@ -266,7 +266,7 @@ void main() {
     });
 
     test('mapToGraph deduplicates shared manifests', () {
-      final store = ManifestStore.fromJson({
+      final store = ManifestStore.fromJson(const {
         'active_manifest': 'urn:c2pa:a',
         'manifests': {
           'urn:c2pa:a': {
@@ -310,7 +310,7 @@ void main() {
     });
 
     test('mapToGraph prevents infinite loops from circular references', () {
-      final store = ManifestStore.fromJson({
+      final store = ManifestStore.fromJson(const {
         'active_manifest': 'urn:c2pa:a',
         'manifests': {
           'urn:c2pa:a': {
@@ -341,7 +341,7 @@ void main() {
     });
 
     test('mapToGraph throws for missing active manifest', () {
-      final store = ManifestStore.fromJson({
+      final store = ManifestStore.fromJson(const {
         'active_manifest': 'nonexistent',
         'manifests': <String, dynamic>{},
       });
@@ -350,7 +350,7 @@ void main() {
     });
 
     test('mapToGraph attaches manifestViewData to nodes', () {
-      final store = ManifestStore.fromJson({
+      final store = ManifestStore.fromJson(const {
         'active_manifest': 'urn:c2pa:main',
         'manifests': {
           'urn:c2pa:main': {
@@ -370,7 +370,7 @@ void main() {
     });
 
     test('nodes map contains all nodes', () {
-      final store = ManifestStore.fromJson({
+      final store = ManifestStore.fromJson(const {
         'active_manifest': 'urn:c2pa:main',
         'manifests': {
           'urn:c2pa:main': {

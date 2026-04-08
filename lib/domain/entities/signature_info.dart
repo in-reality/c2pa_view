@@ -2,11 +2,6 @@ import 'package:equatable/equatable.dart';
 
 /// Structured signature information from a C2PA manifest.
 class SignatureInfo extends Equatable {
-  final String? issuer;
-  final String? certSerialNumber;
-  final DateTime? time;
-  final String? algorithm;
-  final List<CertificateInfo>? certificateChain;
 
   const SignatureInfo({
     this.issuer,
@@ -39,6 +34,11 @@ class SignatureInfo extends Equatable {
       certificateChain: chain,
     );
   }
+  final String? issuer;
+  final String? certSerialNumber;
+  final DateTime? time;
+  final String? algorithm;
+  final List<CertificateInfo>? certificateChain;
 
   @override
   List<Object?> get props => [
@@ -52,11 +52,6 @@ class SignatureInfo extends Equatable {
 
 /// Information about a certificate in the signing chain.
 class CertificateInfo extends Equatable {
-  final String? subject;
-  final String? issuer;
-  final DateTime? notBefore;
-  final DateTime? notAfter;
-  final String? serialNumber;
 
   const CertificateInfo({
     this.subject,
@@ -80,6 +75,11 @@ class CertificateInfo extends Equatable {
                 : null,
         serialNumber: json['serial_number'] as String?,
       );
+  final String? subject;
+  final String? issuer;
+  final DateTime? notBefore;
+  final DateTime? notAfter;
+  final String? serialNumber;
 
   @override
   List<Object?> get props => [

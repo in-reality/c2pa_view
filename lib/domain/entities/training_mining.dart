@@ -2,9 +2,6 @@ import 'package:equatable/equatable.dart';
 
 /// Parsed data from the `c2pa.training-mining` assertion.
 class TrainingMining extends Equatable {
-  final bool doNotTrain;
-  final bool doNotMine;
-  final Map<String, dynamic>? entries;
 
   const TrainingMining({
     this.doNotTrain = false,
@@ -21,10 +18,8 @@ class TrainingMining extends Equatable {
         if (entry is Map<String, dynamic>) {
           final use = entry['use'] as String?;
           final allowed =
-              entry['constraint_info'] is Map
-                  ? (entry['constraint_info'] as Map)['allowed'] as bool? ??
-                      true
-                  : true;
+              entry['constraint_info'] is! Map || ((entry['constraint_info'] as Map)['allowed'] as bool? ??
+                      true);
 
           if (use == 'notAllowed') {
             doNotTrain = true;
@@ -47,6 +42,9 @@ class TrainingMining extends Equatable {
       entries: data,
     );
   }
+  final bool doNotTrain;
+  final bool doNotMine;
+  final Map<String, dynamic>? entries;
 
   @override
   List<Object?> get props => [doNotTrain, doNotMine, entries];

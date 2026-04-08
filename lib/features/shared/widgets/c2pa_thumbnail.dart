@@ -1,14 +1,9 @@
-import 'package:flutter/material.dart';
-
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 /// A thumbnail widget with fallback placeholder based on media type.
 class C2paThumbnail extends StatelessWidget {
-  final ImageProvider? image;
-  final double size;
-  final String? mimeType;
-  final BorderRadius? borderRadius;
-  final BoxFit fit;
 
   const C2paThumbnail({
     super.key,
@@ -18,12 +13,25 @@ class C2paThumbnail extends StatelessWidget {
     this.borderRadius,
     this.fit = BoxFit.cover,
   });
+  final ImageProvider? image;
+  final double size;
+  final String? mimeType;
+  final BorderRadius? borderRadius;
+  final BoxFit fit;
 
   IconData get _placeholderIcon {
-    if (mimeType == null) return Icons.insert_drive_file_outlined;
-    if (mimeType!.startsWith('image/')) return Icons.image_outlined;
-    if (mimeType!.startsWith('video/')) return Icons.videocam_outlined;
-    if (mimeType!.startsWith('audio/')) return Icons.audiotrack_outlined;
+    if (mimeType == null) {
+      return Icons.insert_drive_file_outlined;
+    }
+    if (mimeType!.startsWith('image/')) {
+      return Icons.image_outlined;
+    }
+    if (mimeType!.startsWith('video/')) {
+      return Icons.videocam_outlined;
+    }
+    if (mimeType!.startsWith('audio/')) {
+      return Icons.audiotrack_outlined;
+    }
     if (mimeType!.startsWith('application/pdf')) {
       return Icons.picture_as_pdf_outlined;
     }
@@ -31,7 +39,7 @@ class C2paThumbnail extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
     final radius = borderRadius ?? BorderRadius.circular(8);
 
@@ -47,19 +55,27 @@ class C2paThumbnail extends StatelessWidget {
                   width: size,
                   height: size,
                   fit: fit,
-                  errorBuilder: (_, __, ___) => _placeholder(theme),
+                  errorBuilder: (_, final __, final ___) => _placeholder(theme),
                 )
                 : _placeholder(theme),
       ),
     );
   }
 
-  Widget _placeholder(C2paViewerThemeData theme) {
-    return Container(
+  Widget _placeholder(final C2paViewerThemeData theme) => ColoredBox(
       color: theme.surfaceVariantColor,
       child: Center(
         child: Icon(_placeholderIcon, size: size * 0.4, color: theme.iconColor),
       ),
     );
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<ImageProvider<Object>?>('image', image))
+    ..add(DoubleProperty('size', size))
+    ..add(StringProperty('mimeType', mimeType))
+    ..add(DiagnosticsProperty<BorderRadius?>('borderRadius', borderRadius))
+    ..add(EnumProperty<BoxFit>('fit', fit));
   }
 }

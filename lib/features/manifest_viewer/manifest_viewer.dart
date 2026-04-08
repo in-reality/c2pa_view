@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
-
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
 import 'package:c2pa_view/domain/models/provenance_node.dart';
 import 'package:c2pa_view/features/manifest_detail/manifest_detail_panel.dart';
 import 'package:c2pa_view/features/provenance_tree/provenance_tree_viewer.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 /// A combined viewer widget that shows the provenance DAG on the left
 /// and the manifest detail panel on the right, mirroring the layout of
@@ -14,6 +14,17 @@ import 'package:c2pa_view/features/provenance_tree/provenance_tree_viewer.dart';
 /// [ManifestDetailPanel]. You can also use those widgets independently
 /// for more flexible layouts.
 class C2paManifestViewer extends StatefulWidget {
+
+  const C2paManifestViewer({
+    required this.graph, super.key,
+    this.initialSelectedNodeId,
+    this.onNodeSelected,
+    this.onThumbnailTap,
+    this.onIngredientTap,
+    this.mimeType,
+    this.showDetailPanel = true,
+    this.mediaImage,
+  });
   final ProvenanceGraph graph;
   final String? initialSelectedNodeId;
   final ValueChanged<ProvenanceNode>? onNodeSelected;
@@ -26,20 +37,21 @@ class C2paManifestViewer extends StatefulWidget {
   /// embedded thumbnail, this is shown instead (detail panel and root tree node).
   final ImageProvider? mediaImage;
 
-  const C2paManifestViewer({
-    super.key,
-    required this.graph,
-    this.initialSelectedNodeId,
-    this.onNodeSelected,
-    this.onThumbnailTap,
-    this.onIngredientTap,
-    this.mimeType,
-    this.showDetailPanel = true,
-    this.mediaImage,
-  });
-
   @override
   State<C2paManifestViewer> createState() => _C2paManifestViewerState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<ProvenanceGraph>('graph', graph))
+    ..add(StringProperty('initialSelectedNodeId', initialSelectedNodeId))
+    ..add(ObjectFlagProperty<ValueChanged<ProvenanceNode>?>.has('onNodeSelected', onNodeSelected))
+    ..add(ObjectFlagProperty<VoidCallback?>.has('onThumbnailTap', onThumbnailTap))
+    ..add(ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has('onIngredientTap', onIngredientTap))
+    ..add(StringProperty('mimeType', mimeType))
+    ..add(DiagnosticsProperty<bool>('showDetailPanel', showDetailPanel))
+    ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage));
+  }
 }
 
 class _C2paManifestViewerState extends State<C2paManifestViewer> {
@@ -54,7 +66,7 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
   }
 
   @override
-  void didUpdateWidget(C2paManifestViewer oldWidget) {
+  void didUpdateWidget(final C2paManifestViewer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.graph != widget.graph) {
       _selectedNodeId = widget.initialSelectedNodeId ?? widget.graph.rootId;
@@ -62,7 +74,7 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
     }
   }
 
-  void _onNodeSelected(ProvenanceNode node) {
+  void _onNodeSelected(final ProvenanceNode node) {
     setState(() {
       _selectedNodeId = node.id;
       _selectedData = node.manifestViewData;
@@ -71,7 +83,7 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
 
     return SelectionArea(

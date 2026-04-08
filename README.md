@@ -2,7 +2,7 @@
 
 A Flutter plugin for reading and displaying [C2PA](https://c2pa.org/) (Coalition for Content Provenance and Authenticity) content credentials. It extracts embedded C2PA manifests from media files using the official `c2pa-rs` Rust library and renders provenance data as interactive Flutter widgets.
 
-- 🗃️ Read C2PA manifests from local files, URLs, or raw bytes
+- 🗃️ Read C2PA manifests from files or raw bytes.
 - 🌳 Display an interactive provenance tree with a detail panel
 - 📜 Show manifest details as a popup overlay from any button
 - 🔍 Access structured provenance data: actions, ingredients, signatures, EXIF, AI generation info, and more

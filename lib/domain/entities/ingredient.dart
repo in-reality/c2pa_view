@@ -1,7 +1,6 @@
+import 'package:c2pa_view/domain/entities/thumbnail_data.dart';
+import 'package:c2pa_view/domain/entities/validation_status.dart';
 import 'package:equatable/equatable.dart';
-
-import 'thumbnail_data.dart';
-import 'validation_status.dart';
 
 /// Represents an ingredient (e.g., original asset or intermediate) in the
 /// manifest.

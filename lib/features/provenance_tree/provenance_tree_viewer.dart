@@ -1,37 +1,45 @@
 import 'dart:collection';
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
-
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/provenance_node.dart';
-
-import 'widgets/tree_edge_painter.dart';
-import 'widgets/tree_node_card.dart';
-import 'widgets/zoom_controls.dart';
+import 'package:c2pa_view/features/provenance_tree/widgets/tree_edge_painter.dart';
+import 'package:c2pa_view/features/provenance_tree/widgets/tree_node_card.dart';
+import 'package:c2pa_view/features/provenance_tree/widgets/zoom_controls.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 /// Displays a provenance DAG as a zoomable, pannable diagram.
 ///
 /// Nodes with multiple parents (shared ingredients) appear once with
 /// edges from every parent.
 class ProvenanceTreeViewer extends StatefulWidget {
+
+  const ProvenanceTreeViewer({
+    required this.graph, super.key,
+    this.selectedNodeId,
+    this.onNodeSelected,
+    this.backgroundColor,
+    this.mediaImage,
+  });
   final ProvenanceGraph graph;
   final String? selectedNodeId;
   final ValueChanged<ProvenanceNode>? onNodeSelected;
   final Color? backgroundColor;
   final ImageProvider? mediaImage;
 
-  const ProvenanceTreeViewer({
-    super.key,
-    required this.graph,
-    this.selectedNodeId,
-    this.onNodeSelected,
-    this.backgroundColor,
-    this.mediaImage,
-  });
-
   @override
   State<ProvenanceTreeViewer> createState() => _ProvenanceTreeViewerState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<ProvenanceGraph>('graph', graph))
+    ..add(StringProperty('selectedNodeId', selectedNodeId))
+    ..add(ObjectFlagProperty<ValueChanged<ProvenanceNode>?>.has('onNodeSelected', onNodeSelected))
+    ..add(ColorProperty('backgroundColor', backgroundColor))
+    ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage));
+  }
 }
 
 class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
@@ -49,7 +57,7 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
   }
 
   @override
-  void didUpdateWidget(ProvenanceTreeViewer oldWidget) {
+  void didUpdateWidget(final ProvenanceTreeViewer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.graph != widget.graph) {
       _computeLayout();
@@ -67,14 +75,14 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
   // ---------------------------------------------------------------------------
 
   void _computeLayout() {
-    final theme = C2paViewerThemeData.defaults;
+    const theme = C2paViewerThemeData.defaults;
     final graph = widget.graph;
 
     final depthMap = _assignDepths(graph);
 
     final maxNodesAtDepth = depthMap.values
-        .map((list) => list.length)
-        .fold(0, (a, b) => math.max(a, b));
+        .map((final list) => list.length)
+        .fold(0, math.max);
 
     final nodeW = theme.nodeWidth;
     final nodeH = theme.nodeHeight;
@@ -109,7 +117,9 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
     for (final edge in graph.edges) {
       final parentPos = nodePositions[edge.parentId];
       final childPos = nodePositions[edge.childId];
-      if (parentPos == null || childPos == null) continue;
+      if (parentPos == null || childPos == null) {
+        continue;
+      }
       edges.add(
         EdgeLine(
           from: Offset(parentPos.dx + nodeW / 2, parentPos.dy + nodeH),
@@ -126,7 +136,7 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
   /// Assign each node a depth using BFS.  A shared node's depth is the
   /// maximum depth any of its parents places it at (i.e. max-parent-depth + 1),
   /// ensuring it sits below all parents.
-  Map<int, List<ProvenanceNode>> _assignDepths(ProvenanceGraph graph) {
+  Map<int, List<ProvenanceNode>> _assignDepths(final ProvenanceGraph graph) {
     final depths = <String, int>{};
     final queue = Queue<String>();
 
@@ -169,7 +179,9 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
   /// Walk edges backwards from the selected node to the root, collecting
   /// all nodes on any path.
   Set<String> _pathToSelected() {
-    if (widget.selectedNodeId == null) return {};
+    if (widget.selectedNodeId == null) {
+      return {};
+    }
     final graph = widget.graph;
 
     // Build parent lookup.
@@ -184,11 +196,13 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
   }
 
   void _collectAncestors(
-    String nodeId,
-    Map<String, List<String>> parentsOf,
-    Set<String> result,
+    final String nodeId,
+    final Map<String, List<String>> parentsOf,
+    final Set<String> result,
   ) {
-    if (!result.add(nodeId)) return;
+    if (!result.add(nodeId)) {
+      return;
+    }
     for (final parentId in parentsOf[nodeId] ?? <String>[]) {
       _collectAncestors(parentId, parentsOf, result);
     }
@@ -225,11 +239,11 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
   // ---------------------------------------------------------------------------
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
     final pathNodeIds = _pathToSelected();
 
-    return Container(
+    return ColoredBox(
       color: widget.backgroundColor ?? theme.surfaceVariantColor,
       child: Stack(
         children: [
@@ -238,7 +252,7 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
             constrained: false,
             boundaryMargin: const EdgeInsets.all(200),
             minScale: 0.1,
-            maxScale: 5.0,
+            maxScale: 5,
             child: SizedBox(
               width: _treeSize.width,
               height: _treeSize.height,
@@ -291,8 +305,8 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
 }
 
 class _LayoutNode {
-  final ProvenanceNode node;
-  final Offset position;
 
   const _LayoutNode({required this.node, required this.position});
+  final ProvenanceNode node;
+  final Offset position;
 }

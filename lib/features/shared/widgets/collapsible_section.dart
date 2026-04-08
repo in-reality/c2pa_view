@@ -1,25 +1,31 @@
-import 'package:flutter/material.dart';
-
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 /// A collapsible section with a header, optional description, and expandable
 /// content.
 class CollapsibleSection extends StatefulWidget {
+
+  const CollapsibleSection({
+    required this.title, required this.child, super.key,
+    this.description,
+    this.initiallyExpanded = true,
+  });
   final String title;
   final String? description;
   final Widget child;
   final bool initiallyExpanded;
 
-  const CollapsibleSection({
-    super.key,
-    required this.title,
-    this.description,
-    required this.child,
-    this.initiallyExpanded = true,
-  });
-
   @override
   State<CollapsibleSection> createState() => _CollapsibleSectionState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(StringProperty('title', title))
+    ..add(StringProperty('description', description))
+    ..add(DiagnosticsProperty<bool>('initiallyExpanded', initiallyExpanded));
+  }
 }
 
 class _CollapsibleSectionState extends State<CollapsibleSection>
@@ -40,7 +46,10 @@ class _CollapsibleSectionState extends State<CollapsibleSection>
     );
     _heightFactor = _controller.drive(CurveTween(curve: Curves.easeInOut));
     _iconTurns = _controller.drive(
-      Tween(begin: 0.0, end: 0.5).chain(CurveTween(curve: Curves.easeInOut)),
+      Tween<double>(
+        begin: 0.0,
+        end: 0.5,
+      ).chain(CurveTween(curve: Curves.easeInOut)),
     );
   }
 
@@ -62,7 +71,7 @@ class _CollapsibleSectionState extends State<CollapsibleSection>
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
 
     return Column(
@@ -98,13 +107,11 @@ class _CollapsibleSectionState extends State<CollapsibleSection>
         ClipRect(
           child: AnimatedBuilder(
             animation: _controller,
-            builder: (context, child) {
-              return Align(
+            builder: (final context, final child) => Align(
                 alignment: Alignment.topCenter,
                 heightFactor: _heightFactor.value,
                 child: child,
-              );
-            },
+              ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

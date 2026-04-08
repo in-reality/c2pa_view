@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
-
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/manifest_summary.dart';
-
-import 'c2pa_thumbnail.dart';
-import 'credential_indicator.dart';
+import 'package:c2pa_view/features/provenance_tree/widgets/tree_node_card.dart' show TreeNodeCard;
+import 'package:c2pa_view/features/shared/widgets/c2pa_thumbnail.dart';
+import 'package:c2pa_view/features/shared/widgets/credential_indicator.dart';
+import 'package:c2pa_view/features/shared/widgets/ingredient_card.dart' show IngredientCard;
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 /// Controls the visual variant of [ManifestSummaryCard].
 enum ManifestSummaryCardVariant {
@@ -27,18 +28,21 @@ enum ManifestSummaryCardVariant {
 /// child nodes, or selection state.  Those concerns are handled by the callers
 /// ([TreeNodeCard] and [IngredientCard]).
 class ManifestSummaryCard extends StatelessWidget {
+
+  const ManifestSummaryCard({
+    required this.summary, required this.variant, super.key,
+  });
   final ManifestSummary summary;
   final ManifestSummaryCardVariant variant;
 
-  const ManifestSummaryCard({
-    super.key,
-    required this.summary,
-    required this.variant,
-  });
+  @override
+  Widget build(final BuildContext context) => _SummaryContent(summary: summary, variant: variant);
 
   @override
-  Widget build(BuildContext context) {
-    return _SummaryContent(summary: summary, variant: variant);
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<ManifestSummary>('summary', summary))
+    ..add(EnumProperty<ManifestSummaryCardVariant>('variant', variant));
   }
 }
 
@@ -47,13 +51,13 @@ class ManifestSummaryCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _SummaryContent extends StatelessWidget {
+
+  const _SummaryContent({required this.summary, required this.variant});
   final ManifestSummary summary;
   final ManifestSummaryCardVariant variant;
 
-  const _SummaryContent({required this.summary, required this.variant});
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
 
     final isTreeNode = variant == ManifestSummaryCardVariant.treeNode;
@@ -114,6 +118,13 @@ class _SummaryContent extends StatelessWidget {
       ],
     );
   }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<ManifestSummary>('summary', summary))
+    ..add(EnumProperty<ManifestSummaryCardVariant>('variant', variant));
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -121,6 +132,13 @@ class _SummaryContent extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _Thumbnail extends StatelessWidget {
+
+  const _Thumbnail({
+    required this.image,
+    required this.size,
+    required this.square,
+    required this.theme,
+  });
   final ImageProvider? image;
   final double size;
 
@@ -131,15 +149,8 @@ class _Thumbnail extends StatelessWidget {
 
   final C2paViewerThemeData theme;
 
-  const _Thumbnail({
-    required this.image,
-    required this.size,
-    required this.square,
-    required this.theme,
-  });
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     if (square) {
       // Full-bleed square thumbnail for tree nodes (parent clips corners).
       return SizedBox(
@@ -150,7 +161,7 @@ class _Thumbnail extends StatelessWidget {
                 ? Image(
                   image: image!,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _placeholder(),
+                  errorBuilder: (_, final __, final ___) => _placeholder(),
                 )
                 : _placeholder(),
       );
@@ -163,8 +174,7 @@ class _Thumbnail extends StatelessWidget {
     );
   }
 
-  Widget _placeholder() {
-    return Container(
+  Widget _placeholder() => ColoredBox(
       color: theme.surfaceVariantColor,
       child: Center(
         child: Icon(
@@ -174,5 +184,13 @@ class _Thumbnail extends StatelessWidget {
         ),
       ),
     );
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<ImageProvider<Object>?>('image', image))
+    ..add(DoubleProperty('size', size))
+    ..add(DiagnosticsProperty<bool>('square', square))
+    ..add(DiagnosticsProperty<C2paViewerThemeData>('theme', theme));
   }
 }

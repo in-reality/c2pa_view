@@ -1,16 +1,15 @@
+import 'package:c2pa_view/domain/entities/action.dart';
+import 'package:c2pa_view/domain/entities/claim_generator_info.dart';
+import 'package:c2pa_view/domain/entities/creative_work.dart';
+import 'package:c2pa_view/domain/entities/custom_field.dart';
+import 'package:c2pa_view/domain/entities/exif_data.dart';
+import 'package:c2pa_view/domain/entities/ingredient.dart';
+import 'package:c2pa_view/domain/entities/manifest_assertion.dart';
+import 'package:c2pa_view/domain/entities/signature_info.dart';
+import 'package:c2pa_view/domain/entities/thumbnail_data.dart';
+import 'package:c2pa_view/domain/entities/training_mining.dart';
+import 'package:c2pa_view/domain/entities/validation_status.dart';
 import 'package:equatable/equatable.dart';
-
-import 'action.dart';
-import 'claim_generator_info.dart';
-import 'creative_work.dart';
-import 'custom_field.dart';
-import 'exif_data.dart';
-import 'ingredient.dart';
-import 'manifest_assertion.dart';
-import 'signature_info.dart';
-import 'thumbnail_data.dart';
-import 'training_mining.dart';
-import 'validation_status.dart';
 
 /// Labels of known assertions that get routed to structured fields.
 const _routedAssertionLabels = {
@@ -61,7 +60,7 @@ class Manifest extends Equatable {
     final actionsAssertion =
         allAssertions
             .where(
-              (a) => a.label == 'c2pa.actions' || a.label == 'c2pa.actions.v2',
+              (final a) => a.label == 'c2pa.actions' || a.label == 'c2pa.actions.v2',
             )
             .toList();
     List<Action>? actions;
@@ -75,7 +74,7 @@ class Manifest extends Equatable {
     // Extract EXIF data
     ExifData? exifData;
     final exifAssertions =
-        allAssertions.where((a) => a.label == 'stds.exif').toList();
+        allAssertions.where((final a) => a.label == 'stds.exif').toList();
     if (exifAssertions.isNotEmpty) {
       exifData = ExifData.fromAssertionData(exifAssertions.first.data);
     }
@@ -84,7 +83,7 @@ class Manifest extends Equatable {
     CreativeWork? creativeWork;
     final cwAssertions =
         allAssertions
-            .where((a) => a.label == 'stds.schema-org.CreativeWork')
+            .where((final a) => a.label == 'stds.schema-org.CreativeWork')
             .toList();
     if (cwAssertions.isNotEmpty) {
       creativeWork = CreativeWork.fromAssertionData(cwAssertions.first.data);
@@ -93,7 +92,7 @@ class Manifest extends Equatable {
     // Extract TrainingMining
     TrainingMining? trainingMining;
     final tmAssertions =
-        allAssertions.where((a) => a.label == 'c2pa.training-mining').toList();
+        allAssertions.where((final a) => a.label == 'c2pa.training-mining').toList();
     if (tmAssertions.isNotEmpty) {
       trainingMining = TrainingMining.fromAssertionData(
         tmAssertions.first.data,
@@ -109,7 +108,7 @@ class Manifest extends Equatable {
     } else {
       final thumbAssertions =
           allAssertions
-              .where((a) => a.label.startsWith('c2pa.thumbnail.'))
+              .where((final a) => a.label.startsWith('c2pa.thumbnail.'))
               .toList();
       if (thumbAssertions.isNotEmpty) {
         thumbnail = ThumbnailData(
@@ -124,10 +123,14 @@ class Manifest extends Equatable {
 
     // Filter assertions: keep only custom/unknown ones
     final filteredAssertions =
-        allAssertions.where((a) {
-          if (_routedAssertionLabels.contains(a.label)) return false;
+        allAssertions.where((final a) {
+          if (_routedAssertionLabels.contains(a.label)) {
+            return false;
+          }
           for (final prefix in _internalAssertionPrefixes) {
-            if (a.label.startsWith(prefix)) return false;
+            if (a.label.startsWith(prefix)) {
+              return false;
+            }
           }
           return true;
         }).toList();

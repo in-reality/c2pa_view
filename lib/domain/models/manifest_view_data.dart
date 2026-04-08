@@ -1,13 +1,35 @@
-import 'package:flutter/widgets.dart';
-
+import 'package:c2pa_view/c2pa_view.dart' show ProvenanceNode;
 import 'package:c2pa_view/domain/entities/custom_field.dart';
-
-import 'manifest_summary.dart';
-import 'validation_result.dart';
+import 'package:c2pa_view/domain/models/manifest_summary.dart';
+import 'package:c2pa_view/domain/models/provenance_node.dart' show ProvenanceNode;
+import 'package:c2pa_view/domain/models/validation_result.dart';
+import 'package:flutter/widgets.dart';
 
 /// Display-ready data for the manifest detail panel.
 @immutable
 class ManifestViewData {
+
+  const ManifestViewData({
+    this.title,
+    this.thumbnail,
+    this.validationResult = const ValidationResult.noCredential(),
+    this.issuer,
+    this.signedDate,
+    this.generativeInfo,
+    this.claimGenerator,
+    this.actions = const [],
+    this.ingredients = const [],
+    this.aiToolsUsed = const [],
+    this.exifData,
+    this.producer,
+    this.socialAccounts = const [],
+    this.doNotTrain = false,
+    this.website,
+    this.customFields = const [],
+    this.exifCustomFields = const [],
+    this.creativeWorkCustomFields = const [],
+    this.rawJson,
+  });
   final String? title;
   final ImageProvider? thumbnail;
   final ValidationResult validationResult;
@@ -35,37 +57,15 @@ class ManifestViewData {
 
   /// The raw JSON map for this manifest. Used for the "copy JSON" feature.
   final Map<String, dynamic>? rawJson;
-
-  const ManifestViewData({
-    this.title,
-    this.thumbnail,
-    this.validationResult = const ValidationResult.noCredential(),
-    this.issuer,
-    this.signedDate,
-    this.generativeInfo,
-    this.claimGenerator,
-    this.actions = const [],
-    this.ingredients = const [],
-    this.aiToolsUsed = const [],
-    this.exifData,
-    this.producer,
-    this.socialAccounts = const [],
-    this.doNotTrain = false,
-    this.website,
-    this.customFields = const [],
-    this.exifCustomFields = const [],
-    this.creativeWorkCustomFields = const [],
-    this.rawJson,
-  });
 }
 
 /// AI generation information.
 @immutable
 class GenerativeInfo {
-  final GenerativeType type;
-  final List<String> softwareAgents;
 
   const GenerativeInfo({required this.type, this.softwareAgents = const []});
+  final GenerativeType type;
+  final List<String> softwareAgents;
 
   String get description {
     switch (type) {
@@ -85,15 +85,15 @@ enum GenerativeType { aiGenerated, compositeWithAi, legacy }
 /// Display info for the claim generator (app/device).
 @immutable
 class ClaimGeneratorDisplayInfo {
-  final String name;
-  final String? version;
-  final ImageProvider? icon;
 
   const ClaimGeneratorDisplayInfo({
     required this.name,
     this.version,
     this.icon,
   });
+  final String name;
+  final String? version;
+  final ImageProvider? icon;
 
   String get displayLabel => version != null ? '$name $version' : name;
 }
@@ -101,12 +101,6 @@ class ClaimGeneratorDisplayInfo {
 /// Display info for a single action in the process section.
 @immutable
 class ActionDisplayInfo {
-  final String actionType;
-  final String label;
-  final DateTime? when;
-  final String? softwareAgent;
-  final bool isAiGenerated;
-  final List<CustomField> customParams;
 
   const ActionDisplayInfo({
     required this.actionType,
@@ -116,8 +110,14 @@ class ActionDisplayInfo {
     this.isAiGenerated = false,
     this.customParams = const [],
   });
+  final String actionType;
+  final String label;
+  final DateTime? when;
+  final String? softwareAgent;
+  final bool isAiGenerated;
+  final List<CustomField> customParams;
 
-  static String humanLabel(String actionType) {
+  static String humanLabel(final String actionType) {
     const labels = {
       'c2pa.created': 'Created',
       'c2pa.opened': 'Opened',
@@ -145,6 +145,13 @@ class ActionDisplayInfo {
 /// structurally guaranteed to show identical information.
 @immutable
 class IngredientDisplayInfo {
+
+  const IngredientDisplayInfo({
+    required this.summary,
+    this.hasManifest = false,
+    this.format,
+    this.relationship,
+  });
   /// Display summary (always non-null).  For ingredients without a resolved
   /// manifest this still carries the ingredient's title so that the UI never
   /// shows "Untitled".
@@ -155,13 +162,6 @@ class IngredientDisplayInfo {
 
   final String? format;
   final IngredientRelationship? relationship;
-
-  const IngredientDisplayInfo({
-    required this.summary,
-    this.hasManifest = false,
-    this.format,
-    this.relationship,
-  });
 
   // Convenience accessors kept for call-sites that still read these directly.
   String? get title => summary.title;
@@ -175,21 +175,6 @@ enum IngredientRelationship { parentOf, componentOf, inputTo }
 /// Display-ready EXIF / camera capture data.
 @immutable
 class ExifDisplayData {
-  final String? creator;
-  final String? copyright;
-  final DateTime? captureDate;
-  final String? cameraMake;
-  final String? cameraModel;
-  final String? lensMake;
-  final String? lensModel;
-  final String? exposureTime;
-  final String? fNumber;
-  final String? focalLength;
-  final String? iso;
-  final int? width;
-  final int? height;
-  final double? latitude;
-  final double? longitude;
 
   const ExifDisplayData({
     this.creator,
@@ -208,6 +193,21 @@ class ExifDisplayData {
     this.latitude,
     this.longitude,
   });
+  final String? creator;
+  final String? copyright;
+  final DateTime? captureDate;
+  final String? cameraMake;
+  final String? cameraModel;
+  final String? lensMake;
+  final String? lensModel;
+  final String? exposureTime;
+  final String? fNumber;
+  final String? focalLength;
+  final String? iso;
+  final int? width;
+  final int? height;
+  final double? latitude;
+  final double? longitude;
 
   bool get hasLocation => latitude != null && longitude != null;
 
@@ -216,7 +216,9 @@ class ExifDisplayData {
 
   String? get cameraLabel {
     if (cameraMake != null && cameraModel != null) {
-      if (cameraModel!.startsWith(cameraMake!)) return cameraModel;
+      if (cameraModel!.startsWith(cameraMake!)) {
+        return cameraModel;
+      }
       return '$cameraMake $cameraModel';
     }
     return cameraModel ?? cameraMake;
@@ -224,7 +226,9 @@ class ExifDisplayData {
 
   String? get lensLabel {
     if (lensMake != null && lensModel != null) {
-      if (lensModel!.startsWith(lensMake!)) return lensModel;
+      if (lensModel!.startsWith(lensMake!)) {
+        return lensModel;
+      }
       return '$lensMake $lensModel';
     }
     return lensModel ?? lensMake;
@@ -234,8 +238,8 @@ class ExifDisplayData {
 /// Social account display info.
 @immutable
 class SocialAccountDisplayInfo {
-  final String platform;
-  final String url;
 
   const SocialAccountDisplayInfo({required this.platform, required this.url});
+  final String platform;
+  final String url;
 }

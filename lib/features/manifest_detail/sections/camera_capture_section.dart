@@ -1,26 +1,26 @@
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/entities/custom_field.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
 import 'package:c2pa_view/features/custom_fields/custom_fields_table.dart';
 import 'package:c2pa_view/features/shared/widgets/collapsible_section.dart';
 import 'package:c2pa_view/features/shared/widgets/sub_section.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 /// Collapsible "Camera capture details" section showing EXIF data.
 class CameraCaptureSection extends StatelessWidget {
-  final ExifDisplayData? exifData;
-  final List<CustomField> exifCustomFields;
 
   const CameraCaptureSection({
     super.key,
     this.exifData,
     this.exifCustomFields = const [],
   });
+  final ExifDisplayData? exifData;
+  final List<CustomField> exifCustomFields;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     if (exifData == null && exifCustomFields.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -57,16 +57,23 @@ class CameraCaptureSection extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<ExifDisplayData?>('exifData', exifData))
+    ..add(IterableProperty<CustomField>('exifCustomFields', exifCustomFields));
+  }
 }
 
 class _TextSubSection extends StatelessWidget {
+
+  const _TextSubSection({required this.label, required this.value});
   final String label;
   final String value;
 
-  const _TextSubSection({required this.label, required this.value});
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
     return SubSection(
       label: label,
@@ -76,14 +83,21 @@ class _TextSubSection extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(StringProperty('label', label))
+    ..add(StringProperty('value', value));
+  }
 }
 
 class _CameraInfoCard extends StatelessWidget {
-  final ExifDisplayData exif;
   const _CameraInfoCard({required this.exif});
+  final ExifDisplayData exif;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
 
     final rows = <_InfoRow>[];
@@ -97,7 +111,9 @@ class _CameraInfoCard extends StatelessWidget {
     if (exif.dimensionsLabel != null) {
       rows.add(_InfoRow('Dimensions', exif.dimensionsLabel!));
     }
-    if (exif.iso != null) rows.add(_InfoRow('ISO', exif.iso!));
+    if (exif.iso != null) {
+      rows.add(_InfoRow('ISO', exif.iso!));
+    }
     if (exif.focalLength != null) {
       rows.add(_InfoRow('Focal length', '${exif.focalLength}mm'));
     }
@@ -108,7 +124,9 @@ class _CameraInfoCard extends StatelessWidget {
       rows.add(_InfoRow('Exposure', exif.exposureTime!));
     }
 
-    if (rows.isEmpty) return const SizedBox.shrink();
+    if (rows.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
@@ -154,20 +172,26 @@ class _CameraInfoCard extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<ExifDisplayData>('exif', exif));
+  }
 }
 
 class _InfoRow {
+  const _InfoRow(this.label, this.value);
   final String label;
   final String value;
-  const _InfoRow(this.label, this.value);
 }
 
 class _LocationInfo extends StatelessWidget {
-  final ExifDisplayData exif;
   const _LocationInfo({required this.exif});
+  final ExifDisplayData exif;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
 
     return SubSection(
@@ -193,5 +217,11 @@ class _LocationInfo extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<ExifDisplayData>('exif', exif));
   }
 }

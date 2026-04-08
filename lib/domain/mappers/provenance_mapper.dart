@@ -2,7 +2,6 @@ import 'package:c2pa_view/domain/entities/manifest_store.dart';
 import 'package:c2pa_view/domain/mappers/manifest_view_data_mapper.dart';
 import 'package:c2pa_view/domain/models/manifest_summary.dart';
 import 'package:c2pa_view/domain/models/provenance_node.dart';
-import 'package:c2pa_view/domain/models/validation_result.dart';
 
 /// Converts a [ManifestStore] into a [ProvenanceGraph].
 class ProvenanceMapper {
@@ -11,7 +10,7 @@ class ProvenanceMapper {
   /// Each manifest appears as exactly one [ProvenanceNode].  When the same
   /// manifest is an ingredient of multiple parents, it simply has multiple
   /// incoming [ProvenanceEdge]s rather than being duplicated.
-  static ProvenanceGraph mapToGraph(ManifestStore store) {
+  static ProvenanceGraph mapToGraph(final ManifestStore store) {
     final activeLabel = store.activeManifest;
     final activeManifest =
         activeLabel != null ? store.manifests[activeLabel] : null;
@@ -36,7 +35,7 @@ class ProvenanceMapper {
   }
 
   /// Pre-compute a [ManifestSummary] for every manifest in [store].
-  static Map<String, ManifestSummary> _buildSummaries(ManifestStore store) {
+  static Map<String, ManifestSummary> _buildSummaries(final ManifestStore store) {
     final result = <String, ManifestSummary>{};
     for (final entry in store.manifests.entries) {
       final manifest = entry.value;
@@ -62,15 +61,17 @@ class ProvenanceMapper {
   /// we still add an edge from the current parent but do **not** recurse
   /// into it again.
   static void _walk({
-    required String label,
-    required ManifestStore store,
-    required Map<String, ManifestSummary> summaries,
-    required Map<String, ProvenanceNode> nodes,
-    required List<ProvenanceEdge> edges,
-    String? parentLabel,
+    required final String label,
+    required final ManifestStore store,
+    required final Map<String, ManifestSummary> summaries,
+    required final Map<String, ProvenanceNode> nodes,
+    required final List<ProvenanceEdge> edges,
+    final String? parentLabel,
   }) {
     final manifest = store.manifests[label];
-    if (manifest == null) return;
+    if (manifest == null) {
+      return;
+    }
 
     // Add edge from parent (if any).
     if (parentLabel != null) {
@@ -78,7 +79,9 @@ class ProvenanceMapper {
     }
 
     // If we already created this node, stop recursion to avoid infinite loops.
-    if (nodes.containsKey(label)) return;
+    if (nodes.containsKey(label)) {
+      return;
+    }
 
     // Build the full view data for the detail panel.
     final rawJson = store.rawManifestJsons[label];
@@ -124,7 +127,6 @@ class ProvenanceMapper {
             id: leafId,
             summary: ManifestSummary(
               title: ingredient.title,
-              validationResult: const ValidationResult.noCredential(),
             ),
           );
         }

@@ -1,8 +1,7 @@
+import 'package:c2pa_view/domain/models/manifest_summary.dart';
+import 'package:c2pa_view/domain/models/manifest_view_data.dart';
+import 'package:c2pa_view/domain/models/validation_result.dart';
 import 'package:flutter/widgets.dart';
-
-import 'manifest_summary.dart';
-import 'manifest_view_data.dart';
-import 'validation_result.dart';
 
 /// A node in the provenance DAG.
 ///
@@ -11,13 +10,6 @@ import 'validation_result.dart';
 /// multiple parents reference the same manifest as an ingredient.
 @immutable
 class ProvenanceNode {
-  final String id;
-  final ManifestSummary summary;
-  final DateTime? signedDate;
-
-  /// The full manifest view data for this node, used when the user
-  /// selects this node to show its details in the sidebar.
-  final ManifestViewData? manifestViewData;
 
   const ProvenanceNode({
     required this.id,
@@ -25,6 +17,13 @@ class ProvenanceNode {
     this.signedDate,
     this.manifestViewData,
   });
+  final String id;
+  final ManifestSummary summary;
+  final DateTime? signedDate;
+
+  /// The full manifest view data for this node, used when the user
+  /// selects this node to show its details in the sidebar.
+  final ManifestViewData? manifestViewData;
 
   String? get title => summary.title;
   ImageProvider? get thumbnail => summary.thumbnail;
@@ -36,10 +35,10 @@ class ProvenanceNode {
 /// ingredient).
 @immutable
 class ProvenanceEdge {
-  final String parentId;
-  final String childId;
 
   const ProvenanceEdge({required this.parentId, required this.childId});
+  final String parentId;
+  final String childId;
 }
 
 /// A directed acyclic graph of [ProvenanceNode]s.
@@ -49,27 +48,27 @@ class ProvenanceEdge {
 /// [nodes]; relationships are expressed through [edges].
 @immutable
 class ProvenanceGraph {
-  final String rootId;
-  final Map<String, ProvenanceNode> nodes;
-  final List<ProvenanceEdge> edges;
 
   const ProvenanceGraph({
     required this.rootId,
     required this.nodes,
     required this.edges,
   });
+  final String rootId;
+  final Map<String, ProvenanceNode> nodes;
+  final List<ProvenanceEdge> edges;
 
   ProvenanceNode? get rootNode => nodes[rootId];
 
-  ProvenanceNode? findNode(String id) => nodes[id];
+  ProvenanceNode? findNode(final String id) => nodes[id];
 
   /// All child IDs for a given parent.
-  List<String> childIdsOf(String parentId) =>
-      edges.where((e) => e.parentId == parentId).map((e) => e.childId).toList();
+  List<String> childIdsOf(final String parentId) =>
+      edges.where((final e) => e.parentId == parentId).map((final e) => e.childId).toList();
 
   /// All parent IDs for a given child.
-  List<String> parentIdsOf(String childId) =>
-      edges.where((e) => e.childId == childId).map((e) => e.parentId).toList();
+  List<String> parentIdsOf(final String childId) =>
+      edges.where((final e) => e.childId == childId).map((final e) => e.parentId).toList();
 
-  bool hasChildren(String nodeId) => edges.any((e) => e.parentId == nodeId);
+  bool hasChildren(final String nodeId) => edges.any((final e) => e.parentId == nodeId);
 }

@@ -1,11 +1,10 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
-
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
-
-import 'manifest_detail_content.dart';
+import 'package:c2pa_view/features/manifest_detail/manifest_detail_content.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 /// Default width of the popup when no override is given.
 const _kDefaultPopupWidth = 360.0;
@@ -21,16 +20,16 @@ const _kScreenMargin = 16.0;
 ///
 /// Tap outside the popup or press the back button to dismiss.
 Future<void> showManifestDetailPopup(
-  BuildContext context, {
-  required ManifestViewData data,
-  String? mimeType,
-  VoidCallback? onThumbnailTap,
-  ValueChanged<IngredientDisplayInfo>? onIngredientTap,
-  ImageProvider? mediaImage,
-  double? width,
-  double? maxHeight,
+  final BuildContext context, {
+  required final ManifestViewData data,
+  final String? mimeType,
+  final VoidCallback? onThumbnailTap,
+  final ValueChanged<IngredientDisplayInfo>? onIngredientTap,
+  final ImageProvider? mediaImage,
+  final double? width,
+  final double? maxHeight,
 }) {
-  final renderBox = context.findRenderObject() as RenderBox;
+  final renderBox = context.findRenderObject()! as RenderBox;
   final triggerSize = renderBox.size;
   final triggerPosition = renderBox.localToGlobal(Offset.zero);
 
@@ -39,9 +38,7 @@ Future<void> showManifestDetailPopup(
     barrierDismissible: true,
     barrierLabel: 'Dismiss manifest details',
     barrierColor: Colors.black26,
-    transitionDuration: const Duration(milliseconds: 200),
-    transitionBuilder: (context, animation, _, child) {
-      return FadeTransition(
+    transitionBuilder: (final context, final animation, _, final child) => FadeTransition(
         opacity: animation,
         child: SlideTransition(
           position: Tween<Offset>(
@@ -52,10 +49,8 @@ Future<void> showManifestDetailPopup(
           ),
           child: child,
         ),
-      );
-    },
-    pageBuilder: (context, _, __) {
-      return _ManifestDetailPopupLayout(
+      ),
+    pageBuilder: (final context, _, final __) => _ManifestDetailPopupLayout(
         triggerPosition: triggerPosition,
         triggerSize: triggerSize,
         data: data,
@@ -65,21 +60,11 @@ Future<void> showManifestDetailPopup(
         mediaImage: mediaImage,
         popupWidth: width,
         maxHeight: maxHeight,
-      );
-    },
+      ),
   );
 }
 
 class _ManifestDetailPopupLayout extends StatelessWidget {
-  final Offset triggerPosition;
-  final Size triggerSize;
-  final ManifestViewData data;
-  final String? mimeType;
-  final VoidCallback? onThumbnailTap;
-  final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
-  final ImageProvider? mediaImage;
-  final double? popupWidth;
-  final double? maxHeight;
 
   const _ManifestDetailPopupLayout({
     required this.triggerPosition,
@@ -92,9 +77,18 @@ class _ManifestDetailPopupLayout extends StatelessWidget {
     this.popupWidth,
     this.maxHeight,
   });
+  final Offset triggerPosition;
+  final Size triggerSize;
+  final ManifestViewData data;
+  final String? mimeType;
+  final VoidCallback? onThumbnailTap;
+  final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
+  final ImageProvider? mediaImage;
+  final double? popupWidth;
+  final double? maxHeight;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final screen = MediaQuery.of(context).size;
     final theme = C2paViewerTheme.of(context);
     final w = popupWidth ?? _kDefaultPopupWidth;
@@ -144,5 +138,19 @@ class _ManifestDetailPopupLayout extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<Offset>('triggerPosition', triggerPosition))
+    ..add(DiagnosticsProperty<Size>('triggerSize', triggerSize))
+    ..add(DiagnosticsProperty<ManifestViewData>('data', data))
+    ..add(StringProperty('mimeType', mimeType))
+    ..add(ObjectFlagProperty<VoidCallback?>.has('onThumbnailTap', onThumbnailTap))
+    ..add(ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has('onIngredientTap', onIngredientTap))
+    ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage))
+    ..add(DoubleProperty('popupWidth', popupWidth))
+    ..add(DoubleProperty('maxHeight', maxHeight));
   }
 }

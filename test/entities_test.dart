@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:c2pa_view/domain/entities/entities.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('SignatureInfo', () {
@@ -20,7 +20,7 @@ void main() {
     });
 
     test('fromJson handles null fields', () {
-      final info = SignatureInfo.fromJson({});
+      final info = SignatureInfo.fromJson(const {});
 
       expect(info.issuer, isNull);
       expect(info.certSerialNumber, isNull);
@@ -61,17 +61,17 @@ void main() {
     });
 
     test('isError returns false for validated codes', () {
-      final entry = ValidationStatusEntry(code: 'claimSignature.validated');
+      const entry = ValidationStatusEntry(code: 'claimSignature.validated');
       expect(entry.isError, false);
     });
 
     test('isError returns false for trusted codes', () {
-      final entry = ValidationStatusEntry(code: 'signingCredential.trusted');
+      const entry = ValidationStatusEntry(code: 'signingCredential.trusted');
       expect(entry.isError, false);
     });
 
     test('isError returns true for error codes', () {
-      final entry = ValidationStatusEntry(code: 'assertion.hashedURI.mismatch');
+      const entry = ValidationStatusEntry(code: 'assertion.hashedURI.mismatch');
       expect(entry.isError, true);
     });
   });
@@ -92,7 +92,7 @@ void main() {
     });
 
     test('fromJson defaults name to Unknown', () {
-      final info = ClaimGeneratorInfo.fromJson({});
+      final info = ClaimGeneratorInfo.fromJson(const {});
       expect(info.name, 'Unknown');
     });
   });
@@ -207,7 +207,7 @@ void main() {
     });
 
     test('fromAssertionData with no entries', () {
-      final tm = TrainingMining.fromAssertionData({});
+      final tm = TrainingMining.fromAssertionData(const {});
 
       expect(tm.doNotTrain, false);
       expect(tm.doNotMine, false);
@@ -245,7 +245,7 @@ void main() {
     });
 
     test('toFlatEntries flattens simple values', () {
-      final field = CustomField(key: 'myKey', value: 'hello', source: 's');
+      const field = CustomField(key: 'myKey', value: 'hello', source: 's');
       final entries = field.toFlatEntries();
 
       expect(entries.length, 1);
@@ -254,7 +254,7 @@ void main() {
     });
 
     test('toFlatEntries flattens nested maps', () {
-      final field = CustomField(
+      const field = CustomField(
         key: 'parent',
         value: {
           'child': 'value',
@@ -265,8 +265,8 @@ void main() {
       final entries = field.toFlatEntries();
 
       expect(entries.length, 2);
-      expect(entries.any((e) => e.key == 'parent.child'), true);
-      expect(entries.any((e) => e.key == 'parent.nested.deep'), true);
+      expect(entries.any((final e) => e.key == 'parent.child'), true);
+      expect(entries.any((final e) => e.key == 'parent.nested.deep'), true);
     });
   });
 
@@ -311,7 +311,7 @@ void main() {
       expect(manifest.actions!.length, 2);
       expect(manifest.actions![0].action, 'c2pa.created');
       expect(
-        manifest.assertions.where((a) => a.label == 'c2pa.actions'),
+        manifest.assertions.where((final a) => a.label == 'c2pa.actions'),
         isEmpty,
       );
     });
@@ -331,7 +331,7 @@ void main() {
 
       expect(manifest.exifData, isNotNull);
       expect(manifest.exifData!.cameraMake, 'Nikon');
-      expect(manifest.assertions.where((a) => a.label == 'stds.exif'), isEmpty);
+      expect(manifest.assertions.where((final a) => a.label == 'stds.exif'), isEmpty);
     });
 
     test('fromJson routes creative work assertion', () {
@@ -469,7 +469,7 @@ void main() {
 
       final customActionFields =
           manifest.customFields
-              .where((f) => f.source == 'action_parameter')
+              .where((final f) => f.source == 'action_parameter')
               .toList();
       expect(customActionFields.length, 1);
       expect(customActionFields.first.key, 'vendorCustomParam');

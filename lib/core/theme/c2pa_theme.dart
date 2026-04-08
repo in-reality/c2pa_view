@@ -1,44 +1,12 @@
-import 'package:flutter/material.dart';
-
 import 'package:c2pa_view/domain/models/validation_result.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 /// Theme data for C2PA manifest viewer widgets.
 ///
 /// Provides colors, text styles, and other visual properties that
 /// can be customized by wrapping your widget tree with [C2paViewerTheme].
 class C2paViewerThemeData {
-  final Color validColor;
-  final Color invalidColor;
-  final Color unrecognizedColor;
-  final Color noCredentialColor;
-
-  final Color surfaceColor;
-  final Color surfaceVariantColor;
-  final Color borderColor;
-  final Color textPrimaryColor;
-  final Color textSecondaryColor;
-  final Color iconColor;
-
-  final Color selectedNodeBorderColor;
-  final Color pathNodeBorderColor;
-  final Color defaultNodeBorderColor;
-  final Color edgeColor;
-
-  final TextStyle titleLargeStyle;
-  final TextStyle titleMediumStyle;
-  final TextStyle titleSmallStyle;
-  final TextStyle bodyStyle;
-  final TextStyle bodySmallStyle;
-  final TextStyle labelStyle;
-
-  final double sidebarWidth;
-  final double thumbnailSize;
-  final double nodeWidth;
-  final double nodeHeight;
-  final double nodeSpacingX;
-  final double nodeSpacingY;
-  final BorderRadius cardRadius;
-  final BorderRadius sectionRadius;
 
   const C2paViewerThemeData({
     this.validColor = const Color(0xFF1B8D3E),
@@ -96,8 +64,6 @@ class C2paViewerThemeData {
     this.sectionRadius = const BorderRadius.all(Radius.circular(8)),
   });
 
-  static const C2paViewerThemeData defaults = C2paViewerThemeData();
-
   factory C2paViewerThemeData.dark() => const C2paViewerThemeData(
     surfaceColor: Color(0xFF1E1E1E),
     surfaceVariantColor: Color(0xFF2D2D2D),
@@ -147,8 +113,42 @@ class C2paViewerThemeData {
       color: Color(0xFF9E9E9E),
     ),
   );
+  final Color validColor;
+  final Color invalidColor;
+  final Color unrecognizedColor;
+  final Color noCredentialColor;
 
-  Color colorForStatus(ValidationStatus status) {
+  final Color surfaceColor;
+  final Color surfaceVariantColor;
+  final Color borderColor;
+  final Color textPrimaryColor;
+  final Color textSecondaryColor;
+  final Color iconColor;
+
+  final Color selectedNodeBorderColor;
+  final Color pathNodeBorderColor;
+  final Color defaultNodeBorderColor;
+  final Color edgeColor;
+
+  final TextStyle titleLargeStyle;
+  final TextStyle titleMediumStyle;
+  final TextStyle titleSmallStyle;
+  final TextStyle bodyStyle;
+  final TextStyle bodySmallStyle;
+  final TextStyle labelStyle;
+
+  final double sidebarWidth;
+  final double thumbnailSize;
+  final double nodeWidth;
+  final double nodeHeight;
+  final double nodeSpacingX;
+  final double nodeSpacingY;
+  final BorderRadius cardRadius;
+  final BorderRadius sectionRadius;
+
+  static const C2paViewerThemeData defaults = C2paViewerThemeData();
+
+  Color colorForStatus(final ValidationStatus status) {
     switch (status) {
       case ValidationStatus.valid:
         return validColor;
@@ -166,15 +166,21 @@ class C2paViewerThemeData {
 
 /// InheritedWidget providing [C2paViewerThemeData] to descendant widgets.
 class C2paViewerTheme extends InheritedWidget {
+
+  const C2paViewerTheme({required this.data, required super.child, super.key});
   final C2paViewerThemeData data;
 
-  const C2paViewerTheme({super.key, required this.data, required super.child});
-
-  static C2paViewerThemeData of(BuildContext context) {
+  static C2paViewerThemeData of(final BuildContext context) {
     final theme = context.dependOnInheritedWidgetOfExactType<C2paViewerTheme>();
     return theme?.data ?? C2paViewerThemeData.defaults;
   }
 
   @override
-  bool updateShouldNotify(C2paViewerTheme oldWidget) => data != oldWidget.data;
+  bool updateShouldNotify(final C2paViewerTheme oldWidget) => data != oldWidget.data;
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<C2paViewerThemeData>('data', data));
+  }
 }

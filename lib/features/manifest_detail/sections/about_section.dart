@@ -1,23 +1,22 @@
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/entities/custom_field.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
 import 'package:c2pa_view/features/custom_fields/custom_fields_table.dart';
 import 'package:c2pa_view/features/shared/widgets/collapsible_section.dart';
 import 'package:c2pa_view/features/shared/widgets/sub_section.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 /// Collapsible "About this Content Credential" section.
 class AboutSection extends StatelessWidget {
-  final ManifestViewData data;
-  final List<CustomField> creativeWorkCustomFields;
 
   const AboutSection({
-    super.key,
-    required this.data,
+    required this.data, super.key,
     this.creativeWorkCustomFields = const [],
   });
+  final ManifestViewData data;
+  final List<CustomField> creativeWorkCustomFields;
 
   bool get _hasContent =>
       data.issuer != null ||
@@ -28,8 +27,10 @@ class AboutSection extends StatelessWidget {
       creativeWorkCustomFields.isNotEmpty;
 
   @override
-  Widget build(BuildContext context) {
-    if (!_hasContent) return const SizedBox.shrink();
+  Widget build(final BuildContext context) {
+    if (!_hasContent) {
+      return const SizedBox.shrink();
+    }
 
     return CollapsibleSection(
       title: 'About this Content Credential',
@@ -53,14 +54,21 @@ class AboutSection extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<ManifestViewData>('data', data))
+    ..add(IterableProperty<CustomField>('creativeWorkCustomFields', creativeWorkCustomFields));
+  }
 }
 
 class _IssuedBySubSection extends StatelessWidget {
-  final String issuer;
   const _IssuedBySubSection({required this.issuer});
+  final String issuer;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
 
     return SubSection(
@@ -84,14 +92,20 @@ class _IssuedBySubSection extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(StringProperty('issuer', issuer));
+  }
 }
 
 class _IssuedOnSubSection extends StatelessWidget {
-  final DateTime date;
   const _IssuedOnSubSection({required this.date});
+  final DateTime date;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
     return SubSection(
       label: 'Issued on',
@@ -101,14 +115,20 @@ class _IssuedOnSubSection extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<DateTime>('date', date));
+  }
 }
 
 class _ProducerSubSection extends StatelessWidget {
-  final String producer;
   const _ProducerSubSection({required this.producer});
+  final String producer;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
     return SubSection(
       label: 'Producer',
@@ -118,14 +138,20 @@ class _ProducerSubSection extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(StringProperty('producer', producer));
+  }
 }
 
 class _SocialAccountsSubSection extends StatelessWidget {
-  final List<SocialAccountDisplayInfo> accounts;
   const _SocialAccountsSubSection({required this.accounts});
+  final List<SocialAccountDisplayInfo> accounts;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
     return SubSection(
       label: 'Social accounts',
@@ -155,13 +181,19 @@ class _SocialAccountsSubSection extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(IterableProperty<SocialAccountDisplayInfo>('accounts', accounts));
+  }
 }
 
 class _DoNotTrainSubSection extends StatelessWidget {
   const _DoNotTrainSubSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
     return SubSection(
       label: 'AI training',

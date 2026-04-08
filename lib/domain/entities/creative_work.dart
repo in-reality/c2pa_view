@@ -1,18 +1,8 @@
+import 'package:c2pa_view/domain/entities/custom_field.dart';
 import 'package:equatable/equatable.dart';
-
-import 'custom_field.dart';
 
 /// Parsed data from the `stds.schema-org.CreativeWork` assertion.
 class CreativeWork extends Equatable {
-  final String? author;
-  final String? copyrightNotice;
-  final String? copyrightHolder;
-  final String? producer;
-  final String? creditText;
-  final String? website;
-  final List<SocialAccount> socialAccounts;
-  final Map<String, dynamic>? rawData;
-  final List<CustomField> customFields;
 
   const CreativeWork({
     this.author,
@@ -25,18 +15,6 @@ class CreativeWork extends Equatable {
     this.rawData,
     this.customFields = const [],
   });
-
-  static const _knownKeys = {
-    '@context',
-    '@type',
-    'author',
-    'copyrightNotice',
-    'copyrightHolder',
-    'producer',
-    'creditText',
-    'url',
-    'sameAs',
-  };
 
   factory CreativeWork.fromAssertionData(final Map<String, dynamic> data) {
     final socialAccounts = <SocialAccount>[];
@@ -58,9 +36,9 @@ class CreativeWork extends Equatable {
 
     final customEntries =
         data.entries
-            .where((e) => !_knownKeys.contains(e.key))
+            .where((final e) => !_knownKeys.contains(e.key))
             .map(
-              (e) => CustomField(
+              (final e) => CustomField(
                 key: e.key,
                 value: e.value,
                 source: 'creative_work_extension',
@@ -80,27 +58,61 @@ class CreativeWork extends Equatable {
       customFields: customEntries,
     );
   }
+  final String? author;
+  final String? copyrightNotice;
+  final String? copyrightHolder;
+  final String? producer;
+  final String? creditText;
+  final String? website;
+  final List<SocialAccount> socialAccounts;
+  final Map<String, dynamic>? rawData;
+  final List<CustomField> customFields;
 
-  static String? _extractPersonName(dynamic value) {
-    if (value is String) return value;
+  static const _knownKeys = {
+    '@context',
+    '@type',
+    'author',
+    'copyrightNotice',
+    'copyrightHolder',
+    'producer',
+    'creditText',
+    'url',
+    'sameAs',
+  };
+
+  static String? _extractPersonName(final value) {
+    if (value is String) {
+      return value;
+    }
     if (value is Map<String, dynamic>) {
       return value['name'] as String? ?? value['@value'] as String?;
     }
-    if (value is List && value.isNotEmpty)
+    if (value is List && value.isNotEmpty) {
       return _extractPersonName(value.first);
+    }
     return null;
   }
 
-  static String _guessPlatform(String url) {
+  static String _guessPlatform(final String url) {
     final lower = url.toLowerCase();
     if (lower.contains('twitter.com') || lower.contains('x.com')) {
       return 'Twitter/X';
     }
-    if (lower.contains('instagram.com')) return 'Instagram';
-    if (lower.contains('facebook.com')) return 'Facebook';
-    if (lower.contains('linkedin.com')) return 'LinkedIn';
-    if (lower.contains('youtube.com')) return 'YouTube';
-    if (lower.contains('tiktok.com')) return 'TikTok';
+    if (lower.contains('instagram.com')) {
+      return 'Instagram';
+    }
+    if (lower.contains('facebook.com')) {
+      return 'Facebook';
+    }
+    if (lower.contains('linkedin.com')) {
+      return 'LinkedIn';
+    }
+    if (lower.contains('youtube.com')) {
+      return 'YouTube';
+    }
+    if (lower.contains('tiktok.com')) {
+      return 'TikTok';
+    }
     return 'Website';
   }
 
@@ -120,10 +132,10 @@ class CreativeWork extends Equatable {
 
 /// A social media account reference.
 class SocialAccount extends Equatable {
-  final String platform;
-  final String url;
 
   const SocialAccount({required this.platform, required this.url});
+  final String platform;
+  final String url;
 
   @override
   List<Object?> get props => [platform, url];

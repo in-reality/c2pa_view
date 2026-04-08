@@ -2,18 +2,18 @@ import 'package:flutter/rendering.dart';
 
 /// Custom painter that draws curved edges between tree nodes.
 class TreeEdgePainter extends CustomPainter {
-  final List<EdgeLine> edges;
-  final Color color;
-  final double strokeWidth;
 
   TreeEdgePainter({
     required this.edges,
     required this.color,
     this.strokeWidth = 2.0,
   });
+  final List<EdgeLine> edges;
+  final Color color;
+  final double strokeWidth;
 
   @override
-  void paint(Canvas canvas, Size size) {
+  void paint(final Canvas canvas, final Size size) {
     final paint =
         Paint()
           ..color = color
@@ -22,8 +22,8 @@ class TreeEdgePainter extends CustomPainter {
           ..strokeCap = StrokeCap.round;
 
     for (final edge in edges) {
-      final path = Path();
-      path.moveTo(edge.from.dx, edge.from.dy);
+      final path = Path()
+      ..moveTo(edge.from.dx, edge.from.dy);
 
       final midY = (edge.from.dy + edge.to.dy) / 2;
       path.cubicTo(
@@ -40,7 +40,7 @@ class TreeEdgePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(TreeEdgePainter oldDelegate) =>
+  bool shouldRepaint(final TreeEdgePainter oldDelegate) =>
       edges != oldDelegate.edges ||
       color != oldDelegate.color ||
       strokeWidth != oldDelegate.strokeWidth;
@@ -48,12 +48,12 @@ class TreeEdgePainter extends CustomPainter {
 
 /// A line segment between two points in the tree layout.
 class EdgeLine {
+  const EdgeLine({required this.from, required this.to});
   final Offset from;
   final Offset to;
-  const EdgeLine({required this.from, required this.to});
 
   @override
-  bool operator ==(Object other) =>
+  bool operator ==(final Object other) =>
       identical(this, other) ||
       other is EdgeLine && from == other.from && to == other.to;
 

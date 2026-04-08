@@ -1,17 +1,19 @@
-import 'package:flutter/material.dart';
-
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 /// Content summary section showing AI generation information.
 class ContentSummarySection extends StatelessWidget {
-  final GenerativeInfo? generativeInfo;
 
   const ContentSummarySection({super.key, this.generativeInfo});
+  final GenerativeInfo? generativeInfo;
 
   @override
-  Widget build(BuildContext context) {
-    if (generativeInfo == null) return const SizedBox.shrink();
+  Widget build(final BuildContext context) {
+    if (generativeInfo == null) {
+      return const SizedBox.shrink();
+    }
 
     final theme = C2paViewerTheme.of(context);
 
@@ -52,5 +54,11 @@ class ContentSummarySection extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<GenerativeInfo?>('generativeInfo', generativeInfo));
   }
 }

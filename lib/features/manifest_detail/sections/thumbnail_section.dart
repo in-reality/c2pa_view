@@ -1,13 +1,10 @@
-import 'package:flutter/material.dart';
-
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/features/shared/widgets/c2pa_thumbnail.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 /// Large thumbnail section at the top of the detail panel.
 class ThumbnailSection extends StatelessWidget {
-  final ImageProvider? thumbnail;
-  final String? mimeType;
-  final VoidCallback? onTapFullScreen;
 
   const ThumbnailSection({
     super.key,
@@ -15,9 +12,12 @@ class ThumbnailSection extends StatelessWidget {
     this.mimeType,
     this.onTapFullScreen,
   });
+  final ImageProvider? thumbnail;
+  final String? mimeType;
+  final VoidCallback? onTapFullScreen;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
 
     return Padding(
@@ -60,5 +60,13 @@ class ThumbnailSection extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<ImageProvider<Object>?>('thumbnail', thumbnail))
+    ..add(StringProperty('mimeType', mimeType))
+    ..add(ObjectFlagProperty<VoidCallback?>.has('onTapFullScreen', onTapFullScreen));
   }
 }

@@ -1,21 +1,27 @@
 import 'dart:convert';
 
+import 'package:c2pa_view/core/theme/c2pa_theme.dart';
+import 'package:c2pa_view/domain/models/manifest_view_data.dart';
+import 'package:c2pa_view/features/shared/widgets/credential_indicator.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
-import 'package:c2pa_view/core/theme/c2pa_theme.dart';
-import 'package:c2pa_view/domain/models/manifest_view_data.dart';
-import 'package:c2pa_view/features/shared/widgets/credential_indicator.dart';
-
 /// Sticky header at the top of the detail panel.
 class DetailHeader extends StatefulWidget {
-  final ManifestViewData data;
 
-  const DetailHeader({super.key, required this.data});
+  const DetailHeader({required this.data, super.key});
+  final ManifestViewData data;
 
   @override
   State<DetailHeader> createState() => _DetailHeaderState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<ManifestViewData>('data', data));
+  }
 }
 
 class _DetailHeaderState extends State<DetailHeader> {
@@ -23,17 +29,23 @@ class _DetailHeaderState extends State<DetailHeader> {
 
   Future<void> _copyJson() async {
     final raw = widget.data.rawJson;
-    if (raw == null) return;
+    if (raw == null) {
+      return;
+    }
     final jsonString = const JsonEncoder.withIndent('  ').convert(raw);
     await Clipboard.setData(ClipboardData(text: jsonString));
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     setState(() => _copied = true);
     await Future<void>.delayed(const Duration(seconds: 2));
-    if (mounted) setState(() => _copied = false);
+    if (mounted) {
+      setState(() => _copied = false);
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
     final data = widget.data;
 
@@ -92,9 +104,11 @@ class _DetailHeaderState extends State<DetailHeader> {
     );
   }
 
-  String _issuedByLine(ManifestViewData data) {
+  String _issuedByLine(final ManifestViewData data) {
     final parts = <String>[];
-    if (data.issuer != null) parts.add('Issued by ${data.issuer}');
+    if (data.issuer != null) {
+      parts.add('Issued by ${data.issuer}');
+    }
     if (data.signedDate != null) {
       final formatted = DateFormat.yMMMd().add_jm().format(data.signedDate!);
       if (parts.isEmpty) {

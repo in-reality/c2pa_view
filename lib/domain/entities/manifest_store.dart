@@ -74,12 +74,16 @@ class ManifestStore extends Equatable {
   ///
   /// Input: `self#jumbf=/c2pa/contentauth:urn:uuid:XXXX/c2pa.signature`
   /// Output: `contentauth:urn:uuid:XXXX`
-  static String? _extractManifestLabel(String? url) {
-    if (url == null) return null;
+  static String? _extractManifestLabel(final String? url) {
+    if (url == null) {
+      return null;
+    }
     // Find the /c2pa/ prefix in the fragment or path.
     const prefix = '/c2pa/';
     final idx = url.indexOf(prefix);
-    if (idx == -1) return null;
+    if (idx == -1) {
+      return null;
+    }
     final afterPrefix = url.substring(idx + prefix.length);
     // The manifest label ends at the next '/' (if present).
     final slashIdx = afterPrefix.indexOf('/');
@@ -89,7 +93,9 @@ class ManifestStore extends Equatable {
   /// Creates a ManifestStore from a local file path.
   static ManifestStore? fromLocalPath(final String localPath) {
     final manifestJson = getManifestJsonFromFile(localPath);
-    if (manifestJson == null) return null;
+    if (manifestJson == null) {
+      return null;
+    }
     return ManifestStore.fromJson(json.decode(manifestJson));
   }
 
@@ -99,7 +105,9 @@ class ManifestStore extends Equatable {
     final String? format,
   }) async {
     final manifestJson = await getManifestJsonFromURL(url, format: format);
-    if (manifestJson == null) return null;
+    if (manifestJson == null) {
+      return null;
+    }
     return ManifestStore.fromJson(json.decode(manifestJson));
   }
 
@@ -112,7 +120,9 @@ class ManifestStore extends Equatable {
       fileBytes: fileBytes,
       format: format,
     );
-    if (manifestJson == null) return null;
+    if (manifestJson == null) {
+      return null;
+    }
     return ManifestStore.fromJson(json.decode(manifestJson));
   }
 

@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
-
+import 'package:c2pa_view/c2pa_view.dart' show ManifestSummary;
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
+import 'package:c2pa_view/domain/models/manifest_summary.dart' show ManifestSummary;
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
-
-import 'manifest_summary_card.dart';
+import 'package:c2pa_view/features/shared/widgets/manifest_summary_card.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 /// A compact card showing an ingredient with thumbnail, title, and credential
 /// status, rendered via [ManifestSummaryCard] (listItem variant).
@@ -13,13 +14,13 @@ import 'manifest_summary_card.dart';
 /// tree node.  Passing the same data to both widgets guarantees they always
 /// agree.
 class IngredientCard extends StatelessWidget {
+
+  const IngredientCard({required this.ingredient, super.key, this.onTap});
   final IngredientDisplayInfo ingredient;
   final VoidCallback? onTap;
 
-  const IngredientCard({super.key, required this.ingredient, this.onTap});
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
 
     return InkWell(
@@ -37,5 +38,12 @@ class IngredientCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<IngredientDisplayInfo>('ingredient', ingredient))
+    ..add(ObjectFlagProperty<VoidCallback?>.has('onTap', onTap));
   }
 }

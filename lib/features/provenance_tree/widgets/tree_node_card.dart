@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
-
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/manifest_summary.dart';
 import 'package:c2pa_view/domain/models/provenance_node.dart';
 import 'package:c2pa_view/features/shared/widgets/manifest_summary_card.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 /// A card representing a single node in the provenance tree.
 ///
@@ -12,23 +12,22 @@ import 'package:c2pa_view/features/shared/widgets/manifest_summary_card.dart';
 /// only knows about [node.summary] -- it has no access to parent or child
 /// information.
 class TreeNodeCard extends StatelessWidget {
+
+  const TreeNodeCard({
+    required this.node, super.key,
+    this.isSelected = false,
+    this.isOnPath = false,
+    this.onTap,
+    this.mediaImage,
+  });
   final ProvenanceNode node;
   final bool isSelected;
   final bool isOnPath;
   final VoidCallback? onTap;
   final ImageProvider? mediaImage;
 
-  const TreeNodeCard({
-    super.key,
-    required this.node,
-    this.isSelected = false,
-    this.isOnPath = false,
-    this.onTap,
-    this.mediaImage,
-  });
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
 
     final borderColor =
@@ -76,5 +75,15 @@ class TreeNodeCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<ProvenanceNode>('node', node))
+    ..add(DiagnosticsProperty<bool>('isSelected', isSelected))
+    ..add(DiagnosticsProperty<bool>('isOnPath', isOnPath))
+    ..add(ObjectFlagProperty<VoidCallback?>.has('onTap', onTap))
+    ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage));
   }
 }

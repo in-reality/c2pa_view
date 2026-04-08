@@ -1,19 +1,19 @@
-import 'package:flutter/material.dart';
-
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
 import 'package:c2pa_view/features/custom_fields/custom_fields_table.dart';
 import 'package:c2pa_view/features/shared/widgets/collapsible_section.dart';
 import 'package:c2pa_view/features/shared/widgets/ingredient_card.dart';
 import 'package:c2pa_view/features/shared/widgets/sub_section.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 /// Collapsible "Process" section showing claim generator, AI tools,
 /// actions, and ingredients.
 class ProcessSection extends StatelessWidget {
+
+  const ProcessSection({required this.data, super.key, this.onIngredientTap});
   final ManifestViewData data;
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
-
-  const ProcessSection({super.key, required this.data, this.onIngredientTap});
 
   bool get _hasContent =>
       data.claimGenerator != null ||
@@ -22,8 +22,10 @@ class ProcessSection extends StatelessWidget {
       data.ingredients.isNotEmpty;
 
   @override
-  Widget build(BuildContext context) {
-    if (!_hasContent) return const SizedBox.shrink();
+  Widget build(final BuildContext context) {
+    if (!_hasContent) {
+      return const SizedBox.shrink();
+    }
 
     return CollapsibleSection(
       title: 'Process',
@@ -45,14 +47,21 @@ class ProcessSection extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<ManifestViewData>('data', data))
+    ..add(ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has('onIngredientTap', onIngredientTap));
+  }
 }
 
 class _AppDeviceSubSection extends StatelessWidget {
-  final ManifestViewData data;
   const _AppDeviceSubSection({required this.data});
+  final ManifestViewData data;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
     final gen = data.claimGenerator!;
 
@@ -68,7 +77,7 @@ class _AppDeviceSubSection extends StatelessWidget {
                 width: 24,
                 height: 24,
                 errorBuilder:
-                    (_, __, ___) =>
+                    (_, final __, final ___) =>
                         Icon(Icons.apps, size: 24, color: theme.iconColor),
               ),
             ),
@@ -87,14 +96,20 @@ class _AppDeviceSubSection extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<ManifestViewData>('data', data));
+  }
 }
 
 class _AiToolSubSection extends StatelessWidget {
-  final ManifestViewData data;
   const _AiToolSubSection({required this.data});
+  final ManifestViewData data;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
 
     return SubSection(
@@ -124,15 +139,20 @@ class _AiToolSubSection extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<ManifestViewData>('data', data));
+  }
 }
 
 class _ActionsSubSection extends StatelessWidget {
-  final ManifestViewData data;
   const _ActionsSubSection({required this.data});
+  final ManifestViewData data;
 
   @override
-  Widget build(BuildContext context) {
-    return SubSection(
+  Widget build(final BuildContext context) => SubSection(
       label: 'Edits and activity',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,22 +161,33 @@ class _ActionsSubSection extends StatelessWidget {
         ],
       ),
     );
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<ManifestViewData>('data', data));
   }
 }
 
 class _ActionRow extends StatefulWidget {
-  final ActionDisplayInfo action;
   const _ActionRow({required this.action});
+  final ActionDisplayInfo action;
 
   @override
   State<_ActionRow> createState() => _ActionRowState();
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<ActionDisplayInfo>('action', action));
+  }
 }
 
 class _ActionRowState extends State<_ActionRow> {
   bool _expanded = false;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
     final action = widget.action;
     final hasParams = action.customParams.isNotEmpty;
@@ -230,7 +261,7 @@ class _ActionRowState extends State<_ActionRow> {
     );
   }
 
-  IconData _iconForAction(String actionType) {
+  IconData _iconForAction(final String actionType) {
     const icons = {
       'c2pa.created': Icons.add_circle_outline,
       'c2pa.opened': Icons.folder_open,
@@ -250,14 +281,13 @@ class _ActionRowState extends State<_ActionRow> {
 }
 
 class _IngredientsSubSection extends StatelessWidget {
+
+  const _IngredientsSubSection({required this.data, this.onIngredientTap});
   final ManifestViewData data;
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
 
-  const _IngredientsSubSection({required this.data, this.onIngredientTap});
-
   @override
-  Widget build(BuildContext context) {
-    return SubSection(
+  Widget build(final BuildContext context) => SubSection(
       label: 'Ingredients',
       child: Column(
         children: [
@@ -274,5 +304,11 @@ class _IngredientsSubSection extends StatelessWidget {
         ],
       ),
     );
+
+  @override
+  void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties..add(DiagnosticsProperty<ManifestViewData>('data', data))
+    ..add(ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has('onIngredientTap', onIngredientTap));
   }
 }
