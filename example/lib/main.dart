@@ -29,13 +29,15 @@ class C2paExampleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'c2pa_view example',
+      title: 'InReality C2PA Viewer',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
       home: C2paViewerTheme(
         data: const C2paViewerThemeData(),
-        child: HomePage(initError: initError),
+        child: SelectionArea(
+          child: HomePage(initError: initError),
+        ),
       ),
     );
   }
@@ -62,6 +64,11 @@ class _HomePageState extends State<HomePage> {
       _fileName = null;
       _error = null;
     });
+  }
+
+  Future<void> _chooseAnotherFile() async {
+    _clearFile();
+    await _pickFile();
   }
 
   Future<void> _loadFile(Uint8List bytes, String name) async {
@@ -139,45 +146,46 @@ class _HomePageState extends State<HomePage> {
         fileName: _fileName!,
         initError: widget.initError,
         onBack: _clearFile,
+        onChooseAnother: _chooseAnotherFile,
         mimeTypeForFileName: _mimeTypeForFileName,
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('c2pa_view example')),
-      body: SelectionArea(
-        child: Column(
-          children: [
-            if (widget.initError != null)
-              _InitErrorBanner(message: widget.initError!),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-            Expanded(
-              child: Center(
-                child: DropTarget(
-                  onDragEntered: (_) {
-                    setState(() => _isDragging = true);
-                  },
-                  onDragExited: (_) {
-                    setState(() => _isDragging = false);
-                  },
-                  onDragDone: _onDropDone,
-                  child: GestureDetector(
-                    onTap: _pickFile,
-                    behavior: HitTestBehavior.opaque,
-                    child: _SelectFilePanel(isDragging: _isDragging),
-                  ),
+      appBar: AppBar(title: const Text('InReality C2PA Viewer')),
+      body: Column(
+        children: [
+          if (widget.initError != null)
+            _InitErrorBanner(message: widget.initError!),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                _error!,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
                 ),
               ),
             ),
-          ],
-        ),
+          Expanded(
+            child: Center(
+              child: DropTarget(
+                onDragEntered: (_) {
+                  setState(() => _isDragging = true);
+                },
+                onDragExited: (_) {
+                  setState(() => _isDragging = false);
+                },
+                onDragDone: _onDropDone,
+                child: GestureDetector(
+                  onTap: _pickFile,
+                  behavior: HitTestBehavior.opaque,
+                  child: _SelectFilePanel(isDragging: _isDragging),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -344,6 +352,7 @@ class _ManifestViewScaffold extends StatelessWidget {
     required this.fileName,
     required this.initError,
     required this.onBack,
+    required this.onChooseAnother,
     required this.mimeTypeForFileName,
   });
 
@@ -351,6 +360,7 @@ class _ManifestViewScaffold extends StatelessWidget {
   final String fileName;
   final String? initError;
   final VoidCallback onBack;
+  final VoidCallback onChooseAnother;
   final String Function(String name) mimeTypeForFileName;
 
   @override
@@ -394,7 +404,7 @@ class _ManifestViewScaffold extends StatelessWidget {
               const Text('No C2PA manifest found in this file.'),
               const SizedBox(height: 16),
               FilledButton(
-                onPressed: onBack,
+                onPressed: onChooseAnother,
                 child: const Text('Choose another file'),
               ),
             ],
