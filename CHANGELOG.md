@@ -1,3 +1,17 @@
+
+## 0.2.0 (2026-04-08)
+
+Major rewrite of the package architecture and UI.
+
+- Added interactive provenance graph and detail experience via
+  `C2paManifestViewer` and `ProvenanceTreeViewer`.
+- Added popup detail support with `showManifestDetailPopup`.
+- Replaced legacy display flow with modular domain entities, mappers,
+  and feature widgets.
+- Improved manifest parsing and validation mapping.
+- Updated Rust bridge integration and retained multi-platform FFI
+  support (Android, iOS, Linux, macOS, Windows).
+
 ## 0.1.1 (2025-05-02)
 
 ### Fixes
