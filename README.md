@@ -8,6 +8,8 @@ A Flutter plugin for reading and displaying [C2PA](https://c2pa.org/) (Coalition
 - 🔍 Access structured provenance data: actions, ingredients, signatures, EXIF, AI generation info, and more
 - ✅ Full validation with trust-list checking
 
+<img src="https://raw.githubusercontent.com/in-reality/c2pa_view/refs/heads/main/screenshots/c2pa_view_screenshot.png" />
+
 ## Setup
 
 ### Version compatibility note

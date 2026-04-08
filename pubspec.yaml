@@ -2,7 +2,7 @@ name: c2pa_view
 description: "`c2pa_view` is a Flutter plugin for viewing C2PA manifests in files. 
 It provides an interactive interface to extract and display C2PA metadata using the official C2PA Rust 
 library and the Flutter Rust Bridge."
-version: 0.2.0
+version: 0.2.1
 homepage: "https://github.com/in-reality/c2pa_view"
 
 environment:
