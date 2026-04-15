@@ -4,17 +4,19 @@
 //! The tests read `EVIDENCE_DIR` (env var, defaults to `<repo>/c2pa/evidence/`)
 //! and cover four categories:
 //!
-//! 1. **Positive (own outputs)** — `assets/`: signed files must have
+//! 1. **Positive (own outputs)** — `generator/`: signed files must have
 //!    `active_manifest`, `claim_generator_info[0].name == "inreality-capture"`,
 //!    and only `signingCredential.untrusted` in `validation_status`.
-//! 2. **Positive (third-party)** — `third_party/`: signed files from other
-//!    vendors must have `active_manifest` and only untrusted-cert statuses.
-//! 3. **Negative (error detection)** — `negative/E-*` and `CIE-*`: files with
-//!    intentional errors must produce specific error codes in `validation_status`.
-//! 4. **No manifest** — `negative/*-A.jpg`: plain files without C2PA data must
-//!    return `Ok(None)`.
+//! 2. **Positive (third-party)** — `validator/positive-samples/`: signed files
+//!    from other vendors must have `active_manifest` and only untrusted-cert
+//!    statuses.
+//! 3. **Negative (error detection)** — `validator/negative-samples/E-*` and
+//!    `CIE-*`: files with intentional errors must produce specific error codes
+//!    in `validation_status`.
+//! 4. **No manifest** — `validator/negative-samples/*-A.jpg`: plain files
+//!    without C2PA data must return `Ok(None)`.
 //!
-//! Logs are written to `EVIDENCE_DIR/logs/c2pa_view_<id>.json`.
+//! Logs are written to `validator_utility/c2pa_view_<id>.json`.
 
 use c2pa_view::api::c2pa::get_manifest_with_validation;
 use std::fs;
@@ -34,6 +36,14 @@ fn evidence_dir() -> PathBuf {
             .unwrap()
             .join("c2pa")
             .join("evidence")
+    }
+}
+
+fn logs_dir() -> PathBuf {
+    if let Ok(dir) = std::env::var("C2PA_VIEW_LOGS_DIR") {
+        PathBuf::from(dir)
+    } else {
+        evidence_dir().join("validator_utility")
     }
 }
 
@@ -65,7 +75,7 @@ fn stem_ends_with_unsigned(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-/// Collect signed media files from the flat `assets/` directory.
+/// Collect signed media files from the flat `generator/` directory.
 ///
 /// Signed files are media files whose stem does NOT end with `_unsigned`.
 fn collect_signed_assets(dir: &Path) -> Vec<PathBuf> {
@@ -170,16 +180,16 @@ const ALLOWED_UNTRUSTED_STATUSES: &[&str] = &[
 #[test]
 fn validate_signed_files() {
     let edir = evidence_dir();
-    let logs_dir = edir.join("logs");
-    let assets_dir = edir.join("assets");
+    let logs_dir = logs_dir();
+    let generator_dir = edir.join("generator");
 
-    println!("\n=== c2pa_view: validating signed files in assets/ ===\n");
+    println!("\n=== c2pa_view: validating signed files in generator/ ===\n");
 
-    let files = collect_signed_assets(&assets_dir);
+    let files = collect_signed_assets(&generator_dir);
     assert!(
         !files.is_empty(),
         "No signed files found in {}",
-        assets_dir.display()
+        generator_dir.display()
     );
 
     let mut failures = Vec::new();
@@ -241,10 +251,10 @@ fn validate_signed_files() {
 #[test]
 fn validate_third_party_files() {
     let edir = evidence_dir();
-    let logs_dir = edir.join("logs");
-    let tp_dir = edir.join("third_party");
+    let logs_dir = logs_dir();
+    let tp_dir = edir.join("validator").join("positive-samples");
 
-    println!("\n=== c2pa_view: validating third_party/ files ===\n");
+    println!("\n=== c2pa_view: validating validator/positive-samples/ files ===\n");
 
     let files = collect_third_party_files(&tp_dir);
     if files.is_empty() {
@@ -390,13 +400,13 @@ fn try_validate_file(path: &Path) -> Option<ValidationResult> {
 #[test]
 fn validate_negative_files() {
     let edir = evidence_dir();
-    let logs_dir = edir.join("logs");
-    let neg_dir = edir.join("negative");
+    let logs_dir = logs_dir();
+    let neg_dir = edir.join("validator").join("negative-samples");
 
-    println!("\n=== c2pa_view: validating negative/ error files ===\n");
+    println!("\n=== c2pa_view: validating validator/negative-samples/ error files ===\n");
 
     if !neg_dir.exists() {
-        println!("  No negative/ directory found -- skipping");
+        println!("  No validator/negative-samples/ directory found -- skipping");
         return;
     }
 
@@ -476,12 +486,12 @@ fn validate_negative_files() {
 #[test]
 fn validate_no_manifest_files() {
     let edir = evidence_dir();
-    let neg_dir = edir.join("negative");
+    let neg_dir = edir.join("validator").join("negative-samples");
 
     println!("\n=== c2pa_view: validating no-manifest files ===\n");
 
     if !neg_dir.exists() {
-        println!("  No negative/ directory found -- skipping");
+        println!("  No validator/negative-samples/ directory found -- skipping");
         return;
     }
 
