@@ -64,7 +64,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => -1224628132;
+  int get rustContentHash => 2121492747;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -84,6 +84,18 @@ abstract class RustLibApi extends BaseApi {
   String? crateApiC2PaGetFileManifestFormat({
     required List<int> fileBytes,
     required String format,
+  });
+
+  String? crateApiC2PaGetManifestWithTrustValidation({
+    required List<int> fileBytes,
+    required String format,
+    required String trustAnchorsPem,
+  });
+
+  String? crateApiC2PaGetManifestWithTrustValidationFromPath({
+    required List<int> fileBytes,
+    required String path,
+    required String trustAnchorsPem,
   });
 
   String? crateApiC2PaGetManifestWithValidation({
@@ -166,6 +178,71 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  String? crateApiC2PaGetManifestWithTrustValidation({
+    required List<int> fileBytes,
+    required String format,
+    required String trustAnchorsPem,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(fileBytes, serializer);
+          sse_encode_String(format, serializer);
+          sse_encode_String(trustAnchorsPem, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 3)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_String,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiC2PaGetManifestWithTrustValidationConstMeta,
+        argValues: [fileBytes, format, trustAnchorsPem],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiC2PaGetManifestWithTrustValidationConstMeta =>
+      const TaskConstMeta(
+        debugName: "get_manifest_with_trust_validation",
+        argNames: ["fileBytes", "format", "trustAnchorsPem"],
+      );
+
+  @override
+  String? crateApiC2PaGetManifestWithTrustValidationFromPath({
+    required List<int> fileBytes,
+    required String path,
+    required String trustAnchorsPem,
+  }) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(fileBytes, serializer);
+          sse_encode_String(path, serializer);
+          sse_encode_String(trustAnchorsPem, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 4)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_String,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiC2PaGetManifestWithTrustValidationFromPathConstMeta,
+        argValues: [fileBytes, path, trustAnchorsPem],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiC2PaGetManifestWithTrustValidationFromPathConstMeta =>
+      const TaskConstMeta(
+        debugName: "get_manifest_with_trust_validation_from_path",
+        argNames: ["fileBytes", "path", "trustAnchorsPem"],
+      );
+
+  @override
   String? crateApiC2PaGetManifestWithValidation({
     required List<int> fileBytes,
     required String format,
@@ -176,7 +253,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(fileBytes, serializer);
           sse_encode_String(format, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 3)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 5)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_String,
@@ -206,7 +283,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_list_prim_u_8_loose(fileBytes, serializer);
           sse_encode_String(path, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 4)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 6)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_String,

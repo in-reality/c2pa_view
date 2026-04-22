@@ -3,6 +3,7 @@
 export 'api.dart';
 export 'core/bridge/c2pa_bridge_service.dart';
 export 'core/theme/c2pa_theme.dart';
+export 'core/trust/trust_list_service.dart';
 // Domain entities
 export 'domain/entities/entities.dart';
 export 'domain/mappers/manifest_view_data_mapper.dart';

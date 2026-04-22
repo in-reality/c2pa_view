@@ -35,3 +35,28 @@ String? getManifestWithValidationFromPath({
   fileBytes: fileBytes,
   path: path,
 );
+
+/// Validate a C2PA asset against provided trust anchor PEM bundles.
+///
+/// `trust_anchors_pem` should contain the C2PA Trust List and optionally
+/// the TSA Trust List concatenated as a single PEM bundle.
+String? getManifestWithTrustValidation({
+  required List<int> fileBytes,
+  required String format,
+  required String trustAnchorsPem,
+}) => RustLib.instance.api.crateApiC2PaGetManifestWithTrustValidation(
+  fileBytes: fileBytes,
+  format: format,
+  trustAnchorsPem: trustAnchorsPem,
+);
+
+/// Convenience wrapper that guesses MIME from file path.
+String? getManifestWithTrustValidationFromPath({
+  required List<int> fileBytes,
+  required String path,
+  required String trustAnchorsPem,
+}) => RustLib.instance.api.crateApiC2PaGetManifestWithTrustValidationFromPath(
+  fileBytes: fileBytes,
+  path: path,
+  trustAnchorsPem: trustAnchorsPem,
+);
