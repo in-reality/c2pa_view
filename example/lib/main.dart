@@ -17,14 +17,45 @@ Future<void> main() async {
     initError = e.toString();
     debugPrint('RustLib.init failed: $e\n$st');
   }
-  runApp(C2paExampleApp(initError: initError));
+
+  final trustList = TrustListService();
+  String? trustListError;
+  try {
+    final ok = await trustList.initialize().timeout(
+      const Duration(seconds: 30),
+      onTimeout: () => false,
+    );
+    if (!ok) {
+      trustListError =
+          'Trust list unavailable. Verification will fall back to the '
+          'c2pa-rs defaults; certificates will report as `untrusted`.';
+    }
+  } catch (e, st) {
+    trustListError = e.toString();
+    debugPrint('TrustListService.initialize failed: $e\n$st');
+  }
+
+  runApp(
+    C2paExampleApp(
+      initError: initError,
+      trustList: trustList,
+      trustListError: trustListError,
+    ),
+  );
 }
 
 /// Root app with [C2paViewerTheme] so viewer widgets resolve theme.
 class C2paExampleApp extends StatelessWidget {
-  const C2paExampleApp({super.key, this.initError});
+  const C2paExampleApp({
+    required this.trustList,
+    super.key,
+    this.initError,
+    this.trustListError,
+  });
 
   final String? initError;
+  final TrustListService trustList;
+  final String? trustListError;
 
   @override
   Widget build(BuildContext context) {
@@ -35,16 +66,29 @@ class C2paExampleApp extends StatelessWidget {
       ),
       home: C2paViewerTheme(
         data: const C2paViewerThemeData(),
-        child: SelectionArea(child: HomePage(initError: initError)),
+        child: SelectionArea(
+          child: HomePage(
+            initError: initError,
+            trustList: trustList,
+            trustListError: trustListError,
+          ),
+        ),
       ),
     );
   }
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, this.initError});
+  const HomePage({
+    required this.trustList,
+    super.key,
+    this.initError,
+    this.trustListError,
+  });
 
   final String? initError;
+  final TrustListService trustList;
+  final String? trustListError;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -146,6 +190,8 @@ class _HomePageState extends State<HomePage> {
         onBack: _clearFile,
         onChooseAnother: _chooseAnotherFile,
         mimeTypeForFileName: _mimeTypeForFileName,
+        trustList: widget.trustList,
+        trustListError: widget.trustListError,
       );
     }
 
@@ -155,6 +201,10 @@ class _HomePageState extends State<HomePage> {
         children: [
           if (widget.initError != null)
             _InitErrorBanner(message: widget.initError!),
+          _TrustListBanner(
+            service: widget.trustList,
+            error: widget.trustListError,
+          ),
           if (_error != null)
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -180,6 +230,57 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Top-of-screen banner indicating whether the C2PA + TSA trust lists are
+/// configured for verification. Hidden in the steady state when the list
+/// loaded successfully so the UI is uncluttered.
+class _TrustListBanner extends StatelessWidget {
+  const _TrustListBanner({required this.service, this.error});
+
+  final TrustListService service;
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    if (error == null && service.isAvailable) {
+      return const SizedBox.shrink();
+    }
+    final color =
+        error != null ? Colors.orange.shade100 : Colors.blue.shade100;
+    final textColor =
+        error != null ? Colors.orange.shade900 : Colors.blue.shade900;
+    final title =
+        error != null ? 'Trust list unavailable' : 'Trust list loading';
+    final body = error ??
+        'Verification is using the c2pa-rs defaults until the C2PA CA and '
+            'TSA trust lists finish loading.';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16.0),
+      color: color,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: textColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            body,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: textColor),
           ),
         ],
       ),
@@ -344,6 +445,8 @@ class _ManifestViewScaffold extends StatelessWidget {
     required this.onBack,
     required this.onChooseAnother,
     required this.mimeTypeForFileName,
+    required this.trustList,
+    required this.trustListError,
   });
 
   final Uint8List fileBytes;
@@ -352,11 +455,17 @@ class _ManifestViewScaffold extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onChooseAnother;
   final String Function(String name) mimeTypeForFileName;
+  final TrustListService trustList;
+  final String? trustListError;
 
   @override
   Widget build(BuildContext context) {
     final mimeType = mimeTypeForFileName(fileName);
-    final store = ManifestStore.fromBytes(fileBytes, mimeType);
+    final store = ManifestStore.fromBytes(
+      fileBytes,
+      mimeType,
+      trustAnchorsPem: trustList.trustAnchorsPem,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -370,6 +479,7 @@ class _ManifestViewScaffold extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (initError != null) _InitErrorBanner(message: initError!),
+          _TrustListBanner(service: trustList, error: trustListError),
           Expanded(child: _buildBody(context, store, mimeType)),
         ],
       ),

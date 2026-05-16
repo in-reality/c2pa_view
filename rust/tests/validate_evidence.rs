@@ -12,9 +12,15 @@
 //!    sample media. Manifests may show `signingCredential.untrusted` and/or
 //!    `signingCredential.expired` when no trust list is applied.
 //!
+//! When `C2PA_TRUST_ANCHORS_PEM` points to a PEM bundle file, the tests run
+//! through `get_manifest_with_trust_validation` instead, exercising the
+//! production verify path against the official C2PA CA + TSA trust lists.
+//!
 //! Logs are written to `validator_utility/c2pa_view_*.json`.
 
-use c2pa_view::api::c2pa::get_manifest_with_validation;
+use c2pa_view::api::c2pa::{
+    get_manifest_with_trust_validation, get_manifest_with_validation,
+};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -41,6 +47,24 @@ fn logs_dir() -> PathBuf {
     } else {
         evidence_dir().join("validator_utility")
     }
+}
+
+/// Read the trust anchor PEM bundle from `C2PA_TRUST_ANCHORS_PEM` when set.
+///
+/// The variable points to a single file containing the concatenated C2PA CA
+/// and TSA trust list PEMs (matching `TrustListService.trustAnchorsPem`).
+fn trust_anchors_pem() -> Option<String> {
+    let path = std::env::var("C2PA_TRUST_ANCHORS_PEM").ok()?;
+    let path = PathBuf::from(path);
+    if !path.is_file() {
+        eprintln!(
+            "  C2PA_TRUST_ANCHORS_PEM points to {} which is not a file; \
+             falling back to default trust evaluation",
+            path.display()
+        );
+        return None;
+    }
+    fs::read_to_string(&path).ok().filter(|s| !s.trim().is_empty())
 }
 
 const MEDIA_EXTENSIONS: &[&str] = &[
@@ -141,7 +165,7 @@ struct ValidationResult {
     validation_statuses: Vec<String>,
 }
 
-fn validate_file(path: &Path) -> ValidationResult {
+fn validate_file(path: &Path, trust_pem: Option<&str>) -> ValidationResult {
     let file_name = path.file_name().unwrap().to_string_lossy().to_string();
     let ext = path
         .extension()
@@ -152,7 +176,11 @@ fn validate_file(path: &Path) -> ValidationResult {
 
     println!("  Validating: {file_name} ({mime}, {} bytes)", bytes.len());
 
-    let result = get_manifest_with_validation(bytes, mime.to_string());
+    let result = if let Some(pem) = trust_pem {
+        get_manifest_with_trust_validation(bytes, mime.to_string(), pem.to_string())
+    } else {
+        get_manifest_with_validation(bytes, mime.to_string())
+    };
     let json_str = result
         .unwrap_or_else(|e| panic!("  API error for {file_name}: {e}"))
         .unwrap_or_else(|| panic!("  No manifest found in {file_name}"));
@@ -186,7 +214,13 @@ fn save_log(logs_dir: &Path, id: &str, json: &serde_json::Value) {
     });
 }
 
-const ALLOWED_UNTRUSTED_STATUSES: &[&str] = &["signingCredential.untrusted"];
+// The InReality test CA is not on the public C2PA trust list, so signed
+// generator samples surface as `untrusted` regardless of whether the trust
+// list is configured. Either status is acceptable for these tests.
+const ALLOWED_UNTRUSTED_STATUSES: &[&str] = &[
+    "signingCredential.untrusted",
+    "signingCredential.trusted",
+];
 
 // Conformance corpus: may include trust/CN issues, expired certs, and edge-case
 // assets that intentionally surface validation errors (e.g. *stripped* JPEGs with
@@ -197,8 +231,13 @@ const ALLOWED_UNTRUSTED_STATUSES: &[&str] = &["signingCredential.untrusted"];
 fn validate_signed_files() {
     let edir = evidence_dir();
     let logs_dir = logs_dir();
+    let trust_pem = trust_anchors_pem();
 
     println!("\n=== c2pa_view: generator-*/samples/ (InReality Capture) ===\n");
+    println!(
+        "  Trust list: {}",
+        if trust_pem.is_some() { "configured" } else { "default (none)" }
+    );
 
     let files = collect_inreality_signed_samples(&edir);
     assert!(
@@ -210,7 +249,7 @@ fn validate_signed_files() {
     let mut failures = Vec::new();
 
     for path in &files {
-        let result = validate_file(path);
+        let result = validate_file(path, trust_pem.as_deref());
         let id = path.file_stem().unwrap().to_string_lossy().to_string();
         save_log(&logs_dir, &id, &result.json);
 
@@ -268,8 +307,13 @@ fn validate_conformance_samples() {
     let edir = evidence_dir();
     let logs_dir = logs_dir();
     let conf_dir = edir.join("validator").join("conformance-samples");
+    let trust_pem = trust_anchors_pem();
 
     println!("\n=== c2pa_view: validator/conformance-samples/ (C2PA corpus) ===\n");
+    println!(
+        "  Trust list: {}",
+        if trust_pem.is_some() { "configured" } else { "default (none)" }
+    );
 
     if !conf_dir.is_dir() {
         println!("  No validator/conformance-samples/ -- skipping");
@@ -283,7 +327,7 @@ fn validate_conformance_samples() {
     }
 
     for path in &files {
-        let result = validate_file(path);
+        let result = validate_file(path, trust_pem.as_deref());
 
         let safe_id = format!(
             "conf_{}",

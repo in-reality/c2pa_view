@@ -1,9 +1,9 @@
 
+import 'package:c2pa_view/c2pa_view.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:c2pa_view/c2pa_view.dart';
 
 class TestCase {
   final String title;
@@ -60,13 +60,47 @@ Future<void> main() async {
     initError = e.toString();
     debugPrint('RustLib.init failed: $e\n$st');
   }
-  runApp(MyApp(initError: initError));
+
+  // Memory-only trust list (cacheDirectory: null) keeps this demo app free
+  // of path_provider. Production embedders should pass a writable directory
+  // so the cache survives across cold starts.
+  final trustList = TrustListService();
+  String? trustListError;
+  try {
+    final ok = await trustList.initialize().timeout(
+      const Duration(seconds: 30),
+      onTimeout: () => false,
+    );
+    if (!ok) {
+      trustListError =
+          'Trust list unavailable. Verification will fall back to the '
+          'c2pa-rs defaults; certificates will report as `untrusted`.';
+    }
+  } catch (e, st) {
+    trustListError = e.toString();
+    debugPrint('TrustListService.initialize failed: $e\n$st');
+  }
+
+  runApp(
+    MyApp(
+      initError: initError,
+      trustList: trustList,
+      trustListError: trustListError,
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key, this.initError});
+  const MyApp({
+    required this.trustList,
+    super.key,
+    this.initError,
+    this.trustListError,
+  });
 
   final String? initError;
+  final TrustListService trustList;
+  final String? trustListError;
 
   @override
   Widget build(BuildContext context) {
@@ -120,6 +154,10 @@ class MyApp extends StatelessWidget {
                       ],
                     ),
                   ),
+                _TrustListBanner(
+                  service: trustList,
+                  error: trustListError,
+                ),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
@@ -141,9 +179,15 @@ class MyApp extends StatelessWidget {
                         return Column(
                           children: [
                             if (snapshot.data!.length >= 4)
-                              _PopupDemoCard(testCase: snapshot.data![3]),
+                              _PopupDemoCard(
+                                testCase: snapshot.data![3],
+                                trustList: trustList,
+                              ),
                             Expanded(
-                              child: TestCaseList(testCases: snapshot.data!),
+                              child: TestCaseList(
+                                testCases: snapshot.data!,
+                                trustList: trustList,
+                              ),
                             ),
                           ],
                         );
@@ -166,8 +210,13 @@ class MyApp extends StatelessWidget {
 
 class TestCaseList extends StatelessWidget {
   final List<TestCase> testCases;
+  final TrustListService trustList;
 
-  const TestCaseList({super.key, required this.testCases});
+  const TestCaseList({
+    super.key,
+    required this.testCases,
+    required this.trustList,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +237,10 @@ class TestCaseList extends StatelessWidget {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => ManifestViewerPage(testCase: testCase),
+                    builder: (_) => ManifestViewerPage(
+                      testCase: testCase,
+                      trustList: trustList,
+                    ),
                   ),
                 );
               },
@@ -200,12 +252,64 @@ class TestCaseList extends StatelessWidget {
   }
 }
 
+/// Top-of-screen banner indicating whether the C2PA + TSA trust lists are
+/// configured for verification. Hidden when no error exists and the list is
+/// loaded so the steady-state UI is uncluttered.
+class _TrustListBanner extends StatelessWidget {
+  const _TrustListBanner({required this.service, this.error});
+
+  final TrustListService service;
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    if (error == null && service.isAvailable) {
+      return const SizedBox.shrink();
+    }
+    final color =
+        error != null ? Colors.orange.shade100 : Colors.blue.shade100;
+    final textColor =
+        error != null ? Colors.orange.shade900 : Colors.blue.shade900;
+    final title =
+        error != null ? 'Trust list unavailable' : 'Trust list loading';
+    final body = error ??
+        'Verification is using the c2pa-rs defaults until the C2PA CA and '
+            'TSA trust lists finish loading.';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16.0),
+      color: color,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: textColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            body,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: textColor),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Demo card showing an image thumbnail with a content-credentials button
 /// that opens a [showManifestDetailPopup].
 class _PopupDemoCard extends StatefulWidget {
   final TestCase testCase;
+  final TrustListService trustList;
 
-  const _PopupDemoCard({required this.testCase});
+  const _PopupDemoCard({required this.testCase, required this.trustList});
 
   @override
   State<_PopupDemoCard> createState() => _PopupDemoCardState();
@@ -220,14 +324,23 @@ class _PopupDemoCardState extends State<_PopupDemoCard> {
     _dataFuture = _fetchManifestAndBytes(
       widget.testCase.imageUrl,
       widget.testCase.mimeType,
+      widget.trustList.trustAnchorsPem,
     );
   }
 
   static Future<({ManifestStore? store, Uint8List? bytes})>
-  _fetchManifestAndBytes(String url, String format) async {
+  _fetchManifestAndBytes(
+    String url,
+    String format,
+    String? trustAnchorsPem,
+  ) async {
     final response = await http.get(Uri.parse(url));
     final bytes = Uint8List.fromList(response.bodyBytes);
-    final store = ManifestStore.fromBytes(response.bodyBytes, format);
+    final store = ManifestStore.fromBytes(
+      response.bodyBytes,
+      format,
+      trustAnchorsPem: trustAnchorsPem,
+    );
     return (store: store, bytes: bytes);
   }
 
@@ -351,8 +464,13 @@ class _PopupDemoCardState extends State<_PopupDemoCard> {
 /// Full-screen page that fetches bytes from the URL, then parses the manifest.
 class ManifestViewerPage extends StatefulWidget {
   final TestCase testCase;
+  final TrustListService trustList;
 
-  const ManifestViewerPage({super.key, required this.testCase});
+  const ManifestViewerPage({
+    super.key,
+    required this.testCase,
+    required this.trustList,
+  });
 
   @override
   State<ManifestViewerPage> createState() => _ManifestViewerPageState();
@@ -367,14 +485,23 @@ class _ManifestViewerPageState extends State<ManifestViewerPage> {
     _dataFuture = _fetchManifestAndBytes(
       widget.testCase.imageUrl,
       widget.testCase.mimeType,
+      widget.trustList.trustAnchorsPem,
     );
   }
 
   static Future<({ManifestStore? store, Uint8List? bytes})>
-  _fetchManifestAndBytes(String url, String format) async {
+  _fetchManifestAndBytes(
+    String url,
+    String format,
+    String? trustAnchorsPem,
+  ) async {
     final response = await http.get(Uri.parse(url));
     final bytes = Uint8List.fromList(response.bodyBytes);
-    final store = ManifestStore.fromBytes(response.bodyBytes, format);
+    final store = ManifestStore.fromBytes(
+      response.bodyBytes,
+      format,
+      trustAnchorsPem: trustAnchorsPem,
+    );
     return (store: store, bytes: bytes);
   }
 

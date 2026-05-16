@@ -6,6 +6,12 @@ analyzer:
     - '**.freezed.dart'
     - '**.g.dart'
     - 'lib/src/rust/**'
+    # cargokit is a vendored build tool with its own pubspec that
+    # `flutter pub get` does not resolve from this package, so its
+    # transitive imports show up as "Target of URI doesn't exist"
+    # errors when analyzed from c2pa_view. The cargokit tool is built
+    # and run by Cargo/Gradle during native compilation, not by Dart.
+    - 'cargokit/**'
 
 linter:
   # Documentation: https://dart.dev/lints.
