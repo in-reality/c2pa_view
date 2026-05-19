@@ -24,12 +24,14 @@ class CredentialIndicator extends StatelessWidget {
 
     switch (result.status) {
       case ValidationStatus.valid:
+        // Render the Content Credentials "CR" pin in its native colors
+        // (the brand asset is the source of truth); only the label text
+        // beside it picks up the status colour.
         leading = SvgPicture.asset(
           'assets/icons/cr_pin.svg',
           package: 'c2pa_view',
           width: 16,
           height: 16,
-          colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
           placeholderBuilder:
               (_) => Icon(Icons.verified, size: 16, color: color),
         );
