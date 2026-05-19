@@ -1,70 +1,29 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Generator: Adobe Illustrator 28.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-
 <svg
-   version="1.0"
-   id="katman_1"
-   x="0px"
-   y="0px"
-   viewBox="0 0 96.087195 96.077197"
-   xml:space="preserve"
-   sodipodi:docname="cr_pin.svg"
-   inkscape:version="1.4.4 (1:1.4.4+202605061436+dcaf3e7d9e)"
-   width="96.087196"
-   height="96.077202"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg"><defs
-   id="defs21" /><sodipodi:namedview
-   id="namedview21"
-   pagecolor="#ffffff"
-   bordercolor="#000000"
-   borderopacity="0.25"
-   inkscape:showpageshadow="2"
-   inkscape:pageopacity="0.0"
-   inkscape:pagecheckerboard="0"
-   inkscape:deskcolor="#d1d1d1"
-   inkscape:zoom="0.96677189"
-   inkscape:cx="7.2405911"
-   inkscape:cy="162.9133"
-   inkscape:window-width="2560"
-   inkscape:window-height="1371"
-   inkscape:window-x="0"
-   inkscape:window-y="0"
-   inkscape:window-maximized="1"
-   inkscape:current-layer="katman_1" />
-<style
-   type="text/css"
-   id="style1">
-	.st0{fill:none;stroke:#000000;stroke-width:8.3272;}
-</style>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<path
-   d="m 36.4636,70.6836 c -10.86,0 -17.64,-8.51 -17.64,-18.61 0,-10.1 6.78,-18.61 17.64,-18.61 8.79,0 14.74,5.74 16.33,13.21 h -8.85 c -1.18,-3.32 -3.94,-5.33 -7.47,-5.33 -5.47,0 -9.06,4.29 -9.06,10.72 0,6.43 3.6,10.72 9.06,10.72 3.67,0 6.5,-2.14 7.61,-5.67 h 8.79 c -1.46,7.69 -7.48,13.57 -16.41,13.57 z"
-   id="path19" />
-<path
-   d="m 56.3636,69.7136 v -35.28 h 8.3 v 3.8 c 1.94,-2.56 4.98,-4.22 9.55,-4.22 h 2.14 v 8.16 h -2.21 c -3.11,0 -5.05,0.69 -6.5,2.01 -1.66,1.38 -2.63,3.67 -2.63,7.13 v 18.4 z"
-   id="path20" />
-<path
-   class="st0"
-   d="m 4.1636,48.0436 c 0,-24.23 19.65,-43.88 43.88,-43.88 24.24,0 43.88,19.65 43.88,43.88 v 43.87 h -43.89 c -24.23,0.01 -43.87,-19.64 -43.87,-43.87 z"
-   id="path21" />
+   viewBox="0 0 96.087195 96.077197"
+   width="96.087196"
+   height="96.077202">
+  <path
+     id="path-bg"
+     fill="#ffffff"
+     stroke="#000000"
+     stroke-width="0.286406"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     d="M 48.042969 3.6445312 A 44.398304 44.393688 0 0 0 3.6445312 48.039062 A 44.398304 44.393688 0 0 0 48.042969 92.431641 A 44.398304 44.393688 0 0 0 55.953125 91.722656 L 55.953125 91.914062 L 91.923828 91.914062 L 91.923828 54.802734 A 44.398304 44.393688 0 0 0 92.441406 48.039062 A 44.398304 44.393688 0 0 0 91.923828 41.275391 L 91.923828 38.765625 L 91.462891 38.765625 A 44.398304 44.393688 0 0 0 48.042969 3.6445312 z" />
+  <path
+     id="path-c"
+     fill="#000000"
+     d="m 36.4636,70.6836 c -10.86,0 -17.64,-8.51 -17.64,-18.61 0,-10.1 6.78,-18.61 17.64,-18.61 8.79,0 14.74,5.74 16.33,13.21 h -8.85 c -1.18,-3.32 -3.94,-5.33 -7.47,-5.33 -5.47,0 -9.06,4.29 -9.06,10.72 0,6.43 3.6,10.72 9.06,10.72 3.67,0 6.5,-2.14 7.61,-5.67 h 8.79 c -1.46,7.69 -7.48,13.57 -16.41,13.57 z" />
+  <path
+     id="path-r"
+     fill="#000000"
+     d="m 56.3636,69.7136 v -35.28 h 8.3 v 3.8 c 1.94,-2.56 4.98,-4.22 9.55,-4.22 h 2.14 v 8.16 h -2.21 c -3.11,0 -5.05,0.69 -6.5,2.01 -1.66,1.38 -2.63,3.67 -2.63,7.13 v 18.4 z" />
+  <path
+     id="path-outline"
+     fill="none"
+     stroke="#000000"
+     stroke-width="8.3272"
+     d="m 4.1636,48.0436 c 0,-24.23 19.65,-43.88 43.88,-43.88 24.24,0 43.88,19.65 43.88,43.88 v 43.87 h -43.89 c -24.23,0.01 -43.87,-19.64 -43.87,-43.87 z" />
 </svg>
