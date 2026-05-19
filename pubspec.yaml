@@ -14,6 +14,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_rust_bridge: 2.12.0
+  flutter_svg: ^2.3.0
   http: ^1.3.0
   intl: ">=0.19.0 <1.0.0"
   plugin_platform_interface: ^2.0.2
@@ -45,3 +46,5 @@ flutter:
   assets:
     # Assets for c2pa tags
     - assets/c2pa/
+    # Brand icons (e.g. Content Credentials "CR" pin)
+    - assets/icons/

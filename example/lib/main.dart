@@ -200,7 +200,7 @@ class _HomePageState extends State<HomePage> {
       body: Column(
         children: [
           if (widget.initError != null)
-            _InitErrorBanner(message: widget.initError!),
+            RustInitErrorBanner(message: widget.initError!),
           _TrustListBanner(
             service: widget.trustList,
             error: widget.trustListError,
@@ -282,53 +282,6 @@ class _TrustListBanner extends StatelessWidget {
               context,
             ).textTheme.bodySmall?.copyWith(color: textColor),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InitErrorBanner extends StatelessWidget {
-  const _InitErrorBanner({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16.0),
-      color: Colors.orange.shade100,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Rust library failed to load',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Colors.orange.shade900,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          SelectableText(
-            message,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: Colors.orange.shade900),
-          ),
-          if (kIsWeb)
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Text(
-                'On web, the Rust/WASM build may be missing or CORS may '
-                'block loading. See flutter_rust_bridge web documentation.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.orange.shade800,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -478,7 +431,7 @@ class _ManifestViewScaffold extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (initError != null) _InitErrorBanner(message: initError!),
+          if (initError != null) RustInitErrorBanner(message: initError!),
           _TrustListBanner(service: trustList, error: trustListError),
           Expanded(child: _buildBody(context, store, mimeType)),
         ],

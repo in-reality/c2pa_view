@@ -87,15 +87,17 @@ class _SummaryContent extends StatelessWidget {
                       : MainAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  summary.title ?? 'Untitled',
-                  style: theme.titleSmallStyle.copyWith(
-                    color: theme.textPrimaryColor,
+                if (summary.title != null) ...[
+                  Text(
+                    summary.title!,
+                    style: theme.titleSmallStyle.copyWith(
+                      color: theme.textPrimaryColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
+                  const SizedBox(height: 4),
+                ],
                 CredentialIndicator(result: summary.validationResult),
                 if (summary.issuer != null &&
                     (summary.validationResult.isValid ||

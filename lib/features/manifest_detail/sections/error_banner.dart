@@ -3,7 +3,12 @@ import 'package:c2pa_view/domain/models/validation_result.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// A colored banner displaying validation errors or warnings.
+/// A coloured banner warning that the signing certificate is outside any
+/// trusted certificate list.
+///
+/// Renders only when [result.isUntrusted]. Invalid manifests render via
+/// the [TamperedPlaceholder] widget instead; valid and missing-credential
+/// states show nothing.
 class ErrorBanner extends StatelessWidget {
 
   const ErrorBanner({required this.result, super.key});
@@ -11,32 +16,14 @@ class ErrorBanner extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) {
-    if (result.isValid || !result.hasCredential) {
+    if (!result.isUntrusted) {
       return const SizedBox.shrink();
     }
 
     final theme = C2paViewerTheme.of(context);
-    final isInvalid = result.isInvalid;
-
-    final backgroundColor =
-        isInvalid
-            ? theme.invalidColor.withValues(alpha: 0.1)
-            : theme.unrecognizedColor.withValues(alpha: 0.1);
-    final borderColor =
-        isInvalid
-            ? theme.invalidColor.withValues(alpha: 0.3)
-            : theme.unrecognizedColor.withValues(alpha: 0.3);
-    final iconColor = isInvalid ? theme.invalidColor : theme.unrecognizedColor;
-
-    final icon = isInvalid ? Icons.error : Icons.warning_amber_rounded;
-
-    final message =
-        result.message ??
-        (isInvalid
-            ? 'This file may have been tampered with after the Content '
-                'Credential was issued, or the Content Credential has errors.'
-            : 'The Content Credential issuer could not be recognized. '
-                'Verify the issuer before trusting this content.');
+    final backgroundColor = theme.unrecognizedColor.withValues(alpha: 0.1);
+    final borderColor = theme.unrecognizedColor.withValues(alpha: 0.3);
+    final iconColor = theme.unrecognizedColor;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
@@ -49,11 +36,12 @@ class ErrorBanner extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: iconColor),
+          Icon(Icons.warning_amber_rounded, size: 18, color: iconColor),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              message,
+              "The Content Credential's signing certificate is not in any "
+              'trust list. Verify the issuer before trusting this content.',
               style: theme.bodySmallStyle.copyWith(
                 color: theme.textPrimaryColor,
               ),

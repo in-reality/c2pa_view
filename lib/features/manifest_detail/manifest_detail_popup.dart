@@ -29,6 +29,14 @@ Future<void> showManifestDetailPopup(
   final double? width,
   final double? maxHeight,
 }) {
+  // Invalid manifests show the tampered-asset placeholder inside the full
+  // viewer; the popup entry-point intentionally renders nothing so callers
+  // (such as a thumbnail's CR button) cannot surface details for a manifest
+  // whose assertions are untrustworthy.
+  if (data.validationResult.isInvalid) {
+    return Future<void>.value();
+  }
+
   final renderBox = context.findRenderObject()! as RenderBox;
   final triggerSize = renderBox.size;
   final triggerPosition = renderBox.localToGlobal(Offset.zero);

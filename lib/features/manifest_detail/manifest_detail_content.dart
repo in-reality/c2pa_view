@@ -9,6 +9,7 @@ import 'package:c2pa_view/features/manifest_detail/sections/custom_fields_sectio
 import 'package:c2pa_view/features/manifest_detail/sections/detail_header.dart';
 import 'package:c2pa_view/features/manifest_detail/sections/error_banner.dart';
 import 'package:c2pa_view/features/manifest_detail/sections/process_section.dart';
+import 'package:c2pa_view/features/manifest_detail/sections/tampered_placeholder.dart';
 import 'package:c2pa_view/features/manifest_detail/sections/thumbnail_section.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -38,7 +39,32 @@ class ManifestDetailContent extends StatelessWidget {
   final ImageProvider? mediaImage;
 
   @override
-  Widget build(final BuildContext context) => Column(
+  Widget build(final BuildContext context) {
+    if (data.validationResult.isInvalid) {
+      return Column(
+        children: [
+          DetailHeader(data: data),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
+              children: [
+                TamperedPlaceholder(
+                  result: data.validationResult,
+                  failures: data.validationFailures,
+                ),
+                ThumbnailSection(
+                  thumbnail: data.thumbnail ?? mediaImage,
+                  mimeType: mimeType,
+                  onTapFullScreen: onThumbnailTap,
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
       children: [
         DetailHeader(data: data),
         Expanded(
@@ -52,6 +78,7 @@ class ManifestDetailContent extends StatelessWidget {
         ),
       ],
     );
+  }
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {

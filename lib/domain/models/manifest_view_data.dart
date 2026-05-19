@@ -1,5 +1,6 @@
 import 'package:c2pa_view/c2pa_view.dart' show ProvenanceNode;
 import 'package:c2pa_view/domain/entities/custom_field.dart';
+import 'package:c2pa_view/domain/entities/validation_status.dart';
 import 'package:c2pa_view/domain/models/manifest_summary.dart';
 import 'package:c2pa_view/domain/models/provenance_node.dart' show ProvenanceNode;
 import 'package:c2pa_view/domain/models/validation_result.dart';
@@ -13,6 +14,7 @@ class ManifestViewData {
     this.title,
     this.thumbnail,
     this.validationResult = const ValidationResult.noCredential(),
+    this.validationFailures = const [],
     this.issuer,
     this.signedDate,
     this.generativeInfo,
@@ -33,6 +35,11 @@ class ManifestViewData {
   final String? title;
   final ImageProvider? thumbnail;
   final ValidationResult validationResult;
+
+  /// Raw error-flavoured validation entries surfaced for the tampered-asset
+  /// debug dialog. Empty when [validationResult] is not invalid, or when the
+  /// underlying manifest reported no error-coded statuses.
+  final List<ValidationStatusEntry> validationFailures;
 
   final String? issuer;
   final DateTime? signedDate;

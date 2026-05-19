@@ -71,7 +71,7 @@ class _DetailHeaderState extends State<DetailHeader> {
                         )
                         : const SizedBox.shrink(),
               ),
-              if (data.rawJson != null)
+              if (data.rawJson != null && !data.validationResult.isInvalid)
                 Tooltip(
                   message: _copied ? 'Copied!' : 'Copy manifest JSON',
                   child: IconButton(
@@ -90,7 +90,8 @@ class _DetailHeaderState extends State<DetailHeader> {
           ),
           const SizedBox(height: 4),
           CredentialIndicator(result: data.validationResult),
-          if (data.issuer != null || data.signedDate != null) ...[
+          if (!data.validationResult.isInvalid &&
+              (data.issuer != null || data.signedDate != null)) ...[
             const SizedBox(height: 4),
             Text(
               _issuedByLine(data),

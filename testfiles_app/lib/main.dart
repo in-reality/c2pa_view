@@ -113,47 +113,7 @@ class MyApp extends StatelessWidget {
             child: Column(
               children: [
                 if (initError != null)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16.0),
-                    color: Colors.orange.shade100,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Rust library failed to load',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleSmall?.copyWith(
-                            color: Colors.orange.shade900,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          initError!,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: Colors.orange.shade900),
-                        ),
-                        if (kIsWeb)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(
-                              'On web, the Rust/WASM build may be missing or '
-                              'CORS may block loading. See flutter_rust_bridge '
-                              'web documentation.',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.bodySmall?.copyWith(
-                                color: Colors.orange.shade800,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+                  RustInitErrorBanner(message: initError!),
                 _TrustListBanner(
                   service: trustList,
                   error: trustListError,

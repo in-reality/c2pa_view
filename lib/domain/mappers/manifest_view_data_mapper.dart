@@ -36,6 +36,9 @@ class ManifestViewDataMapper {
       title: manifest.title,
       thumbnail: _toImageProvider(manifest.thumbnail),
       validationResult: mapValidation(manifest.validationStatus),
+      validationFailures: manifest.validationStatus
+          .where((final s) => s.isError)
+          .toList(),
       issuer: manifest.signatureInfo?.issuer,
       signedDate: manifest.signatureInfo?.time,
       generativeInfo: _extractGenerativeInfo(manifest),

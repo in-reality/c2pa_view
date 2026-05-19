@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-enum ValidationStatus { valid, invalid, untrusted, unrecognized, noCredential }
+enum ValidationStatus { valid, invalid, untrusted, noCredential }
 
 @immutable
 class ValidationResult {
@@ -16,9 +16,6 @@ class ValidationResult {
   /// in any trusted certificate list.
   const ValidationResult.untrusted() : this(status: ValidationStatus.untrusted);
 
-  const ValidationResult.unrecognized([final String? message])
-    : this(status: ValidationStatus.unrecognized, message: message);
-
   const ValidationResult.noCredential()
     : this(status: ValidationStatus.noCredential);
   final ValidationStatus status;
@@ -27,6 +24,5 @@ class ValidationResult {
   bool get isValid => status == ValidationStatus.valid;
   bool get isInvalid => status == ValidationStatus.invalid;
   bool get isUntrusted => status == ValidationStatus.untrusted;
-  bool get isUnrecognized => status == ValidationStatus.unrecognized;
   bool get hasCredential => status != ValidationStatus.noCredential;
 }

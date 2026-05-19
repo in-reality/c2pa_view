@@ -89,7 +89,7 @@ All entities use `Equatable` for value equality.
 | `ManifestViewData` | All display-ready data for one manifest's detail view |
 | `ManifestSummary` | Compact summary (title, thumbnail, validation status, issuer) |
 | `ProvenanceGraph` / `ProvenanceNode` / `ProvenanceEdge` | DAG structure for the tree viewer |
-| `ValidationResult` / `ValidationStatus` | Normalized validation state (valid / invalid / untrusted / unrecognized / noCredential) |
+| `ValidationResult` / `ValidationStatus` | Normalized validation state (valid / invalid / untrusted / noCredential) |
 | `GenerativeInfo` / `GenerativeType` | AI generation detection |
 
 ### Widgets
@@ -106,7 +106,7 @@ All entities use `Equatable` for value equality.
 ### Theme
 
 `C2paViewerThemeData` is propagated via `C2paViewerTheme` (an `InheritedWidget`). It controls:
-- Validation status colors (valid, invalid, untrusted, unrecognized, no-credential)
+- Validation status colors (valid, invalid, untrusted, no-credential)
 - Surface/border/text/icon colors
 - Six text style tiers (titleLarge through label)
 - Layout dimensions (sidebar width, thumbnail size, node dimensions, spacing)
@@ -118,9 +118,10 @@ A `C2paViewerThemeData.dark()` factory provides dark-mode defaults.
 
 | Dependency | Role |
 |---|---|
-| `flutter_rust_bridge` 2.11.1 | Rust ↔ Dart FFI bridge |
+| `flutter_rust_bridge` 2.12.0 | Rust ↔ Dart FFI bridge |
 | `c2pa-rs` (fork: NorthGuard/c2pa-rs) | C2PA manifest reading and validation |
 | `equatable` | Value equality for domain entities |
+| `flutter_svg` | Renders the Content Credentials "CR" pin asset |
 | `http` | URL fetching for `fromUrl` |
 | `intl` | Date formatting in detail views |
 

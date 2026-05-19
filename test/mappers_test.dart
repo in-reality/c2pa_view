@@ -169,6 +169,25 @@ void main() {
       expect(result.message, contains('Hash mismatch'));
     });
 
+    test('map populates validationFailures from error codes', () {
+      const manifest = Manifest(
+        validationStatus: [
+          ValidationStatusEntry(
+            code: 'assertion.dataHash.mismatch',
+            explanation: 'Data hash mismatch',
+          ),
+          ValidationStatusEntry(code: 'claimSignature.validated'),
+        ],
+      );
+
+      final viewData = ManifestViewDataMapper.map(manifest);
+
+      expect(viewData.validationResult.status, ValidationStatus.invalid);
+      expect(viewData.validationFailures.length, 1);
+      expect(viewData.validationFailures.first.code,
+          'assertion.dataHash.mismatch');
+    });
+
     test('detects AI generated content from actions', () {
       const manifest = Manifest(
         actions: [
@@ -342,6 +361,45 @@ void main() {
       final bChildren = graph.childIdsOf('urn:c2pa:b');
       expect(bChildren, contains('urn:c2pa:a'));
     });
+
+    test(
+      'mapToGraph truncates ingredients when active manifest is invalid',
+      () {
+        final store = ManifestStore.fromJson(const {
+          'active_manifest': 'urn:c2pa:bad',
+          'manifests': {
+            'urn:c2pa:bad': {
+              'title': 'bad.jpg',
+              'assertions': [],
+              'ingredients': [
+                {'title': 'child.jpg', 'active_manifest': 'urn:c2pa:child'},
+              ],
+              'validation_status': [
+                {
+                  'code': 'assertion.dataHash.mismatch',
+                  'explanation': 'Data hash mismatch',
+                },
+              ],
+            },
+            'urn:c2pa:child': {
+              'title': 'child.jpg',
+              'assertions': [],
+              'ingredients': [],
+            },
+          },
+        });
+
+        final graph = ProvenanceMapper.mapToGraph(store);
+
+        expect(graph.rootId, 'urn:c2pa:bad');
+        expect(graph.nodes.length, 1);
+        expect(graph.edges, isEmpty);
+        expect(
+          graph.rootNode!.validationResult.status,
+          ValidationStatus.invalid,
+        );
+      },
+    );
 
     test('mapToGraph throws for missing active manifest', () {
       final store = ManifestStore.fromJson(const {

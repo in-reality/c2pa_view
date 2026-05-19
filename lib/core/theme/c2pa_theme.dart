@@ -156,8 +156,6 @@ class C2paViewerThemeData {
         return invalidColor;
       case ValidationStatus.untrusted:
         return unrecognizedColor;
-      case ValidationStatus.unrecognized:
-        return unrecognizedColor;
       case ValidationStatus.noCredential:
         return noCredentialColor;
     }

@@ -18,6 +18,36 @@ class ProvenanceMapper {
       throw StateError('No active manifest found in the manifest store');
     }
 
+    // When the active manifest is invalid we cannot trust its assertions
+    // (including the ingredient list). Collapse the graph to a single root
+    // node so the detail panel renders the tampered placeholder without
+    // walking into potentially malformed ingredients.
+    final activeResult = ManifestViewDataMapper.mapValidation(
+      activeManifest.validationStatus,
+    );
+    if (activeResult.isInvalid) {
+      final viewData = ManifestViewDataMapper.map(
+        activeManifest,
+        rawJson: store.rawManifestJsons[activeLabel],
+      );
+      final node = ProvenanceNode(
+        id: activeLabel!,
+        summary: ManifestSummary(
+          title: activeManifest.title,
+          thumbnail: viewData.thumbnail,
+          validationResult: activeResult,
+          issuer: activeManifest.signatureInfo?.issuer,
+        ),
+        signedDate: activeManifest.signatureInfo?.time,
+        manifestViewData: viewData,
+      );
+      return ProvenanceGraph(
+        rootId: activeLabel,
+        nodes: {activeLabel: node},
+        edges: const [],
+      );
+    }
+
     final summaries = _buildSummaries(store);
 
     final nodes = <String, ProvenanceNode>{};

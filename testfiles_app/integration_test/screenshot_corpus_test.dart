@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -103,6 +104,35 @@ bool _stemEndsWithUnsigned(String filename) {
   final dot = filename.lastIndexOf('.');
   final stem = dot > 0 ? filename.substring(0, dot) : filename;
   return stem.endsWith('_unsigned');
+}
+
+/// Force the IO isolate to finish decoding [image] before returning.
+///
+/// `MemoryImage.resolve` dispatches the JPEG/PNG decode to the engine's IO
+/// isolate. Inside the integration-test binding the synthetic clock would
+/// otherwise starve that work, so we wrap the listener wait in
+/// `tester.runAsync` to let the real event loop service the codec callback.
+Future<void> _precacheImage(WidgetTester tester, ImageProvider image) async {
+  final stream = image.resolve(ImageConfiguration.empty);
+  final completer = Completer<void>();
+  late ImageStreamListener listener;
+  listener = ImageStreamListener(
+    (info, _) {
+      stream.removeListener(listener);
+      if (!completer.isCompleted) completer.complete();
+    },
+    onError: (error, _) {
+      stream.removeListener(listener);
+      if (!completer.isCompleted) completer.complete();
+    },
+  );
+  stream.addListener(listener);
+  await tester.runAsync(
+    () => completer.future.timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {},
+    ),
+  );
 }
 
 bool _isMediaFile(FileSystemEntity e) {
@@ -226,6 +256,14 @@ void main() {
 
         final graph = ProvenanceMapper.mapToGraph(store!);
 
+        // Decode the media image up-front. MemoryImage hands decoding off to
+        // the IO isolate; large JPEGs (>~3 MB) miss the pumpAndSettle deadline
+        // and the RepaintBoundary captures an empty image slot. Waiting on
+        // the ImageStream inside tester.runAsync lets the IO isolate actually
+        // run so the bitmap is cached before we render the widget.
+        final mediaImage = MemoryImage(Uint8List.fromList(bytes));
+        await _precacheImage(tester, mediaImage);
+
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
@@ -236,7 +274,7 @@ void main() {
                   child: C2paManifestViewer(
                     graph: graph,
                     mimeType: mime,
-                    mediaImage: MemoryImage(Uint8List.fromList(bytes)),
+                    mediaImage: mediaImage,
                   ),
                 ),
               ),

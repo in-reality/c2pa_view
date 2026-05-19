@@ -2,6 +2,7 @@ import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/validation_result.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// A small indicator showing credential status with icon and text.
 class CredentialIndicator extends StatelessWidget {
@@ -18,35 +19,40 @@ class CredentialIndicator extends StatelessWidget {
     final theme = C2paViewerTheme.of(context);
     final color = theme.colorForStatus(result.status);
 
-    final IconData icon;
+    final Widget leading;
     final String text;
 
     switch (result.status) {
       case ValidationStatus.valid:
-        icon = Icons.verified;
-        text = 'Content Credential';
+        leading = SvgPicture.asset(
+          'assets/icons/cr_pin.svg',
+          package: 'c2pa_view',
+          width: 16,
+          height: 16,
+          colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+          placeholderBuilder:
+              (_) => Icon(Icons.verified, size: 16, color: color),
+        );
+        text = 'CR';
       case ValidationStatus.invalid:
-        icon = Icons.dangerous;
+        leading = Icon(Icons.dangerous, size: 16, color: color);
         text = 'Invalid';
       case ValidationStatus.untrusted:
-        icon = Icons.verified_outlined;
-        text = 'Untrusted signer';
-      case ValidationStatus.unrecognized:
-        icon = Icons.warning_amber_rounded;
-        text = 'Unrecognized';
+        leading = Icon(Icons.verified_outlined, size: 16, color: color);
+        text = 'Untrusted';
       case ValidationStatus.noCredential:
-        icon = Icons.remove_circle_outline;
-        text = 'No Content Credential';
+        leading = Icon(Icons.remove_circle_outline, size: 16, color: color);
+        text = 'No CR';
     }
 
     if (compact) {
-      return Icon(icon, size: 16, color: color);
+      return SizedBox(width: 16, height: 16, child: leading);
     }
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: color),
+        leading,
         const SizedBox(width: 4),
         Flexible(
           child: Text(

@@ -21,5 +21,6 @@ export 'features/manifest_detail/manifest_detail_popup.dart';
 // Features
 export 'features/manifest_viewer/manifest_viewer.dart';
 export 'features/provenance_tree/provenance_tree_viewer.dart';
+export 'features/shared/widgets/rust_init_banner.dart';
 // Rust bridge init
 export 'src/rust/frb_generated.dart' show RustLib;
