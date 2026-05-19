@@ -142,10 +142,13 @@ void main() {
       expect(viewData.customFields.length, 1);
     });
 
-    test('mapValidation returns noCredential for empty statuses', () {
-      final result = ManifestViewDataMapper.mapValidation([]);
-      expect(result.status, ValidationStatus.noCredential);
-    });
+    test(
+      'mapValidation returns valid for empty statuses (trust-checked happy path)',
+      () {
+        final result = ManifestViewDataMapper.mapValidation([]);
+        expect(result.status, ValidationStatus.valid);
+      },
+    );
 
     test('mapValidation returns valid for all trusted/validated', () {
       final result = ManifestViewDataMapper.mapValidation([

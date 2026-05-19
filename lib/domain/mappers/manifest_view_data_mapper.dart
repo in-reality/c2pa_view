@@ -56,7 +56,7 @@ class ManifestViewDataMapper {
 
   static ValidationResult mapValidation(final List<ValidationStatusEntry> statuses) {
     if (statuses.isEmpty) {
-      return const ValidationResult.noCredential();
+      return const ValidationResult.valid();
     }
     final hasError = statuses.any((final s) => s.isError);
     if (hasError) {
