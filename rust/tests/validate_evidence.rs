@@ -11,6 +11,9 @@
 //! 2. **Conformance corpus** — `validator/conformance-samples/`: C2PA program
 //!    sample media. Manifests may show `signingCredential.untrusted` and/or
 //!    `signingCredential.expired` when no trust list is applied.
+//! 3. **Additional samples** — `validator/additional-samples/`: InReality-supplied
+//!    media that is not in the published conformance corpus (currently a single
+//!    HEIC sample). Validated through the same trust-checked path as (2).
 //!
 //! When `C2PA_TRUST_ANCHORS_PEM` points to a PEM bundle file, the tests run
 //! through `get_manifest_with_trust_validation` instead, exercising the
@@ -306,23 +309,34 @@ fn validate_signed_files() {
 fn validate_conformance_samples() {
     let edir = evidence_dir();
     let logs_dir = logs_dir();
-    let conf_dir = edir.join("validator").join("conformance-samples");
+    let validator_dir = edir.join("validator");
+    let conf_dir = validator_dir.join("conformance-samples");
+    let extra_dir = validator_dir.join("additional-samples");
     let trust_pem = trust_anchors_pem();
 
-    println!("\n=== c2pa_view: validator/conformance-samples/ (C2PA corpus) ===\n");
+    println!(
+        "\n=== c2pa_view: validator/conformance-samples/ + validator/additional-samples/ ===\n"
+    );
     println!(
         "  Trust list: {}",
         if trust_pem.is_some() { "configured" } else { "default (none)" }
     );
 
-    if !conf_dir.is_dir() {
-        println!("  No validator/conformance-samples/ -- skipping");
-        return;
+    let mut files: Vec<PathBuf> = Vec::new();
+    if conf_dir.is_dir() {
+        files.extend(collect_conformance_files(&conf_dir));
+    } else {
+        println!("  No validator/conformance-samples/ -- skipping that directory");
     }
+    if extra_dir.is_dir() {
+        files.extend(collect_conformance_files(&extra_dir));
+    } else {
+        println!("  No validator/additional-samples/ -- skipping that directory");
+    }
+    files.sort();
 
-    let files = collect_conformance_files(&conf_dir);
     if files.is_empty() {
-        println!("  No media files in conformance-samples -- skipping");
+        println!("  No media files under conformance-samples/ or additional-samples/ -- skipping");
         return;
     }
 
