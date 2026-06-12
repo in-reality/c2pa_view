@@ -23,6 +23,9 @@ class C2paViewerThemeData {
     this.pathNodeBorderColor = const Color(0xFF5F6368),
     this.defaultNodeBorderColor = const Color(0xFFDADCE0),
     this.edgeColor = const Color(0xFFDADCE0),
+    this.highlightAccentColor = const Color(0xFF1A73E8),
+    this.highlightFillColor = const Color(0x331A73E8),
+    this.highlightBadgeTextColor = const Color(0xFFFFFFFF),
     this.titleLargeStyle = const TextStyle(
       fontSize: 18,
       fontWeight: FontWeight.w600,
@@ -75,6 +78,9 @@ class C2paViewerThemeData {
     pathNodeBorderColor: Color(0xFF9AA0A6),
     defaultNodeBorderColor: Color(0xFF5F6368),
     edgeColor: Color(0xFF5F6368),
+    highlightAccentColor: Color(0xFF8AB4F8),
+    highlightFillColor: Color(0x338AB4F8),
+    highlightBadgeTextColor: Color(0xFF1A1A1A),
     titleLargeStyle: TextStyle(
       fontSize: 18,
       fontWeight: FontWeight.w600,
@@ -129,6 +135,9 @@ class C2paViewerThemeData {
   final Color pathNodeBorderColor;
   final Color defaultNodeBorderColor;
   final Color edgeColor;
+  final Color highlightAccentColor;
+  final Color highlightFillColor;
+  final Color highlightBadgeTextColor;
 
   final TextStyle titleLargeStyle;
   final TextStyle titleMediumStyle;

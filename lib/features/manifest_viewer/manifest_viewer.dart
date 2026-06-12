@@ -1,5 +1,8 @@
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
+import 'package:c2pa_view/domain/models/graph_highlight.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
+import 'package:c2pa_view/domain/models/provenance_annotations.dart';
+import 'package:c2pa_view/domain/models/provenance_interaction.dart';
 import 'package:c2pa_view/domain/models/provenance_node.dart';
 import 'package:c2pa_view/features/manifest_detail/manifest_detail_panel.dart';
 import 'package:c2pa_view/features/provenance_tree/provenance_tree_viewer.dart';
@@ -16,7 +19,8 @@ import 'package:flutter/material.dart';
 class C2paManifestViewer extends StatefulWidget {
 
   const C2paManifestViewer({
-    required this.graph, super.key,
+    required this.graph,
+    super.key,
     this.initialSelectedNodeId,
     this.onNodeSelected,
     this.onThumbnailTap,
@@ -24,6 +28,11 @@ class C2paManifestViewer extends StatefulWidget {
     this.mimeType,
     this.showDetailPanel = true,
     this.mediaImage,
+    this.annotations = ProvenanceAnnotations.empty,
+    this.highlights = GraphHighlights.empty,
+    this.nodeDecorator,
+    this.edgeDecorator,
+    this.interactionHandler,
   });
   final ProvenanceGraph graph;
   final String? initialSelectedNodeId;
@@ -32,6 +41,11 @@ class C2paManifestViewer extends StatefulWidget {
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
   final String? mimeType;
   final bool showDetailPanel;
+  final ProvenanceAnnotations annotations;
+  final GraphHighlights highlights;
+  final ProvenanceNodeDecorator? nodeDecorator;
+  final ProvenanceEdgeDecorator? edgeDecorator;
+  final ProvenanceInteractionHandler? interactionHandler;
 
   /// Optional image for the actual media file. When the manifest has no
   /// embedded thumbnail, this is shown instead (detail panel and root tree node).
@@ -50,7 +64,27 @@ class C2paManifestViewer extends StatefulWidget {
     ..add(ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has('onIngredientTap', onIngredientTap))
     ..add(StringProperty('mimeType', mimeType))
     ..add(DiagnosticsProperty<bool>('showDetailPanel', showDetailPanel))
-    ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage));
+    ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage))
+    ..add(DiagnosticsProperty<ProvenanceAnnotations>('annotations', annotations))
+    ..add(DiagnosticsProperty<GraphHighlights>('highlights', highlights))
+    ..add(
+      ObjectFlagProperty<ProvenanceNodeDecorator?>.has(
+        'nodeDecorator',
+        nodeDecorator,
+      ),
+    )
+    ..add(
+      ObjectFlagProperty<ProvenanceEdgeDecorator?>.has(
+        'edgeDecorator',
+        edgeDecorator,
+      ),
+    )
+    ..add(
+      ObjectFlagProperty<ProvenanceInteractionHandler?>.has(
+        'interactionHandler',
+        interactionHandler,
+      ),
+    );
   }
 }
 
@@ -82,6 +116,17 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
     widget.onNodeSelected?.call(node);
   }
 
+  ProvenanceInteractionHandler? _treeInteractionHandler() {
+    final handler = widget.interactionHandler;
+    if (handler == null) {
+      return null;
+    }
+    return ComposingProvenanceInteractionHandler(
+      delegate: handler,
+      onSelect: _onNodeSelected,
+    );
+  }
+
   @override
   Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
@@ -95,6 +140,11 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
               selectedNodeId: _selectedNodeId,
               onNodeSelected: _onNodeSelected,
               mediaImage: widget.mediaImage,
+              annotations: widget.annotations,
+              highlights: widget.highlights,
+              nodeDecorator: widget.nodeDecorator,
+              edgeDecorator: widget.edgeDecorator,
+              interactionHandler: _treeInteractionHandler(),
             ),
           ),
           if (widget.showDetailPanel && _selectedData != null) ...[
@@ -104,6 +154,9 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
               mimeType: widget.mimeType,
               onThumbnailTap: widget.onThumbnailTap,
               onIngredientTap: widget.onIngredientTap,
+              extraSections:
+                  widget.annotations.detailSections[_selectedNodeId] ??
+                  const [],
               mediaImage:
                   _selectedNodeId == widget.graph.rootId
                       ? widget.mediaImage

@@ -11,7 +11,7 @@ and OSS vs private ownership: `fleet/decisions/d0042-inreality-c2pa-viewer-layer
 `c2pa_view` is an open-source Flutter plugin that reads and displays [C2PA](https://c2pa.org/) (Coalition for Content Provenance and Authenticity) content credentials. It extracts embedded C2PA manifests from media files using the official `c2pa-rs` Rust library via Flutter Rust Bridge, then renders the provenance data as interactive Flutter widgets.
 
 **Package name:** `c2pa_view`
-**Version:** 0.1.1
+**Version:** 0.3.0
 **Homepage:** https://github.com/in-reality/c2pa_view
 **Platforms:** Android, iOS, Linux, macOS, Windows (FFI plugin)
 
@@ -148,6 +148,56 @@ This loads the native binary (or WASM on web). Must be called once, typically in
 - **Two display paths.** The full viewer (`C2paManifestViewer`) needs a `ProvenanceGraph`; the popup (`showManifestDetailPopup`) needs a `ManifestViewData`. Both are derived from the same `ManifestStore`.
 - **Theme is opt-in.** Widgets fall back to `C2paViewerThemeData.defaults` when no `C2paViewerTheme` ancestor exists.
 - **Generated code in `src/rust/`.** Never hand-edit files under `lib/src/rust/` — run `flutter_rust_bridge_codegen generate` after modifying `rust/src/api/*.rs`.
+
+## Extension API
+
+Downstream packages decorate provenance graphs via a parallel annotation
+sidecar — `ProvenanceNode` / `ProvenanceEdge` stay pure C2PA. Empty
+annotations preserve the default appearance. Canonical layering:
+`fleet/decisions/d0042-inreality-c2pa-viewer-layering.md`.
+
+### Data types
+
+| Type | Purpose |
+|---|---|
+| `ProvenanceAnnotations` | Sidecar with `nodeDecorations`, `edgeDecorations`, `detailSections` maps |
+| `NodeDecoration` / `EdgeDecoration` | Opaque host slots (border hints, badges, payload) |
+| `DecorationBadge` | Compact badge on a node (`id`, `label`, optional `icon`, `payload`) |
+| `GraphHighlight` / `HighlightStyle` | Stacked highlight layers per node or edge |
+| `GraphHighlights` | Resolved maps keyed by node id and `provenanceEdgeId(parent, child)` |
+| `ManifestDetailSection` | Host detail-panel section (`id`, `order`, `builder`) |
+| `ProvenanceInteractionHandler` | Outbound-only tap/focus callbacks |
+
+Join keys: node maps use `ProvenanceNode.id` (manifest label); edge maps use
+`provenanceEdgeId(parentId, childId)` → `"$parentId→$childId"`.
+
+### Widget parameters
+
+| Widget | Extension params |
+|---|---|
+| `ProvenanceTreeViewer` | `annotations`, `highlights`, `nodeDecorator`, `edgeDecorator`, `interactionHandler` |
+| `C2paManifestViewer` | Forwards the same params; passes `detailSections` for the selected node |
+| `ManifestDetailContent` / `ManifestDetailPanel` | `extraSections` |
+
+`ProvenanceNodeDecorator` wraps the default node card; `ProvenanceEdgeDecorator`
+runs after the default edge stroke. Selection-path highlighting is expressed as
+built-in highlight layers (`C2paHighlightLayers`) merged with host-supplied
+`GraphHighlights`, resolved from the inherited `C2paViewerTheme` at paint time.
+
+`C2paManifestViewer` wraps a non-null `interactionHandler` with
+`ComposingProvenanceInteractionHandler` so detail-panel selection stays in sync
+before the host handler runs. Badge taps with an `icon` route to `onIconTap`;
+label-only badges use `onBadgeTap`. `onEdgeTap` and `onFocusChangeRequested`
+are part of the exported contract but are not yet invoked by
+`ProvenanceTreeViewer` (edge hit-testing deferred).
+
+### Theme slots
+
+`C2paViewerThemeData` adds generic decoration colors:
+
+- `highlightAccentColor` — default accent for badges and unresolved highlights
+- `highlightFillColor` — optional node fill tint
+- `highlightBadgeTextColor` — badge label color
 
 ## Testing
 

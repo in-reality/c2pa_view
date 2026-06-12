@@ -1,5 +1,6 @@
 import 'package:c2pa_view/c2pa_view.dart' show ManifestDetailPanel;
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
+import 'package:c2pa_view/domain/models/manifest_detail_section.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
 import 'package:c2pa_view/features/manifest_detail/manifest_detail_panel.dart' show ManifestDetailPanel;
 import 'package:c2pa_view/features/manifest_detail/sections/about_section.dart';
@@ -26,16 +27,19 @@ import 'package:flutter/material.dart';
 class ManifestDetailContent extends StatelessWidget {
 
   const ManifestDetailContent({
-    required this.data, super.key,
+    required this.data,
+    super.key,
     this.mimeType,
     this.onThumbnailTap,
     this.onIngredientTap,
+    this.extraSections = const [],
     this.mediaImage,
   });
   final ManifestViewData data;
   final String? mimeType;
   final VoidCallback? onThumbnailTap;
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
+  final List<ManifestDetailSection> extraSections;
   final ImageProvider? mediaImage;
 
   @override
@@ -73,6 +77,7 @@ class ManifestDetailContent extends StatelessWidget {
             mimeType: mimeType,
             onThumbnailTap: onThumbnailTap,
             onIngredientTap: onIngredientTap,
+            extraSections: extraSections,
             mediaImage: mediaImage,
           ),
         ),
@@ -87,23 +92,25 @@ class ManifestDetailContent extends StatelessWidget {
     ..add(StringProperty('mimeType', mimeType))
     ..add(ObjectFlagProperty<VoidCallback?>.has('onThumbnailTap', onThumbnailTap))
     ..add(ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has('onIngredientTap', onIngredientTap))
+    ..add(IterableProperty<ManifestDetailSection>('extraSections', extraSections))
     ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage));
   }
 }
 
 class _ScrollBody extends StatefulWidget {
-
   const _ScrollBody({
     required this.data,
     this.mimeType,
     this.onThumbnailTap,
     this.onIngredientTap,
+    this.extraSections = const [],
     this.mediaImage,
   });
   final ManifestViewData data;
   final String? mimeType;
   final VoidCallback? onThumbnailTap;
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
+  final List<ManifestDetailSection> extraSections;
   final ImageProvider? mediaImage;
 
   @override
@@ -116,6 +123,7 @@ class _ScrollBody extends StatefulWidget {
     ..add(StringProperty('mimeType', mimeType))
     ..add(ObjectFlagProperty<VoidCallback?>.has('onThumbnailTap', onThumbnailTap))
     ..add(ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has('onIngredientTap', onIngredientTap))
+    ..add(IterableProperty<ManifestDetailSection>('extraSections', extraSections))
     ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage));
   }
 }
@@ -146,6 +154,8 @@ class _ScrollBodyState extends State<_ScrollBody> {
   @override
   Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
+    final extraSections = [...widget.extraSections]
+      ..sort((final a, final b) => a.order.compareTo(b.order));
 
     return Column(
       children: [
@@ -188,6 +198,8 @@ class _ScrollBodyState extends State<_ScrollBody> {
               ),
               if (widget.data.customFields.isNotEmpty)
                 CustomFieldsSection(fields: widget.data.customFields),
+              for (final section in extraSections)
+                section.builder(context, widget.data),
               Divider(height: 1, color: theme.borderColor),
               const SizedBox(height: 24),
             ],

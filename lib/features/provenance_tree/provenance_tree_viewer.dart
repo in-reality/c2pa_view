@@ -2,6 +2,9 @@ import 'dart:collection';
 import 'dart:math' as math;
 
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
+import 'package:c2pa_view/domain/models/graph_highlight.dart';
+import 'package:c2pa_view/domain/models/provenance_annotations.dart';
+import 'package:c2pa_view/domain/models/provenance_interaction.dart';
 import 'package:c2pa_view/domain/models/provenance_node.dart';
 import 'package:c2pa_view/features/provenance_tree/widgets/tree_edge_painter.dart';
 import 'package:c2pa_view/features/provenance_tree/widgets/tree_node_card.dart';
@@ -14,19 +17,30 @@ import 'package:flutter/material.dart';
 /// Nodes with multiple parents (shared ingredients) appear once with
 /// edges from every parent.
 class ProvenanceTreeViewer extends StatefulWidget {
-
   const ProvenanceTreeViewer({
-    required this.graph, super.key,
+    required this.graph,
+    super.key,
     this.selectedNodeId,
     this.onNodeSelected,
     this.backgroundColor,
     this.mediaImage,
+    this.annotations = ProvenanceAnnotations.empty,
+    this.highlights = GraphHighlights.empty,
+    this.nodeDecorator,
+    this.edgeDecorator,
+    this.interactionHandler,
   });
+
   final ProvenanceGraph graph;
   final String? selectedNodeId;
   final ValueChanged<ProvenanceNode>? onNodeSelected;
   final Color? backgroundColor;
   final ImageProvider? mediaImage;
+  final ProvenanceAnnotations annotations;
+  final GraphHighlights highlights;
+  final ProvenanceNodeDecorator? nodeDecorator;
+  final ProvenanceEdgeDecorator? edgeDecorator;
+  final ProvenanceInteractionHandler? interactionHandler;
 
   @override
   State<ProvenanceTreeViewer> createState() => _ProvenanceTreeViewerState();
@@ -34,11 +48,37 @@ class ProvenanceTreeViewer extends StatefulWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<ProvenanceGraph>('graph', graph))
-    ..add(StringProperty('selectedNodeId', selectedNodeId))
-    ..add(ObjectFlagProperty<ValueChanged<ProvenanceNode>?>.has('onNodeSelected', onNodeSelected))
-    ..add(ColorProperty('backgroundColor', backgroundColor))
-    ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage));
+    properties
+      ..add(DiagnosticsProperty<ProvenanceGraph>('graph', graph))
+      ..add(StringProperty('selectedNodeId', selectedNodeId))
+      ..add(
+        ObjectFlagProperty<ValueChanged<ProvenanceNode>?>.has(
+          'onNodeSelected',
+          onNodeSelected,
+        ),
+      )
+      ..add(ColorProperty('backgroundColor', backgroundColor))
+      ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage))
+      ..add(DiagnosticsProperty<ProvenanceAnnotations>('annotations', annotations))
+      ..add(DiagnosticsProperty<GraphHighlights>('highlights', highlights))
+      ..add(
+        ObjectFlagProperty<ProvenanceNodeDecorator?>.has(
+          'nodeDecorator',
+          nodeDecorator,
+        ),
+      )
+      ..add(
+        ObjectFlagProperty<ProvenanceEdgeDecorator?>.has(
+          'edgeDecorator',
+          edgeDecorator,
+        ),
+      )
+      ..add(
+        ObjectFlagProperty<ProvenanceInteractionHandler?>.has(
+          'interactionHandler',
+          interactionHandler,
+        ),
+      );
   }
 }
 
@@ -69,10 +109,6 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
     _transformController.dispose();
     super.dispose();
   }
-
-  // ---------------------------------------------------------------------------
-  // Layout
-  // ---------------------------------------------------------------------------
 
   void _computeLayout() {
     const theme = C2paViewerThemeData.defaults;
@@ -112,7 +148,6 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
       }
     }
 
-    // Build edge lines from the graph's edge list.
     final edges = <EdgeLine>[];
     for (final edge in graph.edges) {
       final parentPos = nodePositions[edge.parentId];
@@ -122,6 +157,8 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
       }
       edges.add(
         EdgeLine(
+          parentId: edge.parentId,
+          childId: edge.childId,
           from: Offset(parentPos.dx + nodeW / 2, parentPos.dy + nodeH),
           to: Offset(childPos.dx + nodeW / 2, childPos.dy),
         ),
@@ -133,9 +170,35 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
     _treeSize = Size(totalWidth + padding * 2, totalHeight + padding * 2);
   }
 
-  /// Assign each node a depth using BFS.  A shared node's depth is the
-  /// maximum depth any of its parents places it at (i.e. max-parent-depth + 1),
-  /// ensuring it sits below all parents.
+  GraphHighlights _selectionHighlights(final C2paViewerThemeData theme) {
+    if (widget.selectedNodeId == null) {
+      return GraphHighlights.empty;
+    }
+
+    final pathNodeIds = _pathToSelected();
+    final nodeHighlights = <String, List<GraphHighlight>>{};
+
+    for (final nodeId in pathNodeIds) {
+      if (nodeId == widget.selectedNodeId) {
+        nodeHighlights[nodeId] = [
+          GraphHighlight(
+            layerId: C2paHighlightLayers.selected,
+            style: HighlightStyle(borderColor: theme.selectedNodeBorderColor),
+          ),
+        ];
+      } else {
+        nodeHighlights[nodeId] = [
+          GraphHighlight(
+            layerId: C2paHighlightLayers.selectionPath,
+            style: HighlightStyle(borderColor: theme.pathNodeBorderColor),
+          ),
+        ];
+      }
+    }
+
+    return GraphHighlights(nodeHighlights: nodeHighlights);
+  }
+
   Map<int, List<ProvenanceNode>> _assignDepths(final ProvenanceGraph graph) {
     final depths = <String, int>{};
     final queue = Queue<String>();
@@ -143,13 +206,11 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
     depths[graph.rootId] = 0;
     queue.add(graph.rootId);
 
-    // Build a quick child lookup.
     final childrenOf = <String, List<String>>{};
     for (final edge in graph.edges) {
       childrenOf.putIfAbsent(edge.parentId, () => []).add(edge.childId);
     }
 
-    // BFS, but re-enqueue a child when we discover a deeper path.
     while (queue.isNotEmpty) {
       final id = queue.removeFirst();
       final myDepth = depths[id]!;
@@ -172,19 +233,12 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
     return depthMap;
   }
 
-  // ---------------------------------------------------------------------------
-  // Selection path highlighting
-  // ---------------------------------------------------------------------------
-
-  /// Walk edges backwards from the selected node to the root, collecting
-  /// all nodes on any path.
   Set<String> _pathToSelected() {
     if (widget.selectedNodeId == null) {
       return {};
     }
     final graph = widget.graph;
 
-    // Build parent lookup.
     final parentsOf = <String, List<String>>{};
     for (final edge in graph.edges) {
       parentsOf.putIfAbsent(edge.childId, () => []).add(edge.parentId);
@@ -208,10 +262,6 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Zoom controls
-  // ---------------------------------------------------------------------------
-
   void _zoomIn() {
     final matrix = _transformController.value.clone();
     final currentScale = matrix.getMaxScaleOnAxis();
@@ -234,14 +284,37 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
     _transformController.value = Matrix4.identity();
   }
 
-  // ---------------------------------------------------------------------------
-  // Build
-  // ---------------------------------------------------------------------------
+  void _handleNodeTap(final ProvenanceNode node) {
+    final decoration = widget.annotations.nodeDecorations[node.id];
+    if (widget.interactionHandler != null) {
+      widget.interactionHandler!.onNodeTap(node, decoration: decoration);
+      return;
+    }
+    widget.onNodeSelected?.call(node);
+  }
+
+  void _handleBadgeTap(
+    final String nodeId,
+    final DecorationBadge badge,
+  ) {
+    final handler = widget.interactionHandler;
+    if (handler == null) {
+      return;
+    }
+    if (badge.icon != null) {
+      handler.onIconTap(nodeId, badge.id, payload: badge.payload);
+    } else {
+      handler.onBadgeTap(nodeId, badge.id, payload: badge.payload);
+    }
+  }
 
   @override
   Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
     final pathNodeIds = _pathToSelected();
+    final resolvedHighlights = widget.highlights.mergedWith(
+      _selectionHighlights(theme),
+    );
 
     return ColoredBox(
       color: widget.backgroundColor ?? theme.surfaceVariantColor,
@@ -262,7 +335,10 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
                     size: _treeSize,
                     painter: TreeEdgePainter(
                       edges: _edges,
-                      color: theme.edgeColor,
+                      theme: theme,
+                      edgeHighlights: resolvedHighlights.edgeHighlights,
+                      edgeDecorations: widget.annotations.edgeDecorations,
+                      edgeDecorator: widget.edgeDecorator,
                     ),
                   ),
                   for (final layoutNode in _layoutNodes)
@@ -270,14 +346,29 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
                       left: layoutNode.position.dx,
                       top: layoutNode.position.dy,
                       child: TreeNodeCard(
+                        key: ValueKey(layoutNode.node.id),
                         node: layoutNode.node,
-                        isSelected: layoutNode.node.id == widget.selectedNodeId,
+                        isSelected:
+                            layoutNode.node.id == widget.selectedNodeId,
                         isOnPath:
                             pathNodeIds.contains(layoutNode.node.id) &&
                             layoutNode.node.id != widget.selectedNodeId,
+                        highlights:
+                            resolvedHighlights.forNode(layoutNode.node.id),
+                        decoration:
+                            widget.annotations.nodeDecorations[layoutNode.node.id],
+                        nodeDecorator: widget.nodeDecorator,
                         onTap:
-                            widget.onNodeSelected != null
-                                ? () => widget.onNodeSelected!(layoutNode.node)
+                            widget.onNodeSelected != null ||
+                                widget.interactionHandler != null
+                                ? () => _handleNodeTap(layoutNode.node)
+                                : null,
+                        onBadgeTap:
+                            widget.interactionHandler != null
+                                ? (final badge) => _handleBadgeTap(
+                                  layoutNode.node.id,
+                                  badge,
+                                )
                                 : null,
                         mediaImage:
                             layoutNode.node.id == widget.graph.rootId
@@ -305,7 +396,6 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
 }
 
 class _LayoutNode {
-
   const _LayoutNode({required this.node, required this.position});
   final ProvenanceNode node;
   final Offset position;

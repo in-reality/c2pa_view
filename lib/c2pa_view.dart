@@ -10,8 +10,12 @@ export 'domain/mappers/manifest_view_data_mapper.dart';
 // Mappers
 export 'domain/mappers/provenance_mapper.dart';
 // Domain models (view models)
+export 'domain/models/graph_highlight.dart';
+export 'domain/models/manifest_detail_section.dart';
 export 'domain/models/manifest_summary.dart';
 export 'domain/models/manifest_view_data.dart';
+export 'domain/models/provenance_annotations.dart';
+export 'domain/models/provenance_interaction.dart';
 export 'domain/models/provenance_node.dart';
 export 'domain/models/validation_result.dart';
 export 'features/custom_fields/custom_fields_table.dart';
