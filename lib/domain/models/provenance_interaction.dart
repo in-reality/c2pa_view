@@ -84,6 +84,15 @@ class ComposingProvenanceInteractionHandler
       delegate.onFocusChangeRequested(nodeId);
 }
 
+/// Host-supplied thumbnail for a provenance tree node.
+///
+/// Return null to fall through to the node's embedded manifest thumbnail,
+/// then the graph root [ImageProvider] passed as `mediaImage` on
+/// [C2paManifestViewer] / [ProvenanceTreeViewer].
+typedef ProvenanceNodeThumbnailProvider = ImageProvider? Function(
+  ProvenanceNode node,
+);
+
 /// Wraps the default node card with host-controlled chrome.
 typedef ProvenanceNodeDecorator =
     Widget Function(

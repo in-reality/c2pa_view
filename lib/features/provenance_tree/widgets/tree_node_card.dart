@@ -24,6 +24,7 @@ class TreeNodeCard extends StatelessWidget {
     this.onTap,
     this.onBadgeTap,
     this.mediaImage,
+    this.thumbnailOverride,
   });
 
   final ProvenanceNode node;
@@ -34,7 +35,12 @@ class TreeNodeCard extends StatelessWidget {
   final ProvenanceNodeDecorator? nodeDecorator;
   final VoidCallback? onTap;
   final void Function(DecorationBadge badge)? onBadgeTap;
+
+  /// Legacy root fallback when [thumbnailOverride] is null.
   final ImageProvider? mediaImage;
+
+  /// Pre-resolved display thumbnail from [resolveProvenanceNodeThumbnail].
+  final ImageProvider? thumbnailOverride;
 
   @override
   Widget build(final BuildContext context) {
@@ -57,11 +63,13 @@ class TreeNodeCard extends StatelessWidget {
       theme: theme,
     );
 
+    final thumbnail =
+        thumbnailOverride ?? node.summary.thumbnail ?? mediaImage;
     final summary =
-        (mediaImage != null && node.summary.thumbnail == null)
+        thumbnail != node.summary.thumbnail
             ? ManifestSummary(
               title: node.summary.title,
-              thumbnail: mediaImage,
+              thumbnail: thumbnail,
               validationResult: node.summary.validationResult,
               issuer: node.summary.issuer,
             )
@@ -156,7 +164,13 @@ class TreeNodeCard extends StatelessWidget {
           onBadgeTap,
         ),
       )
-      ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage));
+      ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage))
+      ..add(
+        DiagnosticsProperty<ImageProvider<Object>?>(
+          'thumbnailOverride',
+          thumbnailOverride,
+        ),
+      );
   }
 }
 

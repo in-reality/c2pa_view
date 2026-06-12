@@ -72,3 +72,26 @@ class ProvenanceGraph {
 
   bool hasChildren(final String nodeId) => edges.any((final e) => e.parentId == nodeId);
 }
+
+/// Resolves the thumbnail shown on a provenance tree node card.
+///
+/// Order: [thumbnailProvider] → embedded manifest thumbnail → [mediaImage]
+/// when [node] is the graph [rootId].
+ImageProvider? resolveProvenanceNodeThumbnail({
+  required final ProvenanceNode node,
+  required final String rootId,
+  final ImageProvider? Function(ProvenanceNode node)? thumbnailProvider,
+  final ImageProvider? mediaImage,
+}) {
+  final fromHost = thumbnailProvider?.call(node);
+  if (fromHost != null) {
+    return fromHost;
+  }
+  if (node.summary.thumbnail != null) {
+    return node.summary.thumbnail;
+  }
+  if (node.id == rootId) {
+    return mediaImage;
+  }
+  return null;
+}

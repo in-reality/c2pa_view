@@ -28,6 +28,7 @@ class C2paManifestViewer extends StatefulWidget {
     this.mimeType,
     this.showDetailPanel = true,
     this.mediaImage,
+    this.nodeThumbnailProvider,
     this.annotations = ProvenanceAnnotations.empty,
     this.highlights = GraphHighlights.empty,
     this.nodeDecorator,
@@ -51,6 +52,10 @@ class C2paManifestViewer extends StatefulWidget {
   /// embedded thumbnail, this is shown instead (detail panel and root tree node).
   final ImageProvider? mediaImage;
 
+  /// Per-node thumbnail override for tree cards. See
+  /// [resolveProvenanceNodeThumbnail] for resolution order.
+  final ProvenanceNodeThumbnailProvider? nodeThumbnailProvider;
+
   @override
   State<C2paManifestViewer> createState() => _C2paManifestViewerState();
 
@@ -65,6 +70,12 @@ class C2paManifestViewer extends StatefulWidget {
     ..add(StringProperty('mimeType', mimeType))
     ..add(DiagnosticsProperty<bool>('showDetailPanel', showDetailPanel))
     ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage))
+    ..add(
+      ObjectFlagProperty<ProvenanceNodeThumbnailProvider?>.has(
+        'nodeThumbnailProvider',
+        nodeThumbnailProvider,
+      ),
+    )
     ..add(DiagnosticsProperty<ProvenanceAnnotations>('annotations', annotations))
     ..add(DiagnosticsProperty<GraphHighlights>('highlights', highlights))
     ..add(
@@ -140,6 +151,7 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
               selectedNodeId: _selectedNodeId,
               onNodeSelected: _onNodeSelected,
               mediaImage: widget.mediaImage,
+              nodeThumbnailProvider: widget.nodeThumbnailProvider,
               annotations: widget.annotations,
               highlights: widget.highlights,
               nodeDecorator: widget.nodeDecorator,

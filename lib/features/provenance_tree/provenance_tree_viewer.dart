@@ -24,6 +24,7 @@ class ProvenanceTreeViewer extends StatefulWidget {
     this.onNodeSelected,
     this.backgroundColor,
     this.mediaImage,
+    this.nodeThumbnailProvider,
     this.annotations = ProvenanceAnnotations.empty,
     this.highlights = GraphHighlights.empty,
     this.nodeDecorator,
@@ -36,6 +37,7 @@ class ProvenanceTreeViewer extends StatefulWidget {
   final ValueChanged<ProvenanceNode>? onNodeSelected;
   final Color? backgroundColor;
   final ImageProvider? mediaImage;
+  final ProvenanceNodeThumbnailProvider? nodeThumbnailProvider;
   final ProvenanceAnnotations annotations;
   final GraphHighlights highlights;
   final ProvenanceNodeDecorator? nodeDecorator;
@@ -59,6 +61,12 @@ class ProvenanceTreeViewer extends StatefulWidget {
       )
       ..add(ColorProperty('backgroundColor', backgroundColor))
       ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage))
+      ..add(
+        ObjectFlagProperty<ProvenanceNodeThumbnailProvider?>.has(
+          'nodeThumbnailProvider',
+          nodeThumbnailProvider,
+        ),
+      )
       ..add(DiagnosticsProperty<ProvenanceAnnotations>('annotations', annotations))
       ..add(DiagnosticsProperty<GraphHighlights>('highlights', highlights))
       ..add(
@@ -370,10 +378,12 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
                                   badge,
                                 )
                                 : null,
-                        mediaImage:
-                            layoutNode.node.id == widget.graph.rootId
-                                ? widget.mediaImage
-                                : null,
+                        thumbnailOverride: resolveProvenanceNodeThumbnail(
+                          node: layoutNode.node,
+                          rootId: widget.graph.rootId,
+                          thumbnailProvider: widget.nodeThumbnailProvider,
+                          mediaImage: widget.mediaImage,
+                        ),
                       ),
                     ),
                 ],

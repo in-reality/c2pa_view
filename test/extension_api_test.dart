@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/graph_highlight.dart';
 import 'package:c2pa_view/domain/models/manifest_detail_section.dart';
@@ -150,6 +152,65 @@ void main() {
     });
   });
 
+  group('resolveProvenanceNodeThumbnail', () {
+    final rootImage = MemoryImage(Uint8List.fromList([1]));
+    final parentImage = MemoryImage(Uint8List.fromList([2]));
+    final embeddedImage = MemoryImage(Uint8List.fromList([3]));
+
+    test('host provider wins over embedded thumbnail', () {
+      final node = ProvenanceNode(
+        id: 'child',
+        summary: ManifestSummary(thumbnail: embeddedImage),
+      );
+
+      final resolved = resolveProvenanceNodeThumbnail(
+        node: node,
+        rootId: 'root',
+        thumbnailProvider: (_) => parentImage,
+      );
+
+      expect(resolved, parentImage);
+    });
+
+    test('embedded thumbnail used when provider returns null', () {
+      final node = ProvenanceNode(
+        id: 'child',
+        summary: ManifestSummary(thumbnail: embeddedImage),
+      );
+
+      final resolved = resolveProvenanceNodeThumbnail(
+        node: node,
+        rootId: 'root',
+      );
+
+      expect(resolved, embeddedImage);
+    });
+
+    test('root mediaImage used when no provider or embedded thumbnail', () {
+      const node = ProvenanceNode(id: 'root');
+
+      final resolved = resolveProvenanceNodeThumbnail(
+        node: node,
+        rootId: 'root',
+        mediaImage: rootImage,
+      );
+
+      expect(resolved, rootImage);
+    });
+
+    test('non-root nodes do not inherit root mediaImage', () {
+      const node = ProvenanceNode(id: 'child');
+
+      final resolved = resolveProvenanceNodeThumbnail(
+        node: node,
+        rootId: 'root',
+        mediaImage: rootImage,
+      );
+
+      expect(resolved, isNull);
+    });
+  });
+
   group('ProvenanceTreeViewer default params', () {
     testWidgets('selection path uses inherited theme border colors', (
       final tester,
@@ -208,6 +269,44 @@ void main() {
         ),
         darkTheme.selectedNodeBorderColor,
       );
+    });
+
+    testWidgets('nodeThumbnailProvider supplies distinct images per node', (
+      final tester,
+    ) async {
+      final rootImage = MemoryImage(Uint8List.fromList([1]));
+      final parentImage = MemoryImage(Uint8List.fromList([2]));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: C2paViewerTheme(
+            data: C2paViewerThemeData.defaults,
+            child: Scaffold(
+              body: SizedBox(
+                width: 800,
+                height: 600,
+                child: ProvenanceTreeViewer(
+                  graph: _twoNodeGraph(),
+                  nodeThumbnailProvider: (final node) {
+                    switch (node.id) {
+                      case 'root':
+                        return rootImage;
+                      case 'child':
+                        return parentImage;
+                      default:
+                        return null;
+                    }
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(_cardForNodeId(tester, 'root').thumbnailOverride, rootImage);
+      expect(_cardForNodeId(tester, 'child').thumbnailOverride, parentImage);
     });
   });
 
