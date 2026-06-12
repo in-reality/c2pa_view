@@ -7,6 +7,8 @@ verdict highlights, origin badges, graph windowing) lives in the separate
 `inreality_c2pa_view` package and attaches via a generic annotation sidecar —
 not by extending `ProvenanceNode`. Canonical three-layer boundaries, join keys,
 and OSS vs private ownership: `fleet/decisions/d0042-inreality-c2pa-viewer-layering.md`.
+Verdict evaluation and ruleset `evaluate()` stay **outside** this OSS package
+(in `inreality_c2pa_view` / ruleset bridge per [`d0043`](../../fleet/decisions/d0043-client-authoritative-verdict-display.md)).
 
 `c2pa_view` is an open-source Flutter plugin that reads and displays [C2PA](https://c2pa.org/) (Coalition for Content Provenance and Authenticity) content credentials. It extracts embedded C2PA manifests from media files using the official `c2pa-rs` Rust library via Flutter Rust Bridge, then renders the provenance data as interactive Flutter widgets.
 
