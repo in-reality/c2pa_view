@@ -34,6 +34,7 @@ class ManifestDetailContent extends StatelessWidget {
     this.onIngredientTap,
     this.extraSections = const [],
     this.mediaImage,
+    this.inlineInParentScroll = false,
   });
   final ManifestViewData data;
   final String? mimeType;
@@ -42,9 +43,32 @@ class ManifestDetailContent extends StatelessWidget {
   final List<ManifestDetailSection> extraSections;
   final ImageProvider? mediaImage;
 
+  /// When true, sections render in a [Column] for an outer scroll host.
+  final bool inlineInParentScroll;
+
   @override
   Widget build(final BuildContext context) {
     if (data.validationResult.isInvalid) {
+      if (inlineInParentScroll) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DetailHeader(data: data),
+            const SizedBox(height: 12),
+            TamperedPlaceholder(
+              result: data.validationResult,
+              failures: data.validationFailures,
+            ),
+            ThumbnailSection(
+              thumbnail: data.thumbnail ?? mediaImage,
+              mimeType: mimeType,
+              onTapFullScreen: onThumbnailTap,
+            ),
+            const SizedBox(height: 24),
+          ],
+        );
+      }
+
       return Column(
         children: [
           DetailHeader(data: data),
@@ -63,6 +87,23 @@ class ManifestDetailContent extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ],
+      );
+    }
+
+    if (inlineInParentScroll) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DetailHeader(data: data),
+          _ManifestDetailSections(
+            data: data,
+            mimeType: mimeType,
+            onThumbnailTap: onThumbnailTap,
+            onIngredientTap: onIngredientTap,
+            extraSections: extraSections,
+            mediaImage: mediaImage,
           ),
         ],
       );
@@ -153,10 +194,6 @@ class _ScrollBodyState extends State<_ScrollBody> {
 
   @override
   Widget build(final BuildContext context) {
-    final theme = C2paViewerTheme.of(context);
-    final extraSections = [...widget.extraSections]
-      ..sort((final a, final b) => a.order.compareTo(b.order));
-
     return Column(
       children: [
         if (_showHeaderShadow)
@@ -177,34 +214,70 @@ class _ScrollBodyState extends State<_ScrollBody> {
             controller: _scrollController,
             padding: EdgeInsets.zero,
             children: [
-              ErrorBanner(result: widget.data.validationResult),
-              ThumbnailSection(
-                thumbnail: widget.data.thumbnail ?? widget.mediaImage,
+              _ManifestDetailSections(
+                data: widget.data,
                 mimeType: widget.mimeType,
-                onTapFullScreen: widget.onThumbnailTap,
-              ),
-              ContentSummarySection(generativeInfo: widget.data.generativeInfo),
-              ProcessSection(
-                data: widget.data,
+                onThumbnailTap: widget.onThumbnailTap,
                 onIngredientTap: widget.onIngredientTap,
+                extraSections: widget.extraSections,
+                mediaImage: widget.mediaImage,
               ),
-              CameraCaptureSection(
-                exifData: widget.data.exifData,
-                exifCustomFields: widget.data.exifCustomFields,
-              ),
-              AboutSection(
-                data: widget.data,
-                creativeWorkCustomFields: widget.data.creativeWorkCustomFields,
-              ),
-              if (widget.data.customFields.isNotEmpty)
-                CustomFieldsSection(fields: widget.data.customFields),
-              for (final section in extraSections)
-                section.builder(context, widget.data),
-              Divider(height: 1, color: theme.borderColor),
-              const SizedBox(height: 24),
             ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _ManifestDetailSections extends StatelessWidget {
+  const _ManifestDetailSections({
+    required this.data,
+    this.mimeType,
+    this.onThumbnailTap,
+    this.onIngredientTap,
+    this.extraSections = const [],
+    this.mediaImage,
+  });
+
+  final ManifestViewData data;
+  final String? mimeType;
+  final VoidCallback? onThumbnailTap;
+  final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
+  final List<ManifestDetailSection> extraSections;
+  final ImageProvider? mediaImage;
+
+  @override
+  Widget build(final BuildContext context) {
+    final theme = C2paViewerTheme.of(context);
+    final sortedExtra = [...extraSections]..sort((final a, final b) => a.order.compareTo(b.order));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ErrorBanner(result: data.validationResult),
+        ThumbnailSection(
+          thumbnail: data.thumbnail ?? mediaImage,
+          mimeType: mimeType,
+          onTapFullScreen: onThumbnailTap,
+        ),
+        ContentSummarySection(generativeInfo: data.generativeInfo),
+        ProcessSection(
+          data: data,
+          onIngredientTap: onIngredientTap,
+        ),
+        CameraCaptureSection(
+          exifData: data.exifData,
+          exifCustomFields: data.exifCustomFields,
+        ),
+        AboutSection(
+          data: data,
+          creativeWorkCustomFields: data.creativeWorkCustomFields,
+        ),
+        if (data.customFields.isNotEmpty) CustomFieldsSection(fields: data.customFields),
+        for (final section in sortedExtra) section.builder(context, data),
+        Divider(height: 1, color: theme.borderColor),
+        const SizedBox(height: 24),
       ],
     );
   }

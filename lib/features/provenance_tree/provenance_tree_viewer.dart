@@ -99,6 +99,7 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
   late List<EdgeLine> _edges;
   late Size _treeSize;
   Size _viewportSize = Size.zero;
+  bool _autoFitPending = true;
 
   @override
   void initState() {
@@ -111,6 +112,7 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.graph != widget.graph) {
       _computeLayout();
+      _scheduleFitToView();
     }
   }
 
@@ -178,6 +180,7 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
     _layoutNodes = layoutNodes;
     _edges = edges;
     _treeSize = Size(totalWidth + padding * 2, totalHeight + padding * 2);
+    _autoFitPending = true;
   }
 
   GraphHighlights _selectionHighlights(final C2paViewerThemeData theme) {
@@ -290,22 +293,35 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
     _transformController.value = matrix;
   }
 
+  void _scheduleFitToView() {
+    if (!mounted) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _fitToView();
+    });
+  }
+
   void _fitToView() {
-    if (_viewportSize.isEmpty || _layoutNodes.isEmpty) {
+    if (_viewportSize.isEmpty || _layoutNodes.isEmpty || !mounted) {
       return;
     }
 
-    const theme = C2paViewerThemeData.defaults;
+    final theme = C2paViewerTheme.of(context);
     final contentBounds = provenanceGraphBounds(
       nodePositions: _layoutNodes.map((final node) => node.position),
       nodeWidth: theme.nodeWidth,
       nodeHeight: theme.nodeHeight,
-    );
+    ).inflate(8);
 
     _transformController.value = provenanceFitToViewTransform(
       contentBounds: contentBounds,
       viewportSize: _viewportSize,
     );
+    _autoFitPending = false;
   }
 
   void _handleNodeTap(final ProvenanceNode node) {
@@ -345,6 +361,9 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
       child: LayoutBuilder(
         builder: (final context, final constraints) {
           _viewportSize = Size(constraints.maxWidth, constraints.maxHeight);
+          if (_autoFitPending && !_viewportSize.isEmpty) {
+            _scheduleFitToView();
+          }
 
           return Stack(
             children: [
