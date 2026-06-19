@@ -6,6 +6,7 @@ import 'package:c2pa_view/domain/models/graph_highlight.dart';
 import 'package:c2pa_view/domain/models/provenance_annotations.dart';
 import 'package:c2pa_view/domain/models/provenance_interaction.dart';
 import 'package:c2pa_view/domain/models/provenance_node.dart';
+import 'package:c2pa_view/features/provenance_tree/provenance_fit_transform.dart';
 import 'package:c2pa_view/features/provenance_tree/widgets/tree_edge_painter.dart';
 import 'package:c2pa_view/features/provenance_tree/widgets/tree_node_card.dart';
 import 'package:c2pa_view/features/provenance_tree/widgets/zoom_controls.dart';
@@ -97,6 +98,7 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
   late List<_LayoutNode> _layoutNodes;
   late List<EdgeLine> _edges;
   late Size _treeSize;
+  Size _viewportSize = Size.zero;
 
   @override
   void initState() {
@@ -289,7 +291,21 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
   }
 
   void _fitToView() {
-    _transformController.value = Matrix4.identity();
+    if (_viewportSize.isEmpty || _layoutNodes.isEmpty) {
+      return;
+    }
+
+    const theme = C2paViewerThemeData.defaults;
+    final contentBounds = provenanceGraphBounds(
+      nodePositions: _layoutNodes.map((final node) => node.position),
+      nodeWidth: theme.nodeWidth,
+      nodeHeight: theme.nodeHeight,
+    );
+
+    _transformController.value = provenanceFitToViewTransform(
+      contentBounds: contentBounds,
+      viewportSize: _viewportSize,
+    );
   }
 
   void _handleNodeTap(final ProvenanceNode node) {
@@ -326,80 +342,87 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
 
     return ColoredBox(
       color: widget.backgroundColor ?? theme.surfaceVariantColor,
-      child: Stack(
-        children: [
-          InteractiveViewer(
-            transformationController: _transformController,
-            constrained: false,
-            boundaryMargin: const EdgeInsets.all(200),
-            minScale: 0.1,
-            maxScale: 5,
-            child: SizedBox(
-              width: _treeSize.width,
-              height: _treeSize.height,
-              child: Stack(
-                children: [
-                  CustomPaint(
-                    size: _treeSize,
-                    painter: TreeEdgePainter(
-                      edges: _edges,
-                      theme: theme,
-                      edgeHighlights: resolvedHighlights.edgeHighlights,
-                      edgeDecorations: widget.annotations.edgeDecorations,
-                      edgeDecorator: widget.edgeDecorator,
-                    ),
-                  ),
-                  for (final layoutNode in _layoutNodes)
-                    Positioned(
-                      left: layoutNode.position.dx,
-                      top: layoutNode.position.dy,
-                      child: TreeNodeCard(
-                        key: ValueKey(layoutNode.node.id),
-                        node: layoutNode.node,
-                        isSelected:
-                            layoutNode.node.id == widget.selectedNodeId,
-                        isOnPath:
-                            pathNodeIds.contains(layoutNode.node.id) &&
-                            layoutNode.node.id != widget.selectedNodeId,
-                        highlights:
-                            resolvedHighlights.forNode(layoutNode.node.id),
-                        decoration:
-                            widget.annotations.nodeDecorations[layoutNode.node.id],
-                        nodeDecorator: widget.nodeDecorator,
-                        onTap:
-                            widget.onNodeSelected != null ||
-                                widget.interactionHandler != null
-                                ? () => _handleNodeTap(layoutNode.node)
-                                : null,
-                        onBadgeTap:
-                            widget.interactionHandler != null
-                                ? (final badge) => _handleBadgeTap(
-                                  layoutNode.node.id,
-                                  badge,
-                                )
-                                : null,
-                        thumbnailOverride: resolveProvenanceNodeThumbnail(
-                          node: layoutNode.node,
-                          rootId: widget.graph.rootId,
-                          thumbnailProvider: widget.nodeThumbnailProvider,
-                          mediaImage: widget.mediaImage,
+      child: LayoutBuilder(
+        builder: (final context, final constraints) {
+          _viewportSize = Size(constraints.maxWidth, constraints.maxHeight);
+
+          return Stack(
+            children: [
+              InteractiveViewer(
+                transformationController: _transformController,
+                constrained: false,
+                boundaryMargin: const EdgeInsets.all(200),
+                minScale: 0.1,
+                maxScale: 5,
+                child: SizedBox(
+                  width: _treeSize.width,
+                  height: _treeSize.height,
+                  child: Stack(
+                    children: [
+                      CustomPaint(
+                        size: _treeSize,
+                        painter: TreeEdgePainter(
+                          edges: _edges,
+                          theme: theme,
+                          edgeHighlights: resolvedHighlights.edgeHighlights,
+                          edgeDecorations: widget.annotations.edgeDecorations,
+                          edgeDecorator: widget.edgeDecorator,
                         ),
                       ),
-                    ),
-                ],
+                      for (final layoutNode in _layoutNodes)
+                        Positioned(
+                          left: layoutNode.position.dx,
+                          top: layoutNode.position.dy,
+                          child: TreeNodeCard(
+                            key: ValueKey(layoutNode.node.id),
+                            node: layoutNode.node,
+                            isSelected:
+                                layoutNode.node.id == widget.selectedNodeId,
+                            isOnPath:
+                                pathNodeIds.contains(layoutNode.node.id) &&
+                                layoutNode.node.id != widget.selectedNodeId,
+                            highlights:
+                                resolvedHighlights.forNode(layoutNode.node.id),
+                            decoration:
+                                widget.annotations
+                                    .nodeDecorations[layoutNode.node.id],
+                            nodeDecorator: widget.nodeDecorator,
+                            onTap:
+                                widget.onNodeSelected != null ||
+                                    widget.interactionHandler != null
+                                    ? () => _handleNodeTap(layoutNode.node)
+                                    : null,
+                            onBadgeTap:
+                                widget.interactionHandler != null
+                                    ? (final badge) => _handleBadgeTap(
+                                      layoutNode.node.id,
+                                      badge,
+                                    )
+                                    : null,
+                            thumbnailOverride: resolveProvenanceNodeThumbnail(
+                              node: layoutNode.node,
+                              rootId: widget.graph.rootId,
+                              thumbnailProvider: widget.nodeThumbnailProvider,
+                              mediaImage: widget.mediaImage,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
-          Positioned(
-            right: 16,
-            bottom: 16,
-            child: ZoomControls(
-              onZoomIn: _zoomIn,
-              onZoomOut: _zoomOut,
-              onFit: _fitToView,
-            ),
-          ),
-        ],
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: ZoomControls(
+                  onZoomIn: _zoomIn,
+                  onZoomOut: _zoomOut,
+                  onFit: _fitToView,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
