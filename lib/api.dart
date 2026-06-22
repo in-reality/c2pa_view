@@ -69,3 +69,14 @@ String? getManifestJsonFromBytes({
   }
   return getManifestWithValidation(fileBytes: fileBytes, format: format);
 }
+
+/// Reads a detached manifest **store** (e.g. L1 `GET /manifests/{hash}` CBOR).
+///
+/// Unlike [getManifestJsonFromBytes], does not treat [fileBytes] as the asset
+/// under validation — detached L1 manifest-store bytes skip data_hash binding.
+String? getManifestStoreJsonFromBytes({
+  required final List<int> fileBytes,
+  required final String format,
+}) {
+  return getFileManifestFormat(fileBytes: fileBytes, format: format);
+}

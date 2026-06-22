@@ -18,11 +18,38 @@ pub fn get_file_manifest_format(
     file_bytes: Vec<u8>,
     format: String,
 ) -> Result<Option<String>, String> {
+    // L1 `GET /manifests/{hash}` returns detached manifest-store JUMBF bytes.
+    // Default Reader settings verify those bytes against ingredient data_hash
+    // bindings, which fails with "Hashes do not match" because the body is not
+    // the referenced media asset.
+    let settings_json = serde_json::json!({
+        "verify": {
+            "verify_after_reading": false,
+        }
+    });
+    let settings = Settings::new()
+        .with_json(&settings_json.to_string())
+        .map_err(|e| format!("settings error: {e}"))?;
+    let context = Context::new()
+        .with_settings(settings)
+        .map_err(|e| format!("context error: {e}"))?;
+
+    let manifest_format = normalize_detached_manifest_format(&format);
     let stream = std::io::Cursor::new(file_bytes);
 
-    let reader = Reader::from_stream(&format, stream).ok();
+    let reader = Reader::from_context(context)
+        .with_stream(manifest_format, stream)
+        .ok();
 
     Ok(reader.map(|r| r.json()))
+}
+
+/// Maps HTTP Content-Type values to a manifest-store MIME understood by c2pa-rs.
+fn normalize_detached_manifest_format(format: &str) -> &str {
+    match format.to_ascii_lowercase().as_str() {
+        "application/c2pa" | "application/x-c2pa-manifest-store" | "c2pa" => format,
+        _ => "application/c2pa",
+    }
 }
 
 #[flutter_rust_bridge::frb(sync)]

@@ -25,6 +25,11 @@ echo "Building WASM (wasm-pack)..."
   wasm-pack build --target no-modules --out-dir ../web/pkg --out-name c2pa_view
 )
 
+# Hot restart re-injects pkg/*.js; `let wasm_bindgen` is not re-declarable in JS.
+if [[ -f "$SRC/c2pa_view.js" ]]; then
+  sed -i 's/^let wasm_bindgen/var wasm_bindgen/' "$SRC/c2pa_view.js"
+fi
+
 if [[ ! -d "$SRC" ]]; then
   echo "Error: $SRC not found after wasm-pack build."
   exit 1

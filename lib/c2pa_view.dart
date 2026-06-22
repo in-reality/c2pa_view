@@ -2,6 +2,7 @@
 // Legacy API (still functional)
 export 'api.dart';
 export 'core/bridge/c2pa_bridge_service.dart';
+export 'core/bridge/rust_lib_init.dart';
 export 'core/theme/c2pa_theme.dart';
 export 'core/trust/trust_list_service.dart';
 // Domain entities
