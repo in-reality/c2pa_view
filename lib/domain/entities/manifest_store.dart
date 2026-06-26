@@ -44,23 +44,27 @@ class ManifestStore extends Equatable {
     }
 
     final rawManifestJsons = <String, Map<String, dynamic>>{};
-    final manifests =
-        (json['manifests'] as Map<String, dynamic>?)?.map((final k, final e) {
-          final manifestJson = Map<String, dynamic>.from(
-            e as Map<String, dynamic>,
-          );
-          // Inject the entries attributed to this manifest when the
-          // manifest JSON does not already carry its own validation_status.
-          if (manifestJson['validation_status'] == null) {
-            final entries = perManifestValidation[k];
-            if (entries != null && entries.isNotEmpty) {
-              manifestJson['validation_status'] = entries;
-            }
+    final manifests = <String, Manifest>{};
+    final manifestsJson = json['manifests'];
+    if (manifestsJson is Map) {
+      for (final entry in manifestsJson.entries) {
+        final raw = entry.value;
+        if (raw is! Map) {
+          continue;
+        }
+        final manifestJson = Map<String, dynamic>.from(raw);
+        // Inject the entries attributed to this manifest when the
+        // manifest JSON does not already carry its own validation_status.
+        if (manifestJson['validation_status'] == null) {
+          final entries = perManifestValidation[entry.key];
+          if (entries != null && entries.isNotEmpty) {
+            manifestJson['validation_status'] = entries;
           }
-          rawManifestJsons[k] = manifestJson;
-          return MapEntry(k, Manifest.fromJson(manifestJson));
-        }) ??
-        {};
+        }
+        rawManifestJsons[entry.key] = manifestJson;
+        manifests[entry.key] = Manifest.fromJson(manifestJson);
+      }
+    }
 
     return ManifestStore(
       activeManifest: activeLabel,

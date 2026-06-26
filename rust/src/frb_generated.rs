@@ -38,7 +38,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 2121492747;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 2069417627;
 
 // Section: executor
 
@@ -104,6 +104,38 @@ fn wire__crate__api__c2pa__get_file_manifest_format_impl(
             transform_result_sse::<_, String>((move || {
                 let output_ok =
                     crate::api::c2pa::get_file_manifest_format(api_file_bytes, api_format)?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api__c2pa__get_file_manifest_format_utf8_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "get_file_manifest_format_utf8",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_file_bytes = <Vec<u8>>::sse_decode(&mut deserializer);
+            let api_format = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, String>((move || {
+                let output_ok =
+                    crate::api::c2pa::get_file_manifest_format_utf8(api_file_bytes, api_format)?;
                 Ok(output_ok)
             })())
         },
@@ -247,6 +279,40 @@ fn wire__crate__api__c2pa__get_manifest_with_validation_from_path_impl(
         },
     )
 }
+fn wire__crate__api__c2pa__get_manifest_with_validation_utf8_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "get_manifest_with_validation_utf8",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_file_bytes = <Vec<u8>>::sse_decode(&mut deserializer);
+            let api_format = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, String>((move || {
+                let output_ok = crate::api::c2pa::get_manifest_with_validation_utf8(
+                    api_file_bytes,
+                    api_format,
+                )?;
+                Ok(output_ok)
+            })())
+        },
+    )
+}
 
 // Section: dart2rust
 
@@ -275,6 +341,17 @@ impl SseDecode for Option<String> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(<String>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<Vec<u8>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<Vec<u8>>::sse_decode(deserializer));
         } else {
             return None;
         }
@@ -325,18 +402,26 @@ fn pde_ffi_dispatcher_sync_impl(
     match func_id {
         1 => wire__crate__api__c2pa__get_file_manifest_impl(ptr, rust_vec_len, data_len),
         2 => wire__crate__api__c2pa__get_file_manifest_format_impl(ptr, rust_vec_len, data_len),
-        3 => wire__crate__api__c2pa__get_manifest_with_trust_validation_impl(
+        3 => {
+            wire__crate__api__c2pa__get_file_manifest_format_utf8_impl(ptr, rust_vec_len, data_len)
+        }
+        4 => wire__crate__api__c2pa__get_manifest_with_trust_validation_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        4 => wire__crate__api__c2pa__get_manifest_with_trust_validation_from_path_impl(
+        5 => wire__crate__api__c2pa__get_manifest_with_trust_validation_from_path_impl(
             ptr,
             rust_vec_len,
             data_len,
         ),
-        5 => wire__crate__api__c2pa__get_manifest_with_validation_impl(ptr, rust_vec_len, data_len),
-        6 => wire__crate__api__c2pa__get_manifest_with_validation_from_path_impl(
+        6 => wire__crate__api__c2pa__get_manifest_with_validation_impl(ptr, rust_vec_len, data_len),
+        7 => wire__crate__api__c2pa__get_manifest_with_validation_from_path_impl(
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        8 => wire__crate__api__c2pa__get_manifest_with_validation_utf8_impl(
             ptr,
             rust_vec_len,
             data_len,
@@ -370,6 +455,16 @@ impl SseEncode for Option<String> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <String>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<Vec<u8>> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <Vec<u8>>::sse_encode(value, serializer);
         }
     }
 }

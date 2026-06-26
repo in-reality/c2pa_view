@@ -9,10 +9,28 @@ class ManifestAssertion extends Equatable {
   factory ManifestAssertion.fromJson(final Map<String, dynamic> json) =>
       ManifestAssertion(
         json['label'] as String,
-        json['data'] as Map<String, dynamic>,
+        _coerceAssertionData(json['data']),
         instance: json['instance'] as int?,
         kind: json['kind'] as String?,
       );
+
+  /// c2pa-rs JSON sometimes embeds assertion bodies as base64 strings (e.g.
+  /// `cawg.identity`); coerce to a map so downstream parsers do not throw on web.
+  static Map<String, dynamic> _coerceAssertionData(final Object? raw) {
+    if (raw == null) {
+      return const {};
+    }
+    if (raw is Map<String, dynamic>) {
+      return raw;
+    }
+    if (raw is Map) {
+      return Map<String, dynamic>.from(raw);
+    }
+    if (raw is String) {
+      return {'_c2pa_inline': raw};
+    }
+    return const {};
+  }
 
   /// An assertion label in reverse domain format
   final String label;

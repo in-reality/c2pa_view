@@ -6,6 +6,8 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These functions are ignored because they are not marked as `pub`: `normalize_detached_manifest_format`, `reader_manifest_json_value`
+
 String? getFileManifest({required List<int> fileBytes, required String path}) =>
     RustLib.instance.api.crateApiC2PaGetFileManifest(
       fileBytes: fileBytes,
@@ -20,10 +22,33 @@ String? getFileManifestFormat({
   format: format,
 );
 
+/// UTF-8 JSON bytes for [`get_file_manifest_format`]. See
+/// [`get_manifest_with_validation_utf8`] for the web FRB rationale.
+Uint8List? getFileManifestFormatUtf8({
+  required List<int> fileBytes,
+  required String format,
+}) => RustLib.instance.api.crateApiC2PaGetFileManifestFormatUtf8(
+  fileBytes: fileBytes,
+  format: format,
+);
+
 String? getManifestWithValidation({
   required List<int> fileBytes,
   required String format,
 }) => RustLib.instance.api.crateApiC2PaGetManifestWithValidation(
+  fileBytes: fileBytes,
+  format: format,
+);
+
+/// UTF-8 JSON bytes for [`get_manifest_with_validation`].
+///
+/// Web FRB sync can fail to decode very large [`String`] returns from WASM
+/// (Dart `TypeError` on DCO decode). Callers should `utf8.decode` on the VM
+/// or web.
+Uint8List? getManifestWithValidationUtf8({
+  required List<int> fileBytes,
+  required String format,
+}) => RustLib.instance.api.crateApiC2PaGetManifestWithValidationUtf8(
   fileBytes: fileBytes,
   format: format,
 );

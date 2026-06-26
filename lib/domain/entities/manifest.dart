@@ -47,14 +47,18 @@ class Manifest extends Equatable {
   /// Parses a Manifest from a JSON map.
   factory Manifest.fromJson(final Map<String, dynamic> json) {
     // Parse all assertions
-    final allAssertions =
-        (json['assertions'] as List?)
-            ?.map(
-              (final e) =>
-                  ManifestAssertion.fromJson(e as Map<String, dynamic>),
-            )
-            .toList() ??
-        [];
+    final allAssertions = <ManifestAssertion>[];
+    if (json['assertions'] is List) {
+      for (final item in json['assertions'] as List) {
+        if (item is Map<String, dynamic>) {
+          allAssertions.add(ManifestAssertion.fromJson(item));
+        } else if (item is Map) {
+          allAssertions.add(
+            ManifestAssertion.fromJson(Map<String, dynamic>.from(item)),
+          );
+        }
+      }
+    }
 
     // Extract c2pa.actions or c2pa.actions.v2 assertion
     final actionsAssertion =

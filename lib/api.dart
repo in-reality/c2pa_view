@@ -1,7 +1,13 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:c2pa_view/src/rust/api/c2pa.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+
+String? _manifestJsonFromUtf8Bytes(final Uint8List? bytes) =>
+    bytes == null ? null : utf8.decode(bytes);
 
 /// Get the manifest from a file.
 ///
@@ -46,7 +52,7 @@ Future<String?> getManifestJsonFromURL(
       trustAnchorsPem: trustAnchorsPem,
     );
   }
-  return getManifestWithValidation(
+  return getManifestJsonFromBytes(
     fileBytes: response.bodyBytes,
     format: mime,
   );
@@ -67,7 +73,30 @@ String? getManifestJsonFromBytes({
       trustAnchorsPem: trustAnchorsPem,
     );
   }
-  return getManifestWithValidation(fileBytes: fileBytes, format: format);
+  if (kDebugMode) {
+    debugPrint(
+      'provenance: frb utf8 in len=${fileBytes.length} format=$format',
+    );
+  }
+  try {
+    final raw = getManifestWithValidationUtf8(
+      fileBytes: fileBytes,
+      format: format,
+    );
+    if (kDebugMode) {
+      debugPrint('provenance: frb utf8 out len=${raw?.length ?? 'null'}');
+    }
+    return _manifestJsonFromUtf8Bytes(raw);
+  } on Object catch (error, stackTrace) {
+    if (kDebugMode) {
+      debugPrint(
+        'provenance: frb utf8 failed ${error.runtimeType}: '
+        '${error.toString().length > 120 ? '${error.toString().substring(0, 120)}…' : error}',
+      );
+      debugPrint('provenance: frb utf8 stack: $stackTrace');
+    }
+    rethrow;
+  }
 }
 
 /// Reads a detached manifest **store** (e.g. L1 `GET /manifests/{hash}` CBOR).
@@ -78,5 +107,7 @@ String? getManifestStoreJsonFromBytes({
   required final List<int> fileBytes,
   required final String format,
 }) {
-  return getFileManifestFormat(fileBytes: fileBytes, format: format);
+  return _manifestJsonFromUtf8Bytes(
+    getFileManifestFormatUtf8(fileBytes: fileBytes, format: format),
+  );
 }

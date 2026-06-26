@@ -44,12 +44,32 @@ pub fn get_file_manifest_format(
     Ok(reader.map(|r| r.json()))
 }
 
+/// UTF-8 JSON bytes for [`get_file_manifest_format`]. See
+/// [`get_manifest_with_validation_utf8`] for the web FRB rationale.
+#[flutter_rust_bridge::frb(sync)]
+pub fn get_file_manifest_format_utf8(
+    file_bytes: Vec<u8>,
+    format: String,
+) -> Result<Option<Vec<u8>>, String> {
+    Ok(get_file_manifest_format(file_bytes, format)?.map(|s| s.into_bytes()))
+}
+
 /// Maps HTTP Content-Type values to a manifest-store MIME understood by c2pa-rs.
 fn normalize_detached_manifest_format(format: &str) -> &str {
     match format.to_ascii_lowercase().as_str() {
         "application/c2pa" | "application/x-c2pa-manifest-store" | "c2pa" => format,
         _ => "application/c2pa",
     }
+}
+
+fn reader_manifest_json_value(reader: Reader) -> Result<serde_json::Value, String> {
+    let mut value: serde_json::Value =
+        serde_json::from_str(&reader.json()).map_err(|e| e.to_string())?;
+    if let Some(statuses) = reader.validation_status() {
+        value["validation_status"] =
+            serde_json::to_value(statuses).map_err(|e| e.to_string())?;
+    }
+    Ok(value)
 }
 
 #[flutter_rust_bridge::frb(sync)]
@@ -60,15 +80,29 @@ pub fn get_manifest_with_validation(
     let stream = std::io::Cursor::new(file_bytes);
     let reader = Reader::from_stream(&format, stream).ok();
     match reader {
-        Some(r) => {
-            let mut value: serde_json::Value =
-                serde_json::from_str(&r.json()).map_err(|e| e.to_string())?;
-            if let Some(statuses) = r.validation_status() {
-                value["validation_status"] =
-                    serde_json::to_value(statuses).map_err(|e| e.to_string())?;
-            }
-            Ok(Some(value.to_string()))
-        }
+        Some(r) => Ok(Some(
+            reader_manifest_json_value(r)?.to_string(),
+        )),
+        None => Ok(None),
+    }
+}
+
+/// UTF-8 JSON bytes for [`get_manifest_with_validation`].
+///
+/// Web FRB sync can fail to decode very large [`String`] returns from WASM
+/// (Dart `TypeError` on DCO decode). Callers should `utf8.decode` on the VM
+/// or web.
+#[flutter_rust_bridge::frb(sync)]
+pub fn get_manifest_with_validation_utf8(
+    file_bytes: Vec<u8>,
+    format: String,
+) -> Result<Option<Vec<u8>>, String> {
+    let stream = std::io::Cursor::new(file_bytes);
+    let reader = Reader::from_stream(&format, stream).ok();
+    match reader {
+        Some(r) => Ok(Some(
+            reader_manifest_json_value(r)?.to_string().into_bytes(),
+        )),
         None => Ok(None),
     }
 }
