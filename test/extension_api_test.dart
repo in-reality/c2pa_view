@@ -343,6 +343,7 @@ void main() {
       expect(ProvenanceAnnotations.empty.nodeDecorations, isEmpty);
       expect(ProvenanceAnnotations.empty.edgeDecorations, isEmpty);
       expect(ProvenanceAnnotations.empty.detailSections, isEmpty);
+      expect(ProvenanceAnnotations.empty.attachments, isEmpty);
     });
 
     test('provenanceEdgeId uses arrow joiner', () {

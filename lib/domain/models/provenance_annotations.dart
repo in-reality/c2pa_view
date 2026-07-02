@@ -40,6 +40,28 @@ class EdgeDecoration {
   final Object? payload;
 }
 
+/// Opaque satellite box anchored to a graph node outside the layout algorithm.
+///
+/// Host packages supply color and payload; OSS paints via
+/// [ProvenanceAttachmentContentBuilder] without interpreting semantics.
+class NodeAttachment {
+  const NodeAttachment({
+    required this.id,
+    required this.anchorNodeId,
+    required this.color,
+    this.payload,
+  });
+
+  final String id;
+
+  /// [ProvenanceNode.id] (manifest label) of the anchor media node.
+  final String anchorNodeId;
+  final Color color;
+
+  /// Host-owned payload — opaque to `c2pa_view`.
+  final Object? payload;
+}
+
 /// A compact badge rendered on a node by the default or custom decorator.
 class DecorationBadge {
   const DecorationBadge({
@@ -63,6 +85,7 @@ class ProvenanceAnnotations {
     this.nodeDecorations = const {},
     this.edgeDecorations = const {},
     this.detailSections = const {},
+    this.attachments = const {},
   });
 
   static const ProvenanceAnnotations empty = ProvenanceAnnotations();
@@ -75,4 +98,7 @@ class ProvenanceAnnotations {
 
   /// Key: [ProvenanceNode.id] — ordered extra detail-panel sections.
   final Map<String, List<ManifestDetailSection>> detailSections;
+
+  /// Key: anchor [ProvenanceNode.id] — satellites excluded from layout depth.
+  final Map<String, List<NodeAttachment>> attachments;
 }

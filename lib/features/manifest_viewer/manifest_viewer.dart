@@ -34,6 +34,7 @@ class C2paManifestViewer extends StatefulWidget {
     this.nodeDecorator,
     this.edgeDecorator,
     this.interactionHandler,
+    this.attachmentContentBuilder,
   });
   final ProvenanceGraph graph;
   final String? initialSelectedNodeId;
@@ -47,6 +48,7 @@ class C2paManifestViewer extends StatefulWidget {
   final ProvenanceNodeDecorator? nodeDecorator;
   final ProvenanceEdgeDecorator? edgeDecorator;
   final ProvenanceInteractionHandler? interactionHandler;
+  final ProvenanceAttachmentContentBuilder? attachmentContentBuilder;
 
   /// Optional image for the actual media file. When the manifest has no
   /// embedded thumbnail, this is shown instead (detail panel and root tree node).
@@ -94,6 +96,12 @@ class C2paManifestViewer extends StatefulWidget {
       ObjectFlagProperty<ProvenanceInteractionHandler?>.has(
         'interactionHandler',
         interactionHandler,
+      ),
+    )
+    ..add(
+      ObjectFlagProperty<ProvenanceAttachmentContentBuilder?>.has(
+        'attachmentContentBuilder',
+        attachmentContentBuilder,
       ),
     );
   }
@@ -157,6 +165,7 @@ class _C2paManifestViewerState extends State<C2paManifestViewer> {
               nodeDecorator: widget.nodeDecorator,
               edgeDecorator: widget.edgeDecorator,
               interactionHandler: _treeInteractionHandler(),
+              attachmentContentBuilder: widget.attachmentContentBuilder,
             ),
           ),
           if (widget.showDetailPanel && _selectedData != null) ...[

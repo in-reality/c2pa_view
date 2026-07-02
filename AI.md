@@ -13,7 +13,7 @@ Verdict evaluation and ruleset `evaluate()` stay **outside** this OSS package
 `c2pa_view` is an open-source Flutter plugin that reads and displays [C2PA](https://c2pa.org/) (Coalition for Content Provenance and Authenticity) content credentials. It extracts embedded C2PA manifests from media files using the official `c2pa-rs` Rust library via Flutter Rust Bridge, then renders the provenance data as interactive Flutter widgets.
 
 **Package name:** `c2pa_view`
-**Version:** 0.3.0
+**Version:** 0.4.0
 **Homepage:** https://github.com/in-reality/c2pa_view
 **Platforms:** Android, iOS, Linux, macOS, Windows (FFI plugin)
 
@@ -162,8 +162,9 @@ annotations preserve the default appearance. Canonical layering:
 
 | Type | Purpose |
 |---|---|
-| `ProvenanceAnnotations` | Sidecar with `nodeDecorations`, `edgeDecorations`, `detailSections` maps |
+| `ProvenanceAnnotations` | Sidecar with `nodeDecorations`, `edgeDecorations`, `detailSections`, `attachments` maps |
 | `NodeDecoration` / `EdgeDecoration` | Opaque host slots (border hints, badges, payload) |
+| `NodeAttachment` | Satellite box anchored outside layout (`id`, `anchorNodeId`, `color`, `payload`) |
 | `DecorationBadge` | Compact badge on a node (`id`, `label`, optional `icon`, `payload`) |
 | `GraphHighlight` / `HighlightStyle` | Stacked highlight layers per node or edge |
 | `GraphHighlights` | Resolved maps keyed by node id and `provenanceEdgeId(parent, child)` |
@@ -177,7 +178,7 @@ Join keys: node maps use `ProvenanceNode.id` (manifest label); edge maps use
 
 | Widget | Extension params |
 |---|---|
-| `ProvenanceTreeViewer` | `annotations`, `highlights`, `nodeDecorator`, `edgeDecorator`, `interactionHandler` |
+| `ProvenanceTreeViewer` | `annotations`, `highlights`, `nodeDecorator`, `edgeDecorator`, `interactionHandler`, `attachmentContentBuilder` |
 | `C2paManifestViewer` | Forwards the same params; passes `detailSections` for the selected node |
 | `ManifestDetailContent` / `ManifestDetailPanel` | `extraSections` |
 
@@ -189,9 +190,11 @@ built-in highlight layers (`C2paHighlightLayers`) merged with host-supplied
 `C2paManifestViewer` wraps a non-null `interactionHandler` with
 `ComposingProvenanceInteractionHandler` so detail-panel selection stays in sync
 before the host handler runs. Badge taps with an `icon` route to `onIconTap`;
-label-only badges use `onBadgeTap`. `onEdgeTap` and `onFocusChangeRequested`
-are part of the exported contract but are not yet invoked by
-`ProvenanceTreeViewer` (edge hit-testing deferred).
+label-only badges use `onBadgeTap`. Attachment taps route to `onAttachmentTap`.
+Satellite attachments fan around anchor nodes in graph space, are excluded from
+depth/row layout, and are included in fit-to-view bounds. `onEdgeTap` and
+`onFocusChangeRequested` are part of the exported contract but are not yet
+invoked by `ProvenanceTreeViewer` (edge hit-testing deferred).
 
 ### Theme slots
 

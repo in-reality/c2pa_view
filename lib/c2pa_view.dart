@@ -25,6 +25,8 @@ export 'features/manifest_detail/manifest_detail_panel.dart';
 export 'features/manifest_detail/manifest_detail_popup.dart';
 // Features
 export 'features/manifest_viewer/manifest_viewer.dart';
+export 'features/provenance_tree/node_attachment_layout.dart';
+export 'features/provenance_tree/provenance_fit_transform.dart';
 export 'features/provenance_tree/provenance_tree_viewer.dart';
 export 'features/shared/widgets/rust_init_banner.dart';
 // Rust bridge init

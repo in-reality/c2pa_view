@@ -2,21 +2,34 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-/// Axis-aligned bounds of laid-out provenance node cards.
+/// Axis-aligned bounds of laid-out provenance node cards and optional
+/// satellite attachment rects.
 Rect provenanceGraphBounds({
   required final Iterable<Offset> nodePositions,
   required final double nodeWidth,
   required final double nodeHeight,
+  final Iterable<Rect> attachmentRects = const [],
 }) {
   final iterator = nodePositions.iterator;
-  if (!iterator.moveNext()) {
+  final attachmentIterator = attachmentRects.iterator;
+
+  final hasNodes = iterator.moveNext();
+  final hasAttachments = attachmentIterator.moveNext();
+
+  if (!hasNodes && !hasAttachments) {
     return Rect.zero;
   }
 
-  var minX = iterator.current.dx;
-  var minY = iterator.current.dy;
-  var maxX = minX + nodeWidth;
-  var maxY = minY + nodeHeight;
+  var minX = hasNodes ? iterator.current.dx : attachmentIterator.current.left;
+  var minY = hasNodes ? iterator.current.dy : attachmentIterator.current.top;
+  var maxX =
+      hasNodes
+          ? iterator.current.dx + nodeWidth
+          : attachmentIterator.current.right;
+  var maxY =
+      hasNodes
+          ? iterator.current.dy + nodeHeight
+          : attachmentIterator.current.bottom;
 
   while (iterator.moveNext()) {
     final position = iterator.current;
@@ -24,6 +37,21 @@ Rect provenanceGraphBounds({
     minY = math.min(minY, position.dy);
     maxX = math.max(maxX, position.dx + nodeWidth);
     maxY = math.max(maxY, position.dy + nodeHeight);
+  }
+
+  if (hasAttachments) {
+    minX = math.min(minX, attachmentIterator.current.left);
+    minY = math.min(minY, attachmentIterator.current.top);
+    maxX = math.max(maxX, attachmentIterator.current.right);
+    maxY = math.max(maxY, attachmentIterator.current.bottom);
+  }
+
+  while (attachmentIterator.moveNext()) {
+    final rect = attachmentIterator.current;
+    minX = math.min(minX, rect.left);
+    minY = math.min(minY, rect.top);
+    maxX = math.max(maxX, rect.right);
+    maxY = math.max(maxY, rect.bottom);
   }
 
   return Rect.fromLTRB(minX, minY, maxX, maxY);

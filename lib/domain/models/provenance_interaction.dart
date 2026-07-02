@@ -3,6 +3,9 @@ import 'package:c2pa_view/domain/models/provenance_annotations.dart';
 import 'package:c2pa_view/domain/models/provenance_node.dart';
 import 'package:flutter/material.dart';
 
+export 'package:c2pa_view/domain/models/provenance_annotations.dart'
+    show NodeAttachment;
+
 /// Host-supplied interaction callbacks for provenance graph widgets.
 ///
 /// When null, taps select nodes for the detail panel (today's default).
@@ -33,7 +36,20 @@ abstract class ProvenanceInteractionHandler {
   });
 
   void onFocusChangeRequested(final String nodeId);
+
+  void onAttachmentTap(
+    final String anchorNodeId,
+    final String attachmentId, {
+    final Object? payload,
+  });
 }
+
+/// Host-supplied widget for a node satellite; OSS does not interpret [NodeAttachment.payload].
+typedef ProvenanceAttachmentContentBuilder =
+    Widget Function(
+      BuildContext context, {
+      required NodeAttachment attachment,
+    });
 
 /// Runs [onSelect] before forwarding to [delegate] so composite viewers
 /// keep detail-panel state in sync.
@@ -82,6 +98,18 @@ class ComposingProvenanceInteractionHandler
   @override
   void onFocusChangeRequested(final String nodeId) =>
       delegate.onFocusChangeRequested(nodeId);
+
+  @override
+  void onAttachmentTap(
+    final String anchorNodeId,
+    final String attachmentId, {
+    final Object? payload,
+  }) =>
+      delegate.onAttachmentTap(
+        anchorNodeId,
+        attachmentId,
+        payload: payload,
+      );
 }
 
 /// Host-supplied thumbnail for a provenance tree node.
