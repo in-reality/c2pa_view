@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 /// Default satellite card width in graph space (scales with zoom).
-const double kNodeAttachmentWidth = 72;
+const double kNodeAttachmentWidth = 90;
 
 /// Default satellite card height in graph space (scales with zoom).
 const double kNodeAttachmentHeight = 40;
