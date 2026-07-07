@@ -12,7 +12,11 @@ const double kNodeAttachmentHeight = 40;
 const double kNodeAttachmentAnchorGap = 10;
 
 /// Fan spacing is tuned for up to this many attachments per anchor; more still
-/// render with denser placement rather than being dropped.
+/// render with denser semicircle placement rather than being dropped.
+///
+/// A node carrying its full companion set may exceed this count — all satellites
+/// remain visible, but crowding may warrant a grouping / "+N" overflow
+/// affordance in the host layer.
 const int kNodeAttachmentFanTunedMax = 8;
 
 /// Graph-space top-left offsets for [count] attachments fanned around an

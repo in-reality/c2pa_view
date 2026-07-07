@@ -6,6 +6,7 @@ import 'package:c2pa_view/domain/models/graph_highlight.dart';
 import 'package:c2pa_view/domain/models/provenance_annotations.dart';
 import 'package:c2pa_view/domain/models/provenance_interaction.dart';
 import 'package:c2pa_view/domain/models/provenance_node.dart';
+import 'package:c2pa_view/features/provenance_tree/node_attachment_integrity.dart';
 import 'package:c2pa_view/features/provenance_tree/node_attachment_layout.dart';
 import 'package:c2pa_view/features/provenance_tree/provenance_fit_transform.dart';
 import 'package:c2pa_view/features/provenance_tree/widgets/tree_edge_painter.dart';
@@ -210,28 +211,22 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
     required final double nodeTotalWidth,
     required final double nodeTotalHeight,
   }) {
+    final graphNodeIds = widget.graph.nodes.keys.toSet();
+    assertNoOrphanAttachmentMapKeys(
+      attachmentsByAnchor: widget.annotations.attachments,
+      graphNodeIds: graphNodeIds,
+    );
+
     final anchorNodeSize = Size(nodeWidth, nodeHeight);
     final layoutAttachments = <_LayoutAttachment>[];
     final attachmentBounds = <Rect>[];
 
     for (final layoutNode in _layoutNodes) {
-      final attachments =
-          widget.annotations.attachments[layoutNode.node.id] ?? const [];
-      if (attachments.isEmpty) {
-        continue;
-      }
-
-      final matchedAttachments = <NodeAttachment>[];
-      for (final attachment in attachments) {
-        assert(
-          attachment.anchorNodeId == layoutNode.node.id,
-          'attachment ${attachment.id} anchorNodeId (${attachment.anchorNodeId}) '
-          'must match annotations map key (${layoutNode.node.id})',
-        );
-        if (attachment.anchorNodeId == layoutNode.node.id) {
-          matchedAttachments.add(attachment);
-        }
-      }
+      final matchedAttachments = paintableNodeAttachmentsForAnchor(
+        anchorNodeId: layoutNode.node.id,
+        attachmentsByAnchor: widget.annotations.attachments,
+        graphNodeIds: graphNodeIds,
+      );
       if (matchedAttachments.isEmpty) {
         continue;
       }

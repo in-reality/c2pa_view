@@ -4,10 +4,12 @@ import 'package:c2pa_view/domain/models/provenance_annotations.dart';
 import 'package:c2pa_view/domain/models/provenance_interaction.dart';
 import 'package:c2pa_view/domain/models/provenance_node.dart';
 import 'package:c2pa_view/domain/models/validation_result.dart';
+import 'package:c2pa_view/features/provenance_tree/node_attachment_integrity.dart';
 import 'package:c2pa_view/features/provenance_tree/node_attachment_layout.dart';
 import 'package:c2pa_view/features/provenance_tree/provenance_fit_transform.dart';
 import 'package:c2pa_view/features/provenance_tree/provenance_tree_viewer.dart';
 import 'package:c2pa_view/features/provenance_tree/widgets/tree_node_card.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -115,6 +117,126 @@ class _RecordingHandler implements ProvenanceInteractionHandler {
 }
 
 void main() {
+  group('isNodeAttachmentPaintable', () {
+    const graphNodeIds = {'root', 'child'};
+
+    test('returns true when anchor matches map key and graph', () {
+      const attachment = NodeAttachment(
+        id: 'att-0',
+        anchorNodeId: 'root',
+        color: _attachmentColor,
+      );
+
+      expect(
+        isNodeAttachmentPaintable(
+          attachment: attachment,
+          anchorNodeId: 'root',
+          graphNodeIds: graphNodeIds,
+        ),
+        isTrue,
+      );
+    });
+
+    test('returns false when anchorNodeId is not in graph', () {
+      const attachment = NodeAttachment(
+        id: 'orphan',
+        anchorNodeId: 'missing-node',
+        color: _attachmentColor,
+      );
+
+      expect(
+        isNodeAttachmentPaintable(
+          attachment: attachment,
+          anchorNodeId: 'root',
+          graphNodeIds: graphNodeIds,
+        ),
+        isFalse,
+      );
+    });
+
+    test('returns false when anchorNodeId disagrees with map key', () {
+      const attachment = NodeAttachment(
+        id: 'mis-keyed',
+        anchorNodeId: 'child',
+        color: _attachmentColor,
+      );
+
+      expect(
+        isNodeAttachmentPaintable(
+          attachment: attachment,
+          anchorNodeId: 'root',
+          graphNodeIds: graphNodeIds,
+        ),
+        isFalse,
+      );
+    });
+  });
+
+  group('paintableNodeAttachmentsForAnchor', () {
+    const graphNodeIds = {'root', 'child'};
+
+    test('returns attachments when anchor matches map key and graph', () {
+      final attachments = paintableNodeAttachmentsForAnchor(
+        anchorNodeId: 'root',
+        attachmentsByAnchor: {
+          'root': _attachmentsForAnchor('root', 2),
+        },
+        graphNodeIds: graphNodeIds,
+      );
+
+      expect(attachments, hasLength(2));
+      expect(attachments.every((final a) => a.anchorNodeId == 'root'), isTrue);
+    });
+
+    test('omits attachment when anchorNodeId is not in graph', () {
+      List<NodeAttachment> invoke() {
+        return paintableNodeAttachmentsForAnchor(
+          anchorNodeId: 'root',
+          attachmentsByAnchor: {
+            'root': const [
+              NodeAttachment(
+                id: 'orphan',
+                anchorNodeId: 'missing-node',
+                color: _attachmentColor,
+              ),
+            ],
+          },
+          graphNodeIds: graphNodeIds,
+        );
+      }
+
+      if (kDebugMode) {
+        expect(() => invoke(), throwsAssertionError);
+      } else {
+        expect(invoke(), isEmpty);
+      }
+    });
+
+    test('omits attachment when anchorNodeId disagrees with map key', () {
+      List<NodeAttachment> invoke() {
+        return paintableNodeAttachmentsForAnchor(
+          anchorNodeId: 'root',
+          attachmentsByAnchor: {
+            'root': const [
+              NodeAttachment(
+                id: 'mis-keyed',
+                anchorNodeId: 'child',
+                color: _attachmentColor,
+              ),
+            ],
+          },
+          graphNodeIds: graphNodeIds,
+        );
+      }
+
+      if (kDebugMode) {
+        expect(() => invoke(), throwsAssertionError);
+      } else {
+        expect(invoke(), isEmpty);
+      }
+    });
+  });
+
   group('nodeAttachmentFanOffsets', () {
     test('returns empty list for zero count', () {
       expect(
@@ -394,6 +516,65 @@ void main() {
         );
         expect(positioned.top, greaterThanOrEqualTo(0));
         expect(positioned.left, greaterThanOrEqualTo(0));
+      }
+    });
+
+    testWidgets('full companion set stays inside stack and fit bounds', (
+      final tester,
+    ) async {
+      const companionCount = 12;
+
+      await tester.pumpWidget(
+        _wrap(
+          ProvenanceTreeViewer(
+            graph: _twoNodeGraph(),
+            annotations: ProvenanceAnnotations(
+              attachments: {
+                'root': _attachmentsForAnchor('root', companionCount),
+              },
+            ),
+            attachmentContentBuilder:
+                (final context, {required final attachment}) =>
+                    ColoredBox(color: attachment.color),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      for (var i = 0; i < companionCount; i++) {
+        expect(find.byKey(ValueKey('attachment:att-$i')), findsOneWidget);
+        final positioned = tester.widget<Positioned>(
+          find.ancestor(
+            of: find.byKey(ValueKey('attachment:att-$i')),
+            matching: find.byType(Positioned),
+          ),
+        );
+        expect(positioned.top, greaterThanOrEqualTo(0));
+        expect(positioned.left, greaterThanOrEqualTo(0));
+      }
+
+      const theme = C2paViewerThemeData.defaults;
+      final rootPosition = _nodeGraphPosition(tester, 'root');
+      final attachmentRects = nodeAttachmentRects(
+        anchorPosition: rootPosition,
+        anchorNodeSize: Size(theme.nodeWidth, theme.nodeHeight),
+        attachmentCount: companionCount,
+      );
+      final bounds = provenanceGraphBounds(
+        nodePositions: [
+          rootPosition,
+          _nodeGraphPosition(tester, 'child'),
+        ],
+        nodeWidth: theme.nodeWidth,
+        nodeHeight: theme.nodeHeight,
+        attachmentRects: attachmentRects,
+      );
+
+      for (final rect in attachmentRects) {
+        expect(bounds.left, lessThanOrEqualTo(rect.left));
+        expect(bounds.top, lessThanOrEqualTo(rect.top));
+        expect(bounds.right, greaterThanOrEqualTo(rect.right));
+        expect(bounds.bottom, greaterThanOrEqualTo(rect.bottom));
       }
     });
 

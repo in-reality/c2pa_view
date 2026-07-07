@@ -192,7 +192,14 @@ built-in highlight layers (`C2paHighlightLayers`) merged with host-supplied
 before the host handler runs. Badge taps with an `icon` route to `onIconTap`;
 label-only badges use `onBadgeTap`. Attachment taps route to `onAttachmentTap`.
 Satellite attachments fan around anchor nodes in graph space, are excluded from
-depth/row layout, and are included in fit-to-view bounds. `onEdgeTap` and
+depth/row layout, and are included in fit-to-view bounds. Fan spacing is tuned
+for up to eight satellites per anchor; larger companion sets (for example after
+content-`data_hash` collapse) use a denser semicircle — all remain visible, but
+crowding may warrant a grouping / "+N" overflow affordance tracked in the parent
+repo's `fleet/initiatives/i0026-media-node-satellite-manifests.md`. Invalid
+anchors are never re-homed: debug builds assert, release builds omit attachments
+whose `anchorNodeId` is not a rendered graph node or does not match the
+attachments-map key. `onEdgeTap` and
 `onFocusChangeRequested` are part of the exported contract but are not yet
 invoked by `ProvenanceTreeViewer` (edge hit-testing deferred).
 
