@@ -1,3 +1,19 @@
+## 0.5.0 (2026-09-16)
+
+### Added
+
+- Validated detached (sidecar) manifest reads via
+  `ManifestStore.fromDetached` / `getDetachedManifestJsonFromBytes`, binding
+  manifest-store JUMBF bytes to asset bytes with full hash and signature
+  validation (native FFI and web WASM).
+- Rust helpers `get_detached_manifest_with_validation*` and trust-anchor
+  variants; web `*Utf8` return shapes match the embedded read path.
+
+### Changed
+
+- `getManifestStoreJsonFromBytes` is documented as an **unverified** store-only
+  read (`verify_after_reading: false`); use the detached validated API when
+  trust input is required.
 
 ## 0.2.0 (2026-04-08)
 

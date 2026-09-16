@@ -45,11 +45,48 @@ final store = ManifestStore.fromLocalPath('/path/to/image.jpg');
 // From raw bytes and MIME type
 final store = ManifestStore.fromBytes(imageBytes, 'image/jpeg');
 
+// From a detached sidecar (.c2pa) plus the bound asset bytes
+final store = await ManifestStore.fromDetached(
+  manifestBytes: sidecarBytes,
+  assetBytes: imageBytes,
+  assetFormat: 'image/jpeg',
+);
+
 // From a URL (async)
 final store = await ManifestStore.fromUrl('https://example.com/image.jpg');
 ```
 
-All methods return `null` if no C2PA manifest is found.
+All methods return `null` if no C2PA manifest is found. For detached reads,
+invalid manifest bytes throw; hash/signature problems appear in
+`validationStatus` / `validation_results` like embedded manifests.
+
+### API summary
+
+| Entry point | Input | Validation |
+|-------------|-------|------------|
+| `ManifestStore.fromLocalPath` | File path | Embedded manifest; optional trust anchors |
+| `ManifestStore.fromBytes` | Asset bytes + MIME | Embedded manifest; optional trust anchors |
+| `ManifestStore.fromUrl` | HTTP URL | Embedded manifest; optional trust anchors |
+| `ManifestStore.fromDetached` | Sidecar bytes + asset bytes + MIME | Full hash binding and signatures; optional trust anchors |
+| `getManifestStoreJsonFromBytes` | Manifest-store bytes only | **Unverified** (no asset binding) |
+| `getDetachedManifestJsonFromBytes` | Sidecar + asset bytes | Validated detached read (JSON) |
+
+Web builds load the regenerated `web/pkg/` artifacts (`scripts/sync_web_pkg.sh`
+after Rust changes). Detached validation uses the same FRB/WASM exports as
+native.
+
+**VM integration:** `flutter test test/detached_manifest_test.dart` (requires the
+monorepo signing corpus; uses `dart:io` — not a Chrome target).
+
+**Web smoke (manual, testfiles_app):**
+
+1. From `frontend/c2pa_view`, run `scripts/sync_web_pkg.sh`.
+2. `cd testfiles_app && flutter run -d chrome`.
+3. Confirm the home screen loads without a Rust init timeout banner.
+4. Tap **Validate detached sidecar** on the **Detached sidecar check** card.
+5. Expect `validation_state: Valid` and `(assertion.dataHash.match present)`.
+   Without trust-list initialization, `signingCredential.untrusted` in the JSON
+   is normal — the smoke check only requires hash binding success.
 
 ## Usage: Full Viewer
 

@@ -92,16 +92,50 @@ Future<String?> getManifestJsonFromBytes({
   }
 }
 
-/// Reads a detached C2PA manifest **store** (JUMBF bytes, not embedded in media).
+/// Reads a detached C2PA manifest **store** (JUMBF bytes) without binding it
+/// to an asset.
 ///
-/// Unlike [getManifestJsonFromBytes], [fileBytes] is the manifest store itself,
-/// not the asset under validation. Verification settings disable post-read
-/// ingredient hash checks that assume an embedded asset payload.
+/// Hash binding and signature checks against the referenced media are **not**
+/// performed (`verify_after_reading: false`). Prefer [getDetachedManifestJsonFromBytes]
+/// when the sidecar must be validated against known asset bytes.
 Future<String?> getManifestStoreJsonFromBytes({
   required final List<int> fileBytes,
   required final String format,
 }) async {
   return _manifestJsonFromUtf8Bytes(
     await getFileManifestFormatUtf8(fileBytes: fileBytes, format: format),
+  );
+}
+
+/// Validates a detached manifest store against asset bytes.
+///
+/// [manifestBytes] is the sidecar JUMBF. [manifestFormat] must be a C2PA
+/// manifest-store MIME (`application/c2pa` by default). [assetBytes] and
+/// [assetFormat] are the bound media. When [trustAnchorsPem]
+/// is provided, signing credentials are checked against that PEM bundle;
+/// otherwise certificates report as `signingCredential.untrusted`.
+Future<String?> getDetachedManifestJsonFromBytes({
+  required final List<int> manifestBytes,
+  required final List<int> assetBytes,
+  required final String assetFormat,
+  final String manifestFormat = 'application/c2pa',
+  final String? trustAnchorsPem,
+}) async {
+  if (trustAnchorsPem != null && trustAnchorsPem.isNotEmpty) {
+    return getDetachedManifestWithTrustValidation(
+      manifestBytes: manifestBytes,
+      manifestFormat: manifestFormat,
+      assetBytes: assetBytes,
+      assetFormat: assetFormat,
+      trustAnchorsPem: trustAnchorsPem,
+    );
+  }
+  return _manifestJsonFromUtf8Bytes(
+    await getDetachedManifestWithValidationUtf8(
+      manifestBytes: manifestBytes,
+      manifestFormat: manifestFormat,
+      assetBytes: assetBytes,
+      assetFormat: assetFormat,
+    ),
   );
 }

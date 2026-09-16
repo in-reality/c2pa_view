@@ -152,6 +152,32 @@ class ManifestStore extends Equatable {
     return ManifestStore.fromJson(json.decode(manifestJson));
   }
 
+  /// Creates a ManifestStore from a detached sidecar plus bound asset bytes.
+  ///
+  /// Validates hash binding and signatures the same way as [fromBytes] does
+  /// for embedded manifests. [manifestFormat] must be a manifest-store MIME;
+  /// defaults to `application/c2pa`.
+  /// See [fromLocalPath] for the meaning of [trustAnchorsPem].
+  static Future<ManifestStore?> fromDetached({
+    required final List<int> manifestBytes,
+    required final List<int> assetBytes,
+    required final String assetFormat,
+    final String manifestFormat = 'application/c2pa',
+    final String? trustAnchorsPem,
+  }) async {
+    final manifestJson = await getDetachedManifestJsonFromBytes(
+      manifestBytes: manifestBytes,
+      assetBytes: assetBytes,
+      assetFormat: assetFormat,
+      manifestFormat: manifestFormat,
+      trustAnchorsPem: trustAnchorsPem,
+    );
+    if (manifestJson == null) {
+      return null;
+    }
+    return ManifestStore.fromJson(json.decode(manifestJson));
+  }
+
   /// A label for the active (most recent) manifest in the store.
   final String? activeManifest;
 

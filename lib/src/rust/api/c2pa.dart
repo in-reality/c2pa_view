@@ -6,7 +6,7 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `mime_type_from_path`, `normalize_detached_manifest_format`, `read_path_bytes`, `reader_manifest_json_value`
+// These functions are ignored because they are not marked as `pub`: `detached_manifest_json`, `mime_type_from_path`, `normalize_detached_manifest_format`, `read_path_bytes`, `reader_manifest_json_value`
 
 Future<String?> getFileManifest({
   required List<int> fileBytes,
@@ -83,3 +83,65 @@ Future<String?> getManifestWithTrustValidationFromPath({
   path: path,
   trustAnchorsPem: trustAnchorsPem,
 );
+
+/// Validate a detached manifest store (sidecar JUMBF) against asset bytes.
+///
+/// Uses `Reader::from_context(context).with_manifest_data_and_stream` so hash
+/// binding, signature checks, and `validation_status` match the embedded read
+/// path. `manifest_format` is the store MIME (typically `application/c2pa`);
+/// `asset_format` is the bound media MIME or extension.
+Future<String?> getDetachedManifestWithValidation({
+  required List<int> manifestBytes,
+  required String manifestFormat,
+  required List<int> assetBytes,
+  required String assetFormat,
+}) => RustLib.instance.api.crateApiC2PaGetDetachedManifestWithValidation(
+  manifestBytes: manifestBytes,
+  manifestFormat: manifestFormat,
+  assetBytes: assetBytes,
+  assetFormat: assetFormat,
+);
+
+/// UTF-8 JSON bytes for [`get_detached_manifest_with_validation`].
+Future<Uint8List?> getDetachedManifestWithValidationUtf8({
+  required List<int> manifestBytes,
+  required String manifestFormat,
+  required List<int> assetBytes,
+  required String assetFormat,
+}) => RustLib.instance.api.crateApiC2PaGetDetachedManifestWithValidationUtf8(
+  manifestBytes: manifestBytes,
+  manifestFormat: manifestFormat,
+  assetBytes: assetBytes,
+  assetFormat: assetFormat,
+);
+
+/// Detached manifest read with explicit trust-anchor PEM validation.
+Future<String?> getDetachedManifestWithTrustValidation({
+  required List<int> manifestBytes,
+  required String manifestFormat,
+  required List<int> assetBytes,
+  required String assetFormat,
+  required String trustAnchorsPem,
+}) => RustLib.instance.api.crateApiC2PaGetDetachedManifestWithTrustValidation(
+  manifestBytes: manifestBytes,
+  manifestFormat: manifestFormat,
+  assetBytes: assetBytes,
+  assetFormat: assetFormat,
+  trustAnchorsPem: trustAnchorsPem,
+);
+
+/// UTF-8 JSON bytes for [`get_detached_manifest_with_trust_validation`].
+Future<Uint8List?> getDetachedManifestWithTrustValidationUtf8({
+  required List<int> manifestBytes,
+  required String manifestFormat,
+  required List<int> assetBytes,
+  required String assetFormat,
+  required String trustAnchorsPem,
+}) =>
+    RustLib.instance.api.crateApiC2PaGetDetachedManifestWithTrustValidationUtf8(
+      manifestBytes: manifestBytes,
+      manifestFormat: manifestFormat,
+      assetBytes: assetBytes,
+      assetFormat: assetFormat,
+      trustAnchorsPem: trustAnchorsPem,
+    );

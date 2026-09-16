@@ -64,7 +64,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 2069417627;
+  int get rustContentHash => -1291742180;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -76,6 +76,36 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
+  Future<String?> crateApiC2PaGetDetachedManifestWithTrustValidation({
+    required List<int> manifestBytes,
+    required String manifestFormat,
+    required List<int> assetBytes,
+    required String assetFormat,
+    required String trustAnchorsPem,
+  });
+
+  Future<Uint8List?> crateApiC2PaGetDetachedManifestWithTrustValidationUtf8({
+    required List<int> manifestBytes,
+    required String manifestFormat,
+    required List<int> assetBytes,
+    required String assetFormat,
+    required String trustAnchorsPem,
+  });
+
+  Future<String?> crateApiC2PaGetDetachedManifestWithValidation({
+    required List<int> manifestBytes,
+    required String manifestFormat,
+    required List<int> assetBytes,
+    required String assetFormat,
+  });
+
+  Future<Uint8List?> crateApiC2PaGetDetachedManifestWithValidationUtf8({
+    required List<int> manifestBytes,
+    required String manifestFormat,
+    required List<int> assetBytes,
+    required String assetFormat,
+  });
+
   Future<String?> crateApiC2PaGetFileManifest({
     required List<int> fileBytes,
     required String path,
@@ -126,6 +156,204 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
+  Future<String?> crateApiC2PaGetDetachedManifestWithTrustValidation({
+    required List<int> manifestBytes,
+    required String manifestFormat,
+    required List<int> assetBytes,
+    required String assetFormat,
+    required String trustAnchorsPem,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(manifestBytes, serializer);
+          sse_encode_String(manifestFormat, serializer);
+          sse_encode_list_prim_u_8_loose(assetBytes, serializer);
+          sse_encode_String(assetFormat, serializer);
+          sse_encode_String(trustAnchorsPem, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 1,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_String,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiC2PaGetDetachedManifestWithTrustValidationConstMeta,
+        argValues: [
+          manifestBytes,
+          manifestFormat,
+          assetBytes,
+          assetFormat,
+          trustAnchorsPem,
+        ],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiC2PaGetDetachedManifestWithTrustValidationConstMeta =>
+      const TaskConstMeta(
+        debugName: "get_detached_manifest_with_trust_validation",
+        argNames: [
+          "manifestBytes",
+          "manifestFormat",
+          "assetBytes",
+          "assetFormat",
+          "trustAnchorsPem",
+        ],
+      );
+
+  @override
+  Future<Uint8List?> crateApiC2PaGetDetachedManifestWithTrustValidationUtf8({
+    required List<int> manifestBytes,
+    required String manifestFormat,
+    required List<int> assetBytes,
+    required String assetFormat,
+    required String trustAnchorsPem,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(manifestBytes, serializer);
+          sse_encode_String(manifestFormat, serializer);
+          sse_encode_list_prim_u_8_loose(assetBytes, serializer);
+          sse_encode_String(assetFormat, serializer);
+          sse_encode_String(trustAnchorsPem, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 2,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta:
+            kCrateApiC2PaGetDetachedManifestWithTrustValidationUtf8ConstMeta,
+        argValues: [
+          manifestBytes,
+          manifestFormat,
+          assetBytes,
+          assetFormat,
+          trustAnchorsPem,
+        ],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiC2PaGetDetachedManifestWithTrustValidationUtf8ConstMeta =>
+      const TaskConstMeta(
+        debugName: "get_detached_manifest_with_trust_validation_utf8",
+        argNames: [
+          "manifestBytes",
+          "manifestFormat",
+          "assetBytes",
+          "assetFormat",
+          "trustAnchorsPem",
+        ],
+      );
+
+  @override
+  Future<String?> crateApiC2PaGetDetachedManifestWithValidation({
+    required List<int> manifestBytes,
+    required String manifestFormat,
+    required List<int> assetBytes,
+    required String assetFormat,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(manifestBytes, serializer);
+          sse_encode_String(manifestFormat, serializer);
+          sse_encode_list_prim_u_8_loose(assetBytes, serializer);
+          sse_encode_String(assetFormat, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 3,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_String,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiC2PaGetDetachedManifestWithValidationConstMeta,
+        argValues: [manifestBytes, manifestFormat, assetBytes, assetFormat],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiC2PaGetDetachedManifestWithValidationConstMeta =>
+      const TaskConstMeta(
+        debugName: "get_detached_manifest_with_validation",
+        argNames: [
+          "manifestBytes",
+          "manifestFormat",
+          "assetBytes",
+          "assetFormat",
+        ],
+      );
+
+  @override
+  Future<Uint8List?> crateApiC2PaGetDetachedManifestWithValidationUtf8({
+    required List<int> manifestBytes,
+    required String manifestFormat,
+    required List<int> assetBytes,
+    required String assetFormat,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(manifestBytes, serializer);
+          sse_encode_String(manifestFormat, serializer);
+          sse_encode_list_prim_u_8_loose(assetBytes, serializer);
+          sse_encode_String(assetFormat, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 4,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiC2PaGetDetachedManifestWithValidationUtf8ConstMeta,
+        argValues: [manifestBytes, manifestFormat, assetBytes, assetFormat],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiC2PaGetDetachedManifestWithValidationUtf8ConstMeta =>
+      const TaskConstMeta(
+        debugName: "get_detached_manifest_with_validation_utf8",
+        argNames: [
+          "manifestBytes",
+          "manifestFormat",
+          "assetBytes",
+          "assetFormat",
+        ],
+      );
+
+  @override
   Future<String?> crateApiC2PaGetFileManifest({
     required List<int> fileBytes,
     required String path,
@@ -139,7 +367,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 1,
+            funcId: 5,
             port: port_,
           );
         },
@@ -174,7 +402,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 2,
+            funcId: 6,
             port: port_,
           );
         },
@@ -209,7 +437,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 3,
+            funcId: 7,
             port: port_,
           );
         },
@@ -246,7 +474,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 4,
+            funcId: 8,
             port: port_,
           );
         },
@@ -281,7 +509,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 5,
+            funcId: 9,
             port: port_,
           );
         },
@@ -317,7 +545,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 6,
+            funcId: 10,
             port: port_,
           );
         },
@@ -350,7 +578,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 7,
+            funcId: 11,
             port: port_,
           );
         },
@@ -385,7 +613,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 8,
+            funcId: 12,
             port: port_,
           );
         },

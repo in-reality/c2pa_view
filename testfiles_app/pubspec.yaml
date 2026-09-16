@@ -37,3 +37,5 @@ flutter:
   # Test data
   assets:
     - assets/c2pa_test_data.dsv
+    - assets/detached_smoke/asset.jpg
+    - assets/detached_smoke/extract/manifest_data.c2pa

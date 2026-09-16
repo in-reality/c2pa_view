@@ -1,3 +1,4 @@
+import 'dart:convert';
 
 import 'package:c2pa_view/c2pa_view.dart';
 import 'package:flutter/foundation.dart';
@@ -118,6 +119,7 @@ class MyApp extends StatelessWidget {
                   service: trustList,
                   error: trustListError,
                 ),
+                const _DetachedSidecarSmokeCard(),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
@@ -161,6 +163,121 @@ class MyApp extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Bundled sidecar + asset pair for a one-tap detached validation smoke check.
+class _DetachedSidecarSmokeCard extends StatefulWidget {
+  const _DetachedSidecarSmokeCard();
+
+  @override
+  State<_DetachedSidecarSmokeCard> createState() =>
+      _DetachedSidecarSmokeCardState();
+}
+
+class _DetachedSidecarSmokeCardState extends State<_DetachedSidecarSmokeCard> {
+  Future<String>? _resultFuture;
+
+  Future<String> _runDetachedSmoke() async {
+    final manifestBytes = (await rootBundle.load(
+      'assets/detached_smoke/extract/manifest_data.c2pa',
+    )).buffer.asUint8List();
+    final assetBytes =
+        (await rootBundle.load('assets/detached_smoke/asset.jpg'))
+            .buffer
+            .asUint8List();
+
+    final json = await getDetachedManifestJsonFromBytes(
+      manifestBytes: manifestBytes,
+      assetBytes: assetBytes,
+      assetFormat: 'image/jpeg',
+    );
+    if (json == null) {
+      throw StateError('Detached read returned null');
+    }
+
+    final parsed = jsonDecode(json) as Map<String, dynamic>;
+    final state = parsed['validation_state'] as String? ?? 'unknown';
+    final successes = (parsed['validation_results']?['activeManifest']?['success']
+            as List<dynamic>?)
+        ?.map((final e) => (e as Map)['code'] as String)
+        .toList() ??
+        const <String>[];
+    if (!successes.contains('assertion.dataHash.match')) {
+      throw StateError(
+        'Expected assertion.dataHash.match, got validation_state=$state '
+        'successes=$successes',
+      );
+    }
+    return state;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Card(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Detached sidecar check',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Runs ManifestStore.fromDetached on bundled JPEG + .c2pa '
+                'sidecar bytes (same WASM path as native).',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              FilledButton(
+                onPressed: () {
+                  setState(() {
+                    _resultFuture = _runDetachedSmoke();
+                  });
+                },
+                child: const Text('Validate detached sidecar'),
+              ),
+              if (_resultFuture != null)
+                FutureBuilder<String>(
+                  future: _resultFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: Text('Validating…'),
+                      );
+                    }
+                    if (snapshot.hasError) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          'Failed: ${snapshot.error}',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      );
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        'validation_state: ${snapshot.data} '
+                        '(assertion.dataHash.match present)',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    );
+                  },
+                ),
+            ],
           ),
         ),
       ),
