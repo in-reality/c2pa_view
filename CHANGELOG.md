@@ -1,3 +1,13 @@
+## 0.6.0 (2026-09-29)
+
+### Added
+
+- Optional end-entity allow-list PEM (`allowedListPem`) on trust-validation
+  entry points, passed to c2pa-rs `trust.allowed_list`. A listed leaf reports
+  `signingCredential.trusted` even with an empty CA anchor set.
+- Rust `*_allow_list` bridge helpers alongside the existing anchors-only
+  functions (unchanged arity for callers that only pass anchors).
+
 ## 0.5.0 (2026-09-16)
 
 ### Added

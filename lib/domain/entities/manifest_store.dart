@@ -96,17 +96,19 @@ class ManifestStore extends Equatable {
 
   /// Creates a ManifestStore from a local file path.
   ///
-  /// When [trustAnchorsPem] is provided, validation runs against that
-  /// trust list (concatenated C2PA CA + TSA PEM bundle from
-  /// `TrustListService`); otherwise the underlying `c2pa-rs` defaults
-  /// are used and certificates report as `untrusted`.
+  /// When [trustAnchorsPem] and/or [allowedListPem] is provided, validation
+  /// runs against those PEM bundles (CA anchors and end-entity allow-list);
+  /// otherwise the underlying `c2pa-rs` defaults are used and certificates
+  /// report as `untrusted`.
   static Future<ManifestStore?> fromLocalPath(
     final String localPath, {
     final String? trustAnchorsPem,
+    final String? allowedListPem,
   }) async {
     final manifestJson = await getManifestJsonFromFile(
       localPath,
       trustAnchorsPem: trustAnchorsPem,
+      allowedListPem: allowedListPem,
     );
     if (manifestJson == null) {
       return null;
@@ -116,16 +118,19 @@ class ManifestStore extends Equatable {
 
   /// Creates a ManifestStore from a URL.
   ///
-  /// See [fromLocalPath] for the meaning of [trustAnchorsPem].
+  /// See [fromLocalPath] for the meaning of [trustAnchorsPem] /
+  /// [allowedListPem].
   static Future<ManifestStore?> fromUrl(
     final String url, {
     final String? format,
     final String? trustAnchorsPem,
+    final String? allowedListPem,
   }) async {
     final manifestJson = await getManifestJsonFromURL(
       url,
       format: format,
       trustAnchorsPem: trustAnchorsPem,
+      allowedListPem: allowedListPem,
     );
     if (manifestJson == null) {
       return null;
@@ -135,16 +140,19 @@ class ManifestStore extends Equatable {
 
   /// Creates a ManifestStore from raw bytes.
   ///
-  /// See [fromLocalPath] for the meaning of [trustAnchorsPem].
+  /// See [fromLocalPath] for the meaning of [trustAnchorsPem] /
+  /// [allowedListPem].
   static Future<ManifestStore?> fromBytes(
     final List<int> fileBytes,
     final String format, {
     final String? trustAnchorsPem,
+    final String? allowedListPem,
   }) async {
     final manifestJson = await getManifestJsonFromBytes(
       fileBytes: fileBytes,
       format: format,
       trustAnchorsPem: trustAnchorsPem,
+      allowedListPem: allowedListPem,
     );
     if (manifestJson == null) {
       return null;
@@ -157,13 +165,15 @@ class ManifestStore extends Equatable {
   /// Validates hash binding and signatures the same way as [fromBytes] does
   /// for embedded manifests. [manifestFormat] must be a manifest-store MIME;
   /// defaults to `application/c2pa`.
-  /// See [fromLocalPath] for the meaning of [trustAnchorsPem].
+  /// See [fromLocalPath] for the meaning of [trustAnchorsPem] /
+  /// [allowedListPem].
   static Future<ManifestStore?> fromDetached({
     required final List<int> manifestBytes,
     required final List<int> assetBytes,
     required final String assetFormat,
     final String manifestFormat = 'application/c2pa',
     final String? trustAnchorsPem,
+    final String? allowedListPem,
   }) async {
     final manifestJson = await getDetachedManifestJsonFromBytes(
       manifestBytes: manifestBytes,
@@ -171,6 +181,7 @@ class ManifestStore extends Equatable {
       assetFormat: assetFormat,
       manifestFormat: manifestFormat,
       trustAnchorsPem: trustAnchorsPem,
+      allowedListPem: allowedListPem,
     );
     if (manifestJson == null) {
       return null;

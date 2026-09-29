@@ -8,20 +8,33 @@ import 'package:http/http.dart' as http;
 String? _manifestJsonFromUtf8Bytes(final Uint8List? bytes) =>
     bytes == null ? null : utf8.decode(bytes);
 
+bool _hasTrustMaterial({
+  final String? trustAnchorsPem,
+  final String? allowedListPem,
+}) =>
+    (trustAnchorsPem != null && trustAnchorsPem.isNotEmpty) ||
+    (allowedListPem != null && allowedListPem.isNotEmpty);
+
 /// Get the manifest from a file.
 ///
-/// When [trustAnchorsPem] is provided, validation runs against that trust
-/// list (concatenated C2PA CA + TSA PEM bundle); otherwise the underlying
-/// `c2pa-rs` defaults are used and certificates report as `untrusted`.
+/// When [trustAnchorsPem] and/or [allowedListPem] is provided, validation
+/// runs against those PEM bundles (CA anchors and end-entity allow-list);
+/// otherwise the underlying `c2pa-rs` defaults are used and certificates
+/// report as `untrusted`.
 // ignore: type_annotate_public_apis
 Future<String?> getManifestJsonFromFile(
   final String path, {
   final String? trustAnchorsPem,
+  final String? allowedListPem,
 }) async {
-  if (trustAnchorsPem != null && trustAnchorsPem.isNotEmpty) {
-    return getManifestWithTrustValidationFromPath(
+  if (_hasTrustMaterial(
+    trustAnchorsPem: trustAnchorsPem,
+    allowedListPem: allowedListPem,
+  )) {
+    return getManifestWithTrustValidationFromPathAllowList(
       path: path,
-      trustAnchorsPem: trustAnchorsPem,
+      trustAnchorsPem: trustAnchorsPem ?? '',
+      allowedListPem: allowedListPem,
     );
   }
   return getManifestWithValidationFromPath(path: path);
@@ -30,19 +43,25 @@ Future<String?> getManifestJsonFromFile(
 /// Get the manifest from a URL.
 ///
 /// Optionally specify the format (mime type) if not in the header.
-/// See [getManifestJsonFromFile] for the meaning of [trustAnchorsPem].
+/// See [getManifestJsonFromFile] for the meaning of [trustAnchorsPem] /
+/// [allowedListPem].
 Future<String?> getManifestJsonFromURL(
   final String url, {
   final String? format,
   final String? trustAnchorsPem,
+  final String? allowedListPem,
 }) async {
   final response = await http.get(Uri.parse(url));
   final mime = response.headers['content-type'] ?? format ?? 'image/jpeg';
-  if (trustAnchorsPem != null && trustAnchorsPem.isNotEmpty) {
-    return getManifestWithTrustValidation(
+  if (_hasTrustMaterial(
+    trustAnchorsPem: trustAnchorsPem,
+    allowedListPem: allowedListPem,
+  )) {
+    return getManifestWithTrustValidationAllowList(
       fileBytes: response.bodyBytes,
       format: mime,
-      trustAnchorsPem: trustAnchorsPem,
+      trustAnchorsPem: trustAnchorsPem ?? '',
+      allowedListPem: allowedListPem,
     );
   }
   return getManifestJsonFromBytes(
@@ -53,17 +72,23 @@ Future<String?> getManifestJsonFromURL(
 
 /// Get the manifest from bytes and format (mime type).
 ///
-/// See [getManifestJsonFromFile] for the meaning of [trustAnchorsPem].
+/// See [getManifestJsonFromFile] for the meaning of [trustAnchorsPem] /
+/// [allowedListPem].
 Future<String?> getManifestJsonFromBytes({
   required final List<int> fileBytes,
   required final String format,
   final String? trustAnchorsPem,
+  final String? allowedListPem,
 }) async {
-  if (trustAnchorsPem != null && trustAnchorsPem.isNotEmpty) {
-    return getManifestWithTrustValidation(
+  if (_hasTrustMaterial(
+    trustAnchorsPem: trustAnchorsPem,
+    allowedListPem: allowedListPem,
+  )) {
+    return getManifestWithTrustValidationAllowList(
       fileBytes: fileBytes,
       format: format,
-      trustAnchorsPem: trustAnchorsPem,
+      trustAnchorsPem: trustAnchorsPem ?? '',
+      allowedListPem: allowedListPem,
     );
   }
   if (kDebugMode) {
@@ -111,23 +136,29 @@ Future<String?> getManifestStoreJsonFromBytes({
 ///
 /// [manifestBytes] is the sidecar JUMBF. [manifestFormat] must be a C2PA
 /// manifest-store MIME (`application/c2pa` by default). [assetBytes] and
-/// [assetFormat] are the bound media. When [trustAnchorsPem]
-/// is provided, signing credentials are checked against that PEM bundle;
-/// otherwise certificates report as `signingCredential.untrusted`.
+/// [assetFormat] are the bound media. When [trustAnchorsPem] and/or
+/// [allowedListPem] is provided, signing credentials are checked against
+/// those PEM bundles; otherwise certificates report as
+/// `signingCredential.untrusted`.
 Future<String?> getDetachedManifestJsonFromBytes({
   required final List<int> manifestBytes,
   required final List<int> assetBytes,
   required final String assetFormat,
   final String manifestFormat = 'application/c2pa',
   final String? trustAnchorsPem,
+  final String? allowedListPem,
 }) async {
-  if (trustAnchorsPem != null && trustAnchorsPem.isNotEmpty) {
-    return getDetachedManifestWithTrustValidation(
+  if (_hasTrustMaterial(
+    trustAnchorsPem: trustAnchorsPem,
+    allowedListPem: allowedListPem,
+  )) {
+    return getDetachedManifestWithTrustValidationAllowList(
       manifestBytes: manifestBytes,
       manifestFormat: manifestFormat,
       assetBytes: assetBytes,
       assetFormat: assetFormat,
-      trustAnchorsPem: trustAnchorsPem,
+      trustAnchorsPem: trustAnchorsPem ?? '',
+      allowedListPem: allowedListPem,
     );
   }
   return _manifestJsonFromUtf8Bytes(

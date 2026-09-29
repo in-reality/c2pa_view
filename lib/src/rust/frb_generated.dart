@@ -64,7 +64,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => -1291742180;
+  int get rustContentHash => 1684961251;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -82,6 +82,25 @@ abstract class RustLibApi extends BaseApi {
     required List<int> assetBytes,
     required String assetFormat,
     required String trustAnchorsPem,
+  });
+
+  Future<String?> crateApiC2PaGetDetachedManifestWithTrustValidationAllowList({
+    required List<int> manifestBytes,
+    required String manifestFormat,
+    required List<int> assetBytes,
+    required String assetFormat,
+    required String trustAnchorsPem,
+    String? allowedListPem,
+  });
+
+  Future<Uint8List?>
+  crateApiC2PaGetDetachedManifestWithTrustValidationAllowListUtf8({
+    required List<int> manifestBytes,
+    required String manifestFormat,
+    required List<int> assetBytes,
+    required String assetFormat,
+    required String trustAnchorsPem,
+    String? allowedListPem,
   });
 
   Future<Uint8List?> crateApiC2PaGetDetachedManifestWithTrustValidationUtf8({
@@ -127,9 +146,22 @@ abstract class RustLibApi extends BaseApi {
     required String trustAnchorsPem,
   });
 
+  Future<String?> crateApiC2PaGetManifestWithTrustValidationAllowList({
+    required List<int> fileBytes,
+    required String format,
+    required String trustAnchorsPem,
+    String? allowedListPem,
+  });
+
   Future<String?> crateApiC2PaGetManifestWithTrustValidationFromPath({
     required String path,
     required String trustAnchorsPem,
+  });
+
+  Future<String?> crateApiC2PaGetManifestWithTrustValidationFromPathAllowList({
+    required String path,
+    required String trustAnchorsPem,
+    String? allowedListPem,
   });
 
   Future<String?> crateApiC2PaGetManifestWithValidation({
@@ -210,6 +242,126 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<String?> crateApiC2PaGetDetachedManifestWithTrustValidationAllowList({
+    required List<int> manifestBytes,
+    required String manifestFormat,
+    required List<int> assetBytes,
+    required String assetFormat,
+    required String trustAnchorsPem,
+    String? allowedListPem,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(manifestBytes, serializer);
+          sse_encode_String(manifestFormat, serializer);
+          sse_encode_list_prim_u_8_loose(assetBytes, serializer);
+          sse_encode_String(assetFormat, serializer);
+          sse_encode_String(trustAnchorsPem, serializer);
+          sse_encode_opt_String(allowedListPem, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 2,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_String,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta:
+            kCrateApiC2PaGetDetachedManifestWithTrustValidationAllowListConstMeta,
+        argValues: [
+          manifestBytes,
+          manifestFormat,
+          assetBytes,
+          assetFormat,
+          trustAnchorsPem,
+          allowedListPem,
+        ],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiC2PaGetDetachedManifestWithTrustValidationAllowListConstMeta =>
+      const TaskConstMeta(
+        debugName: "get_detached_manifest_with_trust_validation_allow_list",
+        argNames: [
+          "manifestBytes",
+          "manifestFormat",
+          "assetBytes",
+          "assetFormat",
+          "trustAnchorsPem",
+          "allowedListPem",
+        ],
+      );
+
+  @override
+  Future<Uint8List?>
+  crateApiC2PaGetDetachedManifestWithTrustValidationAllowListUtf8({
+    required List<int> manifestBytes,
+    required String manifestFormat,
+    required List<int> assetBytes,
+    required String assetFormat,
+    required String trustAnchorsPem,
+    String? allowedListPem,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(manifestBytes, serializer);
+          sse_encode_String(manifestFormat, serializer);
+          sse_encode_list_prim_u_8_loose(assetBytes, serializer);
+          sse_encode_String(assetFormat, serializer);
+          sse_encode_String(trustAnchorsPem, serializer);
+          sse_encode_opt_String(allowedListPem, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 3,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta:
+            kCrateApiC2PaGetDetachedManifestWithTrustValidationAllowListUtf8ConstMeta,
+        argValues: [
+          manifestBytes,
+          manifestFormat,
+          assetBytes,
+          assetFormat,
+          trustAnchorsPem,
+          allowedListPem,
+        ],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiC2PaGetDetachedManifestWithTrustValidationAllowListUtf8ConstMeta =>
+      const TaskConstMeta(
+        debugName:
+            "get_detached_manifest_with_trust_validation_allow_list_utf8",
+        argNames: [
+          "manifestBytes",
+          "manifestFormat",
+          "assetBytes",
+          "assetFormat",
+          "trustAnchorsPem",
+          "allowedListPem",
+        ],
+      );
+
+  @override
   Future<Uint8List?> crateApiC2PaGetDetachedManifestWithTrustValidationUtf8({
     required List<int> manifestBytes,
     required String manifestFormat,
@@ -229,7 +381,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 2,
+            funcId: 4,
             port: port_,
           );
         },
@@ -282,7 +434,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 3,
+            funcId: 5,
             port: port_,
           );
         },
@@ -326,7 +478,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 4,
+            funcId: 6,
             port: port_,
           );
         },
@@ -367,7 +519,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 5,
+            funcId: 7,
             port: port_,
           );
         },
@@ -402,7 +554,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 6,
+            funcId: 8,
             port: port_,
           );
         },
@@ -437,7 +589,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 7,
+            funcId: 9,
             port: port_,
           );
         },
@@ -474,7 +626,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 8,
+            funcId: 10,
             port: port_,
           );
         },
@@ -496,6 +648,47 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<String?> crateApiC2PaGetManifestWithTrustValidationAllowList({
+    required List<int> fileBytes,
+    required String format,
+    required String trustAnchorsPem,
+    String? allowedListPem,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(fileBytes, serializer);
+          sse_encode_String(format, serializer);
+          sse_encode_String(trustAnchorsPem, serializer);
+          sse_encode_opt_String(allowedListPem, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 11,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_String,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta:
+            kCrateApiC2PaGetManifestWithTrustValidationAllowListConstMeta,
+        argValues: [fileBytes, format, trustAnchorsPem, allowedListPem],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiC2PaGetManifestWithTrustValidationAllowListConstMeta =>
+      const TaskConstMeta(
+        debugName: "get_manifest_with_trust_validation_allow_list",
+        argNames: ["fileBytes", "format", "trustAnchorsPem", "allowedListPem"],
+      );
+
+  @override
   Future<String?> crateApiC2PaGetManifestWithTrustValidationFromPath({
     required String path,
     required String trustAnchorsPem,
@@ -509,7 +702,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 9,
+            funcId: 12,
             port: port_,
           );
         },
@@ -532,6 +725,45 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<String?> crateApiC2PaGetManifestWithTrustValidationFromPathAllowList({
+    required String path,
+    required String trustAnchorsPem,
+    String? allowedListPem,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(path, serializer);
+          sse_encode_String(trustAnchorsPem, serializer);
+          sse_encode_opt_String(allowedListPem, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 13,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_String,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta:
+            kCrateApiC2PaGetManifestWithTrustValidationFromPathAllowListConstMeta,
+        argValues: [path, trustAnchorsPem, allowedListPem],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateApiC2PaGetManifestWithTrustValidationFromPathAllowListConstMeta =>
+      const TaskConstMeta(
+        debugName: "get_manifest_with_trust_validation_from_path_allow_list",
+        argNames: ["path", "trustAnchorsPem", "allowedListPem"],
+      );
+
+  @override
   Future<String?> crateApiC2PaGetManifestWithValidation({
     required List<int> fileBytes,
     required String format,
@@ -545,7 +777,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 10,
+            funcId: 14,
             port: port_,
           );
         },
@@ -578,7 +810,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 11,
+            funcId: 15,
             port: port_,
           );
         },
@@ -613,7 +845,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 12,
+            funcId: 16,
             port: port_,
           );
         },
