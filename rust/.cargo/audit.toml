@@ -1,0 +1,9 @@
+[advisories]
+# RUSTSEC-2023-0071: RSA private-key operations are vulnerable to timing
+# attacks. Production uses RSA only for verification. Tests sign fixtures
+# with the SDK's public test key; no production private key is used here.
+# There is currently no patched release.
+# RUSTSEC-2024-0370: unmaintained proc-macro-error is build-time only,
+# through static-regular-grammar -> iref -> C2PA. Operator-approved;
+# revisit this exception on the next C2PA upgrade.
+ignore = ["RUSTSEC-2023-0071", "RUSTSEC-2024-0370"]

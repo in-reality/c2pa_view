@@ -15,7 +15,7 @@ A Flutter plugin for reading and displaying [C2PA](https://c2pa.org/) (Coalition
 ### Version compatibility note
 
 This package intentionally pins `flutter_rust_bridge` to a specific tested
-version (`2.12.0`) instead of a broad range.
+version (`2.13.0`) instead of a broad range.
 
 If you need a different FRB version, update it together with regenerated
 bindings and verify all target platforms before publishing.
