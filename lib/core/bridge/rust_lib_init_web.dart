@@ -1,21 +1,24 @@
-import 'dart:js_interop';
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
 
-import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+// Release hosts bind immutable asset identity at compile time.
+// ignore: do_not_use_environment
+const _assetBase = String.fromEnvironment(
+  'VERIFIER_ASSET_BASE',
+  defaultValue: 'pkg/',
+);
 
-@JS('wasm_bindgen')
-external JSAny? get _windowWasmBindgen;
+@JS('__inrealityC2paReadyBase')
+external JSString? get _readyBase;
+@JS('__inrealityC2paReadyBase')
+external set _readyBase(final JSString? value);
 
-/// Reuses an already-loaded `wasm_bindgen` global after Flutter hot restart.
-ExternalLibrary? createReusedExternalLibraryIfAny() {
-  try {
-    if (_windowWasmBindgen == null) {
-      return null;
-    }
-    return ExternalLibrary(
-      debugInfo: 'reused wasm_bindgen after hot restart',
-      wasmBindgenName: 'wasm_bindgen',
-    );
-  } on Object {
-    return null;
+/// Reuses only a successfully initialized bridge from this exact release.
+Future<ExternalLibrary?> loadRustExternalLibrary() async {
+  if (_readyBase?.toDart != _assetBase) {
+    await initializeWasmModule(root: '${_assetBase}c2pa_view');
   }
+  return const ExternalLibrary(debugInfo: 'c2pa_view at $_assetBase');
 }
+
+/// Written after FRB's content-hash sanity check and initializers succeed.
+void markRustLibraryReady() => _readyBase = _assetBase.toJS;

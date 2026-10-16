@@ -215,3 +215,10 @@ This is an FFI plugin with native Rust code built through Dart hooks:
 | Linux    | Supported |
 | macOS    | Supported |
 | Windows  | Supported |
+
+Web release hosts can set `VERIFIER_ASSET_BASE` to an immutable package prefix;
+`initRustLib()` passes it to FRB's exposed web-module loader. The
+compatibility default remains `pkg/`, with native loading unchanged. Concurrent
+calls share one initialization future. Browser hot restart reuses only a
+successfully initialized bridge from that exact prefix; failed or timed-out
+initialization requires a full page reload so partial globals cannot be reused.
