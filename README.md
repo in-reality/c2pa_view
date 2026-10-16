@@ -12,6 +12,17 @@ A Flutter plugin for reading and displaying [C2PA](https://c2pa.org/) (Coalition
 
 ## Setup
 
+Version 1.0.0 requires **Flutter 3.44 or newer**, a Rust toolchain, and the
+platform build tools for each native target. Dart build hooks compile and
+bundle the Rust library through FRB 2.13 Native Assets. The pinned Rust
+version and targets are declared in `rust/rust-toolchain.toml`.
+
+Upgrading from 0.x: update Flutter, run `flutter pub get`, and rebuild the
+host app. Remove any manual Cargokit or c2pa_view podspec integration; the
+package no longer registers a native Flutter plugin. `RustLib.init()` and
+the viewer API are unchanged. Web continues to load the separately built
+`web/pkg` WASM package; Native Assets does not replace it.
+
 ### Version compatibility note
 
 This package intentionally pins `flutter_rust_bridge` to a specific tested
@@ -195,12 +206,12 @@ final json = C2paBridgeService.getManifestJsonFromFile('/path/to/image.jpg');
 
 ## Platforms
 
-This is an FFI plugin with native Rust code compiled for all platforms:
+This is an FFI plugin with native Rust code built through Dart hooks:
 
 | Platform | Status |
 |----------|--------|
 | Android  | Supported |
-| iOS      | Supported |
+| iOS      | Native Assets verification pending |
 | Linux    | Supported |
 | macOS    | Supported |
 | Windows  | Supported |
