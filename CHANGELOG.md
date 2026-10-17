@@ -5,6 +5,9 @@
   Cargokit and native Gradle/CMake/CocoaPods plugin scaffolding.
 - Pin the Rust toolchain and supported targets in `rust/rust-toolchain.toml`.
 - Preserve the Dart/Rust viewer API and the separate web WASM loading path.
+- Forward the build hook's iOS minimum into Cargo so the native library
+  links. Without it, OpenSSL targets the SDK version and the link fails
+  on `___chkstk_darwin`.
 
 ## 0.6.0 (2026-09-29)
 
