@@ -6,19 +6,19 @@ Future<void> main(final List<String> args) async {
       extraCargoEnvironmentVariables: {
         'CARGO_BUILD_JOBS': '1',
         'CARGO_INCREMENTAL': '0',
-        ..._iosDeploymentTarget(input.json),
+        ..._appleCargoEnvironment(input.json),
       },
     ).run(input: input, output: output);
   });
 }
 
-/// Forwards the hook's iOS minimum into Cargo.
+/// Preserves loadable Apple libraries and forwards the iOS minimum into Cargo.
 ///
 /// The Rust native-assets builder replaces the process environment and does
 /// not pass this minimum through. Without it, OpenSSL records the SDK version
 /// while rustc links at its default. The iOS SDK hides `___chkstk_darwin` for
 /// that default, so the native library fails to link.
-Map<String, String> _iosDeploymentTarget(final Map<String, Object?> json) {
+Map<String, String> _appleCargoEnvironment(final Map<String, Object?> json) {
   final config = json['config'];
   if (config is! Map) {
     return const {};
@@ -28,16 +28,25 @@ Map<String, String> _iosDeploymentTarget(final Map<String, Object?> json) {
     return const {};
   }
   final codeAssets = extensions['code_assets'];
-  if (codeAssets is! Map || codeAssets['target_os'] != 'ios') {
+  if (codeAssets is! Map) {
     return const {};
+  }
+  final targetOS = codeAssets['target_os'];
+  final environment = <String, String>{
+    // Rust 1.97's stripping can misalign Mach-O LINKEDIT (rust-lang/rust#157750).
+    if (targetOS == 'ios' || targetOS == 'macos')
+      'CARGO_PROFILE_RELEASE_STRIP': 'none',
+  };
+  if (targetOS != 'ios') {
+    return environment;
   }
   final ios = codeAssets['ios'];
   if (ios is! Map) {
-    return const {};
+    return environment;
   }
   final version = ios['target_version'];
   if (version is! int) {
-    return const {};
+    return environment;
   }
-  return {'IPHONEOS_DEPLOYMENT_TARGET': '$version.0'};
+  return {...environment, 'IPHONEOS_DEPLOYMENT_TARGET': '$version.0'};
 }
