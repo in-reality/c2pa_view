@@ -211,7 +211,7 @@ This is an FFI plugin with native Rust code built through Dart hooks:
 | Platform | Status |
 |----------|--------|
 | Android  | Supported |
-| iOS      | Native Assets verification pending |
+| iOS      | Supported (Native Assets verified on iPhone) |
 | Linux    | Supported |
 | macOS    | Supported |
 | Windows  | Supported |
