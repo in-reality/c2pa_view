@@ -124,3 +124,6 @@ app.*.symbols
 # Private planning docs (maintained outside the public package tree)
 AI.md
 MODERNIZATION_PLAN.md
+
+# wasm-pack output. Release builds write it and must not dirty the tree.
+/web/pkg/
