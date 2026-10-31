@@ -19,15 +19,20 @@ class Ingredient extends Equatable {
     this.relationship,
     this.thumbnail,
     this.validationStatus = const [],
+    this.reportedFailures = const [],
     this.metadata,
   });
 
   /// Creates an Ingredient from a JSON map.
-  factory Ingredient.fromJson(final Map<String, dynamic> json) {
+  factory Ingredient.fromJson(
+    final Map<String, dynamic> json, {
+    final bool previewsTruncated = false,
+  }) {
     ThumbnailData? thumbnail;
     if (json['thumbnail'] is Map<String, dynamic>) {
       thumbnail = ThumbnailData.fromJson(
         json['thumbnail'] as Map<String, dynamic>,
+        previewsTruncated: previewsTruncated,
       );
     }
 
@@ -36,6 +41,20 @@ class Ingredient extends Equatable {
       for (final item in json['validation_status'] as List) {
         if (item is Map<String, dynamic>) {
           validationStatus.add(ValidationStatusEntry.fromJson(item));
+        }
+      }
+    }
+
+    final reportedFailures = <ValidationStatusEntry>[];
+    final results = json['validation_results'];
+    if (results is Map) {
+      final active = results['activeManifest'];
+      if (active is Map && active['failure'] is List) {
+        for (final item in active['failure'] as List) {
+          if (item is Map<String, dynamic>) {
+            final status = ValidationStatusEntry.fromJson(item);
+            if (status.isError) reportedFailures.add(status);
+          }
         }
       }
     }
@@ -54,6 +73,7 @@ class Ingredient extends Equatable {
       relationship: json['relationship'] as String?,
       thumbnail: thumbnail,
       validationStatus: validationStatus,
+      reportedFailures: reportedFailures,
       metadata: json['metadata'] as Map<String, dynamic>?,
     );
   }
@@ -97,6 +117,16 @@ class Ingredient extends Equatable {
   /// Validation status entries for this ingredient.
   final List<ValidationStatusEntry> validationStatus;
 
+  /// Non-trust failures recorded by the consuming claim's v3 input report.
+  /// These are evidence about that import, not new checks of ancestor media.
+  final List<ValidationStatusEntry> reportedFailures;
+
+  /// Legacy/v3 recorded input failures; old issuer trust never overrides current trust.
+  List<ValidationStatusEntry> get inputValidationFailures => {
+    ...validationStatus.where((final status) => status.isError),
+    ...reportedFailures,
+  }.toList(growable: false);
+
   /// Vendor-specific metadata.
   final Map<String, dynamic>? metadata;
 
@@ -115,6 +145,7 @@ class Ingredient extends Equatable {
     relationship,
     thumbnail,
     validationStatus,
+    reportedFailures,
     metadata,
   ];
 }

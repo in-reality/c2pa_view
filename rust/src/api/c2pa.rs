@@ -45,7 +45,10 @@ pub async fn get_file_manifest_format(
         .with_stream(manifest_format, stream)
         .ok();
 
-    Ok(reader.map(|r| r.json()))
+    reader
+        .map(reader_manifest_json_value)
+        .transpose()
+        .map(|v| v.map(|v| v.to_string()))
 }
 
 /// UTF-8 JSON bytes for [`get_file_manifest_format`]. See
@@ -67,13 +70,366 @@ fn normalize_detached_manifest_format(format: &str) -> &str {
     }
 }
 
+// Limits apply identically to native and WASM preview output. The SDK already
+// owns the input store; this bounds additional hydration and serialized copies.
+const PREVIEW_BYTES: usize = 1024 * 1024;
+const TOTAL_PREVIEW_BYTES: usize = 8 * PREVIEW_BYTES;
+const PREVIEW_NODES: usize = 256;
+const PREVIEW_REFS: usize = 1024;
+const PREVIEW_IDENTIFIER: usize = 4096;
+const PREVIEW_CONTEXT: usize = 256;
+
+struct PreviewWriter {
+    cursor: std::io::Cursor<Vec<u8>>,
+    limit: usize,
+    exceeded: bool,
+}
+
+impl std::io::Write for PreviewWriter {
+    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+        if bytes.len() > self.limit.saturating_sub(self.cursor.position() as usize) {
+            self.exceeded = true;
+            return Err(std::io::Error::other("preview byte limit"));
+        }
+        std::io::Write::write(&mut self.cursor, bytes)
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+impl std::io::Read for PreviewWriter {
+    fn read(&mut self, bytes: &mut [u8]) -> std::io::Result<usize> {
+        std::io::Read::read(&mut self.cursor, bytes)
+    }
+}
+impl std::io::Seek for PreviewWriter {
+    fn seek(&mut self, position: std::io::SeekFrom) -> std::io::Result<u64> {
+        let target = match position {
+            std::io::SeekFrom::Start(offset) => i128::from(offset),
+            std::io::SeekFrom::Current(offset) => {
+                i128::from(self.cursor.position()) + i128::from(offset)
+            }
+            std::io::SeekFrom::End(offset) => {
+                self.cursor.get_ref().len() as i128 + i128::from(offset)
+            }
+        };
+        if target < 0 || target > self.limit as i128 {
+            self.exceeded = true;
+            return Err(std::io::Error::other("preview seek limit"));
+        }
+        std::io::Seek::seek(&mut self.cursor, std::io::SeekFrom::Start(target as u64))
+    }
+}
+
+fn local_preview_identifier(id: &str) -> bool {
+    !id.is_empty()
+        && id.len() <= PREVIEW_IDENTIFIER
+        && !id.contains(['\\', '\0'])
+        && !id.split('/').any(|part| part == "..")
+        && (id.starts_with("self#jumbf=") || !id.contains([':', '#', '?']))
+        && !id.starts_with('/')
+}
+
+const PREVIEW_DECODED_BYTES: u64 = 4 * 1024 * 1024;
+const TOTAL_PREVIEW_DECODED_BYTES: u64 = 16 * 1024 * 1024;
+
+// Validate with standard codecs and retain the original encoded bytes. Width /
+// height limits are strict; max_alloc is codec assistance, not a heap guarantee.
+fn preview_image_size(format: &str, data: &[u8], decoded_budget: u64) -> Result<u64, &'static str> {
+    use image::{ImageFormat, ImageReader, Limits};
+    let mut limits = Limits::default();
+    limits.max_image_width = Some(4096);
+    limits.max_image_height = Some(4096);
+    limits.max_alloc = Some(PREVIEW_DECODED_BYTES);
+    match format {
+        "image/png" => {
+            let png =
+                image::codecs::png::PngDecoder::with_limits(std::io::Cursor::new(data), limits)
+                    .map_err(preview_decode_error)?;
+            if png.is_apng().map_err(preview_decode_error)? {
+                return Err("unsupported");
+            }
+            preview_decoded_pixels(png, decoded_budget)
+        }
+        "image/jpeg" => {
+            let mut reader =
+                ImageReader::with_format(std::io::Cursor::new(data), ImageFormat::Jpeg);
+            reader.limits(limits);
+            preview_decoded_pixels(
+                reader.into_decoder().map_err(preview_decode_error)?,
+                decoded_budget,
+            )
+        }
+        _ => Err("unsupported"),
+    }
+}
+
+fn preview_decode_error(error: image::ImageError) -> &'static str {
+    match error {
+        image::ImageError::Limits(_) => "oversize",
+        _ => "malformed",
+    }
+}
+
+fn preview_decoded_pixels(
+    decoder: impl image::ImageDecoder,
+    decoded_budget: u64,
+) -> Result<u64, &'static str> {
+    let (width, height) = decoder.dimensions();
+    let bytes = decoder.total_bytes();
+    // Bound Flutter's RGBA footprint too, before allocating any decoded pixels.
+    let rgba_bytes = u64::from(width) * u64::from(height) * 4;
+    if width == 0
+        || height == 0
+        || rgba_bytes > PREVIEW_DECODED_BYTES
+        || bytes > PREVIEW_DECODED_BYTES
+    {
+        return Err("oversize");
+    }
+    if rgba_bytes > decoded_budget {
+        return Err("limit");
+    }
+    let mut pixels = vec![0; bytes as usize];
+    decoder
+        .read_image(&mut pixels)
+        .map_err(preview_decode_error)?;
+    Ok(rgba_bytes)
+}
+
+// Count JSON array amplification, including commas and brackets, for EACH
+// emitted reference. Cache deduplication cannot evade the output budget.
+fn preview_json_bytes(data: &[u8]) -> usize {
+    2 + data
+        .iter()
+        .map(|b| {
+            if *b < 10 {
+                2
+            } else if *b < 100 {
+                3
+            } else {
+                4
+            }
+        })
+        .sum::<usize>()
+}
+
+fn lookup_preview(
+    reader: &Reader,
+    label: &str,
+    id: &str,
+    format: &str,
+    output_budget: usize,
+    decoded_budget: u64,
+) -> (String, Vec<u8>, u64) {
+    if !local_preview_identifier(id) {
+        return ("malformed".into(), vec![], 0);
+    }
+    if !matches!(format, "image/jpeg" | "image/png") {
+        return ("unsupported".into(), vec![], 0);
+    }
+    let Some(manifest) = reader.manifests().get(label) else {
+        return ("missing".into(), vec![], 0);
+    };
+    // Resolve ONLY inside the containing claim, including its ingredient stores.
+    // Do not use Reader's manifest-data fallback for an arbitrary identifier.
+    for resources in std::iter::once(manifest.resources()).chain(
+        manifest
+            .ingredients()
+            .iter()
+            .take(PREVIEW_REFS)
+            .map(c2pa::Ingredient::resources),
+    ) {
+        let length = match resources.resource_len(id) {
+            Ok(length) => length,
+            Err(c2pa::Error::ResourceNotFound(_)) => continue,
+            Err(c2pa::Error::UnsupportedType) => return ("unsupported".into(), vec![], 0),
+            Err(_) => return ("missing".into(), vec![], 0),
+        };
+        if length > PREVIEW_BYTES as u64 {
+            return ("oversize".into(), vec![], 0);
+        }
+        // Even one-digit JSON numbers need two bytes apiece including commas.
+        if length * 2 + 2 > output_budget as u64 {
+            return ("limit".into(), vec![], 0);
+        }
+        let mut writer = PreviewWriter {
+            cursor: std::io::Cursor::new(Vec::new()),
+            limit: PREVIEW_BYTES,
+            exceeded: false,
+        };
+        let result = resources.write_stream(id, &mut writer);
+        if writer.exceeded {
+            return ("oversize".into(), vec![], 0);
+        }
+        if result.is_err() {
+            return ("missing".into(), vec![], 0);
+        }
+        let data = writer.cursor.into_inner();
+        if preview_json_bytes(&data) > output_budget {
+            return ("limit".into(), vec![], 0);
+        }
+        return match preview_image_size(format, &data, decoded_budget) {
+            Ok(decoded_bytes) => ("resolved".into(), data, decoded_bytes),
+            Err(outcome) => (outcome.into(), vec![], 0),
+        };
+    }
+    ("missing".into(), vec![], 0)
+}
+
+fn hydrate_previews(reader: &Reader, value: &mut serde_json::Value) {
+    use std::collections::HashMap;
+    let Some(manifests) = value["manifests"].as_object_mut() else {
+        return;
+    };
+    // Reserve the store-level truncation flag, even when it is not needed.
+    let mut total = 64usize;
+    let mut decoded_total = 0u64;
+    let mut refs = 0usize;
+    let mut truncated = manifests.len() > PREVIEW_NODES;
+    let mut cache = HashMap::<(String, String, String), (String, Vec<u8>, u64)>::new();
+    // SDK metadata stays intact; bound even annotation/traversal work here.
+    'claims: for (node_index, (label, manifest)) in
+        manifests.iter_mut().take(PREVIEW_NODES).enumerate()
+    {
+        if let Some(thumbnail) = manifest.get_mut("thumbnail") {
+            if !hydrate_thumbnail(
+                reader,
+                label,
+                thumbnail,
+                node_index,
+                &mut refs,
+                &mut total,
+                &mut decoded_total,
+                &mut cache,
+            ) {
+                truncated = true;
+                break 'claims;
+            }
+        }
+        if let Some(ingredients) = manifest
+            .get_mut("ingredients")
+            .and_then(|v| v.as_array_mut())
+        {
+            for ingredient in ingredients {
+                if refs >= PREVIEW_REFS {
+                    truncated = true;
+                    break 'claims;
+                }
+                if let Some(thumbnail) = ingredient.get_mut("thumbnail") {
+                    if !hydrate_thumbnail(
+                        reader,
+                        label,
+                        thumbnail,
+                        node_index,
+                        &mut refs,
+                        &mut total,
+                        &mut decoded_total,
+                        &mut cache,
+                    ) {
+                        truncated = true;
+                        break 'claims;
+                    }
+                } else {
+                    // Even a manifestless/omitted-preview ingredient consumes
+                    // traversal budget; it remains truthfully absent.
+                    refs += 1;
+                }
+            }
+        }
+    }
+    if truncated {
+        value["preview_resources_truncated"] = true.into();
+    }
+}
+
+fn hydrate_thumbnail(
+    reader: &Reader,
+    label: &str,
+    thumbnail: &mut serde_json::Value,
+    node_index: usize,
+    refs: &mut usize,
+    total: &mut usize,
+    decoded_total: &mut u64,
+    cache: &mut std::collections::HashMap<(String, String, String), (String, Vec<u8>, u64)>,
+) -> bool {
+    if *refs >= PREVIEW_REFS {
+        return false;
+    }
+    *refs += 1;
+    let Some(object) = thumbnail.as_object_mut() else {
+        return true;
+    };
+    object.remove("data");
+    if label.len() > PREVIEW_CONTEXT
+        || object
+            .get("format")
+            .and_then(|v| v.as_str())
+            .is_some_and(|format| format.len() > 128)
+    {
+        if *total + 32 > TOTAL_PREVIEW_BYTES {
+            return false;
+        }
+        *total += 32;
+        object.remove("containing_manifest");
+        object.insert("resolution".into(), "limit".into());
+        return true;
+    }
+    // Charge escaped context plus conservative key/comma/value overhead for
+    // every annotation, including failures and repeated references, before cloning.
+    let annotation_bytes = 96 + serde_json::json!(label).to_string().len();
+    if *total + annotation_bytes > TOTAL_PREVIEW_BYTES {
+        return false;
+    }
+    *total += annotation_bytes;
+    object.insert("containing_manifest".into(), label.into());
+    let id = object
+        .get("identifier")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let format = object.get("format").and_then(|v| v.as_str()).unwrap_or("");
+    let mut outcome = "limit".to_owned();
+    if node_index < PREVIEW_NODES && *decoded_total < TOTAL_PREVIEW_DECODED_BYTES {
+        if !local_preview_identifier(id) {
+            outcome = "malformed".into();
+        } else {
+            let key = (label.to_owned(), id.to_owned(), format.to_owned());
+            if !cache.contains_key(&key) {
+                let result = lookup_preview(
+                    reader,
+                    label,
+                    id,
+                    format,
+                    TOTAL_PREVIEW_BYTES - *total,
+                    TOTAL_PREVIEW_DECODED_BYTES - *decoded_total,
+                );
+                cache.insert(key.clone(), result);
+            }
+            let (resolution, data, decoded_bytes) = &cache[&key];
+            outcome = resolution.clone();
+            if outcome == "resolved" {
+                if *total + preview_json_bytes(data) <= TOTAL_PREVIEW_BYTES
+                    && *decoded_total + decoded_bytes <= TOTAL_PREVIEW_DECODED_BYTES
+                {
+                    *total += preview_json_bytes(data);
+                    *decoded_total += decoded_bytes;
+                    object.insert("data".into(), serde_json::json!(data));
+                } else {
+                    outcome = "limit".into();
+                }
+            }
+        }
+    }
+    object.insert("resolution".into(), outcome.into());
+    true
+}
+
 fn reader_manifest_json_value(reader: Reader) -> Result<serde_json::Value, String> {
     let mut value: serde_json::Value =
         serde_json::from_str(&reader.json()).map_err(|e| e.to_string())?;
     if let Some(statuses) = reader.validation_status() {
-        value["validation_status"] =
-            serde_json::to_value(statuses).map_err(|e| e.to_string())?;
+        value["validation_status"] = serde_json::to_value(statuses).map_err(|e| e.to_string())?;
     }
+    hydrate_previews(&reader, &mut value);
     Ok(value)
 }
 
@@ -84,9 +440,7 @@ pub async fn get_manifest_with_validation(
     let stream = std::io::Cursor::new(file_bytes);
     let reader = Reader::from_stream(&format, stream).ok();
     match reader {
-        Some(r) => Ok(Some(
-            reader_manifest_json_value(r)?.to_string(),
-        )),
+        Some(r) => Ok(Some(reader_manifest_json_value(r)?.to_string())),
         None => Ok(None),
     }
 }
@@ -162,13 +516,7 @@ pub async fn get_manifest_with_trust_validation(
     format: String,
     trust_anchors_pem: String,
 ) -> Result<Option<String>, String> {
-    get_manifest_with_trust_validation_allow_list(
-        file_bytes,
-        format,
-        trust_anchors_pem,
-        None,
-    )
-    .await
+    get_manifest_with_trust_validation_allow_list(file_bytes, format, trust_anchors_pem, None).await
 }
 
 /// Validate a C2PA asset against trust anchors and/or an end-entity allow-list.
@@ -182,10 +530,7 @@ pub async fn get_manifest_with_trust_validation_allow_list(
     trust_anchors_pem: String,
     allowed_list_pem: Option<String>,
 ) -> Result<Option<String>, String> {
-    let settings = trust_validation_settings(
-        &trust_anchors_pem,
-        allowed_list_pem.as_deref(),
-    )?;
+    let settings = trust_validation_settings(&trust_anchors_pem, allowed_list_pem.as_deref())?;
 
     let context = Context::new()
         .with_settings(settings)
@@ -198,12 +543,7 @@ pub async fn get_manifest_with_trust_validation_allow_list(
 
     match reader {
         Some(r) => {
-            let mut value: serde_json::Value =
-                serde_json::from_str(&r.json()).map_err(|e| e.to_string())?;
-            if let Some(statuses) = r.validation_status() {
-                value["validation_status"] =
-                    serde_json::to_value(statuses).map_err(|e| e.to_string())?;
-            }
+            let value = reader_manifest_json_value(r)?;
             Ok(Some(value.to_string()))
         }
         None => Ok(None),
@@ -216,12 +556,7 @@ pub async fn get_manifest_with_trust_validation_from_path(
     path: String,
     trust_anchors_pem: String,
 ) -> Result<Option<String>, String> {
-    get_manifest_with_trust_validation_from_path_allow_list(
-        path,
-        trust_anchors_pem,
-        None,
-    )
-    .await
+    get_manifest_with_trust_validation_from_path_allow_list(path, trust_anchors_pem, None).await
 }
 
 /// Path convenience wrapper with optional end-entity allow-list PEM.
@@ -275,8 +610,8 @@ pub async fn get_detached_manifest_with_validation_utf8(
         asset_bytes,
         asset_format,
     )
-        .await?
-        .map(|s| s.into_bytes()))
+    .await?
+    .map(|s| s.into_bytes()))
 }
 
 /// Detached manifest read with explicit trust-anchor PEM validation.
@@ -307,10 +642,7 @@ pub async fn get_detached_manifest_with_trust_validation_allow_list(
     trust_anchors_pem: String,
     allowed_list_pem: Option<String>,
 ) -> Result<Option<String>, String> {
-    let settings = trust_validation_settings(
-        &trust_anchors_pem,
-        allowed_list_pem.as_deref(),
-    )?;
+    let settings = trust_validation_settings(&trust_anchors_pem, allowed_list_pem.as_deref())?;
 
     let context = Context::new()
         .with_settings(settings)
@@ -445,14 +777,11 @@ mod tests {
             asset_bytes,
             "image/jpeg".to_string(),
         ))
-            .expect("detached read");
+        .expect("detached read");
 
         let json = json.expect("manifest json");
         let failures = validation_codes(&json);
-        if failures
-            .iter()
-            .any(|c| c == "assertion.dataHash.mismatch")
-        {
+        if failures.iter().any(|c| c == "assertion.dataHash.mismatch") {
             // Sample pair under c2pa/evidence/backend-signing/samples no longer
             // hash-binds; keep the other detached tests covering the API.
             eprintln!("skip: fixture pair reports dataHash.mismatch");
@@ -460,9 +789,9 @@ mod tests {
         }
         let successes = success_codes(&json);
         assert!(
-            successes.iter().any(|c| {
-                c == "assertion.dataHash.match" || c == "assertion.hashedURI.match"
-            }),
+            successes
+                .iter()
+                .any(|c| { c == "assertion.dataHash.match" || c == "assertion.hashedURI.match" }),
             "expected hash binding success, got {successes:?}"
         );
         assert_eq!(
@@ -473,7 +802,10 @@ mod tests {
 
     fn value_field(json: &str, field: &str) -> Option<String> {
         let value: serde_json::Value = serde_json::from_str(json).expect("json");
-        value.get(field).and_then(|v| v.as_str()).map(str::to_string)
+        value
+            .get(field)
+            .and_then(|v| v.as_str())
+            .map(str::to_string)
     }
 
     #[test]
@@ -490,7 +822,7 @@ mod tests {
             tampered,
             "image/jpeg".to_string(),
         ))
-            .expect("detached read");
+        .expect("detached read");
 
         let json = json.expect("manifest json");
         let codes = validation_codes(&json);
@@ -512,7 +844,7 @@ mod tests {
             asset_bytes,
             "image/jpeg".to_string(),
         ))
-            .expect("detached read");
+        .expect("detached read");
 
         let json = json.expect("manifest json");
         let codes = validation_codes(&json);
@@ -534,7 +866,7 @@ mod tests {
             asset_bytes,
             "image/jpeg".to_string(),
         ))
-            .expect_err("manifest store format mismatch should error");
+        .expect_err("manifest store format mismatch should error");
 
         assert!(
             err.contains("unsupported manifest store format"),
@@ -554,7 +886,7 @@ mod tests {
             asset_bytes,
             "image/jpeg".to_string(),
         ))
-            .expect_err("invalid manifest store should error");
+        .expect_err("invalid manifest store should error");
 
         assert!(
             err.contains("detached manifest validation failed"),
@@ -669,5 +1001,687 @@ mod tests {
             !successes.iter().any(|c| c == "signingCredential.trusted"),
             "unlisted leaf must not be trusted, got {successes:?}"
         );
+    }
+    fn preview_fixture() -> Vec<u8> {
+        preview_fixture_with_thumbnail(include_bytes!("../../tests/fixtures/preview.png"))
+    }
+
+    fn preview_fixture_with_thumbnail(claim_preview: &[u8]) -> Vec<u8> {
+        preview_fixture_with_signers(claim_preview, false, false)
+    }
+
+    fn preview_fixture_with_signers(
+        claim_preview: &[u8],
+        mixed_signers: bool,
+        damaged_input: bool,
+    ) -> Vec<u8> {
+        use c2pa::{create_signer, Builder, BuilderIntent, Ingredient};
+        use std::io::Cursor;
+        let certs = fixture_certs_dir();
+        let signer = create_signer::from_files(
+            certs.join("ps256.pub"),
+            certs.join("ps256.pem"),
+            c2pa::SigningAlg::Ps256,
+            None,
+        )
+        .expect("public fixture signer");
+        let child_signer = create_signer::from_files(
+            certs.join("es256.pub"),
+            certs.join("es256.pem"),
+            c2pa::SigningAlg::Es256,
+            None,
+        )
+        .expect("public child fixture signer");
+        let source = include_bytes!("../../tests/fixtures/preview.png");
+        let poster = include_bytes!("../../tests/fixtures/poster.jpg");
+        let sign = |builder: &mut Builder, child: bool| {
+            let signer = if mixed_signers && child {
+                child_signer.as_ref()
+            } else {
+                signer.as_ref()
+            };
+            let mut output = Cursor::new(Vec::new());
+            builder
+                .sign(signer, "image/png", &mut Cursor::new(source), &mut output)
+                .expect("sign synthetic image");
+            output.into_inner()
+        };
+        let mut original = Builder::default()
+            .with_definition(r#"{"title":"original"}"#)
+            .unwrap();
+        original.definition.claim_version = Some(1);
+        original.set_intent(BuilderIntent::Create(c2pa::DigitalSourceType::Empty));
+        let mut original = sign(&mut original, false);
+        if damaged_input {
+            let idat = source
+                .windows(4)
+                .position(|window| window == b"IDAT")
+                .unwrap();
+            let marker = &source[idat..idat + 8];
+            let payload = original
+                .windows(marker.len())
+                .position(|window| window == marker)
+                .unwrap()
+                + 4;
+            original[payload + 2] ^= 1; // alter media, leaving its claim signature intact
+        }
+        let mut middle = Builder::default()
+            .with_definition(r#"{"title":"middle"}"#)
+            .unwrap();
+        middle.definition.claim_version = Some(1); // legacy databox ingredient preview
+        middle.set_intent(BuilderIntent::Edit);
+        middle
+            .add_ingredient_from_stream(
+                r#"{"title":"original","relationship":"parentOf"}"#,
+                "image/png",
+                &mut Cursor::new(original),
+            )
+            .unwrap()
+            .set_thumbnail("image/jpeg", poster.to_vec())
+            .unwrap();
+        let middle = sign(&mut middle, true);
+        let mut final_claim = Builder::default()
+            .with_definition(r#"{"title":"edited"}"#)
+            .unwrap();
+        final_claim.set_intent(BuilderIntent::Edit);
+        final_claim
+            .set_thumbnail("image/png", &mut Cursor::new(claim_preview))
+            .unwrap();
+        final_claim
+            .add_ingredient_from_stream(
+                r#"{"title":"middle","relationship":"parentOf"}"#,
+                "image/png",
+                &mut Cursor::new(middle),
+            )
+            .unwrap();
+        for title in ["unsigned video", "second component"] {
+            let mut ingredient = Ingredient::new_v2(title, "video/mp4");
+            ingredient
+                .set_thumbnail("image/jpeg", poster.to_vec())
+                .unwrap();
+            final_claim.add_ingredient(ingredient);
+        }
+        sign(&mut final_claim, false)
+    }
+
+    #[test]
+    fn embedded_previews_use_containing_stores_and_all_reader_paths() {
+        let bytes = preview_fixture();
+        let raw_reader = Reader::from_stream("image/png", std::io::Cursor::new(&bytes)).unwrap();
+        for manifest in raw_reader.manifests().values() {
+            if let Some(reference) = manifest.thumbnail_ref() {
+                assert_eq!(
+                    manifest
+                        .resources()
+                        .resource_len(&reference.identifier)
+                        .unwrap(),
+                    include_bytes!("../../tests/fixtures/preview.png").len() as u64
+                );
+            }
+            for ingredient in manifest.ingredients() {
+                if let Some(reference) = ingredient.thumbnail_ref() {
+                    assert_eq!(
+                        manifest
+                            .resources()
+                            .resource_len(&reference.identifier)
+                            .unwrap(),
+                        include_bytes!("../../tests/fixtures/poster.jpg").len() as u64
+                    );
+                    assert_eq!(
+                        ingredient
+                            .resources()
+                            .resource_len(&reference.identifier)
+                            .unwrap(),
+                        include_bytes!("../../tests/fixtures/poster.jpg").len() as u64
+                    );
+                }
+                if let Some(reference) = ingredient.manifest_data_ref() {
+                    assert!(matches!(
+                        ingredient.resources().resource_len(&reference.identifier),
+                        Err(c2pa::Error::UnsupportedType)
+                    ));
+                }
+            }
+        }
+        let raw: serde_json::Value = serde_json::from_str(&raw_reader.json()).unwrap();
+        assert!(
+            raw["manifests"][raw["active_manifest"].as_str().unwrap()]["thumbnail"]
+                .get("data")
+                .is_none(),
+            "SDK reference alone reproduces the original preview gap"
+        );
+        let json = pollster::block_on(get_manifest_with_validation(
+            bytes.clone(),
+            "image/png".into(),
+        ))
+        .unwrap()
+        .unwrap();
+        let value: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert!(
+            validation_codes(&json)
+                .iter()
+                .all(|code| code == "signingCredential.untrusted"),
+            "fixture must be valid apart from issuer trust: {:?}",
+            validation_codes(&json)
+        );
+        let manifests = value["manifests"].as_object().unwrap();
+        assert_eq!(manifests.len(), 3, "preserve two-hop provenance");
+        let root = &value["manifests"][value["active_manifest"].as_str().unwrap()];
+        assert_eq!(root["thumbnail"]["resolution"], "resolved");
+        assert_eq!(
+            root["thumbnail"]["data"],
+            serde_json::json!(include_bytes!("../../tests/fixtures/preview.png").to_vec())
+        );
+        assert_eq!(root["ingredients"].as_array().unwrap().len(), 3);
+        let middle = manifests.values().find(|m| m["title"] == "middle").unwrap();
+        assert!(middle["validation_status"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|status| status["code"] == "signingCredential.untrusted"));
+        let poster = &middle["ingredients"][0]["thumbnail"];
+        assert_eq!(poster["resolution"], "resolved");
+        assert_eq!(
+            poster["data"],
+            serde_json::json!(include_bytes!("../../tests/fixtures/poster.jpg").to_vec())
+        );
+        assert_eq!(poster["containing_manifest"], middle["label"]);
+        for i in [1, 2] {
+            assert_eq!(
+                root["ingredients"][i]["thumbnail"]["resolution"],
+                "resolved"
+            );
+            assert_eq!(root["ingredients"][i]["thumbnail"]["data"], poster["data"]);
+        }
+        let utf8 = pollster::block_on(get_manifest_with_validation_utf8(
+            bytes.clone(),
+            "image/png".into(),
+        ))
+        .unwrap()
+        .unwrap();
+        assert_eq!(
+            value,
+            serde_json::from_slice::<serde_json::Value>(&utf8).unwrap()
+        );
+        let trust = pollster::block_on(get_manifest_with_trust_validation(
+            bytes.clone(),
+            "image/png".into(),
+            String::new(),
+        ))
+        .unwrap()
+        .unwrap();
+        assert_eq!(
+            value["manifests"],
+            serde_json::from_str::<serde_json::Value>(&trust).unwrap()["manifests"]
+        );
+        if let Ok(dir) = std::env::var("T2057_FIXTURE_DIR") {
+            std::fs::create_dir_all(&dir).unwrap();
+            std::fs::write(format!("{dir}/embedded-preview.png"), bytes).unwrap();
+            std::fs::write(format!("{dir}/expected.json"), json).unwrap();
+        }
+    }
+
+    #[test]
+    fn preview_containing_claim_status_uses_current_trust_not_historical_report() {
+        let bytes = preview_fixture();
+        let certs = fixture_certs_dir();
+        let allowed = first_cert_pem(&std::fs::read_to_string(certs.join("ps256.pub")).unwrap());
+        let json = pollster::block_on(get_manifest_with_trust_validation_allow_list(
+            bytes,
+            "image/png".into(),
+            String::new(),
+            Some(allowed),
+        ))
+        .unwrap()
+        .unwrap();
+        let value: serde_json::Value = serde_json::from_str(&json).unwrap();
+        for manifest in value["manifests"].as_object().unwrap().values() {
+            assert!(
+                manifest["validation_status"]
+                    .as_array()
+                    .is_some_and(|statuses| statuses.is_empty()),
+                "currently trusted claim must not inherit historical untrusted report: {manifest}"
+            );
+        }
+    }
+
+    #[test]
+    fn current_claim_projection_preserves_mixed_issuer_trust() {
+        let bytes = preview_fixture_with_signers(
+            include_bytes!("../../tests/fixtures/preview.png"),
+            true,
+            false,
+        );
+        let certs = fixture_certs_dir();
+        for (leaf, root_untrusted, child_untrusted) in
+            [("ps256.pub", false, true), ("es256.pub", true, false)]
+        {
+            let allowed = first_cert_pem(&std::fs::read_to_string(certs.join(leaf)).unwrap());
+            let json = pollster::block_on(get_manifest_with_trust_validation_allow_list(
+                bytes.clone(),
+                "image/png".into(),
+                String::new(),
+                Some(allowed),
+            ))
+            .unwrap()
+            .unwrap();
+            let value: serde_json::Value = serde_json::from_str(&json).unwrap();
+            for manifest in value["manifests"].as_object().unwrap().values() {
+                let statuses = manifest["validation_status"]
+                    .as_array()
+                    .expect("authoritative current result");
+                assert!(statuses
+                    .iter()
+                    .all(|s| s["code"] == "signingCredential.untrusted"));
+                let untrusted = statuses
+                    .iter()
+                    .any(|s| s["code"] == "signingCredential.untrusted");
+                assert_eq!(
+                    untrusted,
+                    if manifest["title"] == "middle" {
+                        child_untrusted
+                    } else {
+                        root_untrusted
+                    }
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn recorded_input_binding_failure_survives_current_trusted_projection() {
+        let bytes = preview_fixture_with_signers(
+            include_bytes!("../../tests/fixtures/preview.png"),
+            false,
+            true,
+        );
+        let allowed = first_cert_pem(
+            &std::fs::read_to_string(fixture_certs_dir().join("ps256.pub")).unwrap(),
+        );
+        let json = pollster::block_on(get_manifest_with_trust_validation_allow_list(
+            bytes.clone(),
+            "image/png".into(),
+            String::new(),
+            Some(allowed),
+        ))
+        .unwrap()
+        .unwrap();
+        let value: serde_json::Value = serde_json::from_str(&json).unwrap();
+        let manifests = value["manifests"].as_object().unwrap();
+        let original = manifests
+            .values()
+            .find(|m| m["title"] == "original")
+            .unwrap();
+        assert!(
+            original["validation_status"].as_array().unwrap().is_empty(),
+            "current signature/certificate is clean, ancestor media was not rechecked"
+        );
+        let middle = manifests.values().find(|m| m["title"] == "middle").unwrap();
+        let input = &middle["ingredients"][0];
+        assert!(input["validation_status"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|s| s["code"] == "assertion.dataHash.mismatch"));
+        assert_eq!(input["thumbnail"]["resolution"], "resolved");
+        if let Ok(dir) = std::env::var("T2057_FIXTURE_DIR") {
+            std::fs::create_dir_all(&dir).unwrap();
+            std::fs::write(format!("{dir}/recorded-input-failure.png"), bytes).unwrap();
+        }
+    }
+
+    #[test]
+    fn invalid_signature_failure_survives_preview_projection() {
+        let mut bytes = preview_fixture();
+        let reader = Reader::from_context(Context::new())
+            .with_stream("image/png", std::io::Cursor::new(&bytes))
+            .unwrap();
+        let signature = reader.active_manifest().unwrap().signature().unwrap();
+        let offset = bytes
+            .windows(signature.len())
+            .position(|window| window == signature)
+            .expect("raw COSE signature in synthetic PNG");
+        bytes[offset] ^= 1;
+        let reader = Reader::from_context(Context::new())
+            .with_stream("image/png", std::io::Cursor::new(bytes))
+            .unwrap();
+        let value = reader_manifest_json_value(reader).unwrap();
+        let manifest = &value["manifests"][value["active_manifest"].as_str().unwrap()];
+        assert!(manifest["validation_status"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|s| s["code"] == "claimSignature.mismatch"));
+        assert_eq!(manifest["thumbnail"]["resolution"], "resolved");
+    }
+
+    #[test]
+    fn repeated_resources_count_encoded_json_and_decoded_aggregate_budgets() {
+        use std::io::Cursor;
+        for noisy in [false, true] {
+            let mut state = 1u32;
+            let image = image::RgbImage::from_fn(512, 512, |_, _| {
+                state ^= state << 13;
+                state ^= state >> 17;
+                state ^= state << 5;
+                image::Rgb(if noisy {
+                    [state as u8, (state >> 8) as u8, (state >> 16) as u8]
+                } else {
+                    [255, 0, 0]
+                })
+            });
+            let mut encoded = Cursor::new(Vec::new());
+            image
+                .write_to(&mut encoded, image::ImageFormat::Png)
+                .unwrap();
+            let png = encoded.into_inner();
+            assert!(png.len() <= PREVIEW_BYTES);
+            let reader = Reader::from_context(Context::new())
+                .with_stream(
+                    "image/png",
+                    Cursor::new(preview_fixture_with_thumbnail(&png)),
+                )
+                .unwrap();
+            let label = reader.active_label().unwrap();
+            let raw: serde_json::Value = serde_json::from_str(&reader.json()).unwrap();
+            let thumbnail = raw["manifests"][label]["thumbnail"].clone();
+            let ingredients: Vec<_> = (0..24)
+                .map(|_| serde_json::json!({"active_manifest":label,"thumbnail":thumbnail}))
+                .collect();
+            let mut value = serde_json::json!({"manifests":{label:{"thumbnail":thumbnail,"ingredients":ingredients}}});
+            hydrate_previews(&reader, &mut value);
+            let manifest = &value["manifests"][label];
+            let all = std::iter::once(&manifest["thumbnail"]).chain(
+                manifest["ingredients"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|i| &i["thumbnail"]),
+            );
+            let resolved = all.filter(|t| t["resolution"] == "resolved").count();
+            let expected = (TOTAL_PREVIEW_BYTES / preview_json_bytes(&png))
+                .min((TOTAL_PREVIEW_DECODED_BYTES / (512 * 512 * 4)) as usize);
+            assert_eq!(
+                resolved, expected,
+                "every repeated output copy consumes both budgets"
+            );
+            assert_eq!(
+                manifest["ingredients"][23]["thumbnail"]["resolution"],
+                "limit"
+            );
+            if noisy {
+                assert!(
+                    expected < 16,
+                    "JSON amplification, not just decoded pixels, must bind"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn oversized_lazy_resource_is_rejected_by_length_before_retrieval() {
+        use c2pa::{create_signer, Builder, BuilderIntent};
+        use std::io::Cursor;
+        let certs = fixture_certs_dir();
+        let signer = create_signer::from_files(
+            certs.join("ps256.pub"),
+            certs.join("ps256.pem"),
+            c2pa::SigningAlg::Ps256,
+            None,
+        )
+        .unwrap();
+        let mut builder = Builder::default();
+        builder.set_intent(BuilderIntent::Create(c2pa::DigitalSourceType::Empty));
+        builder
+            .set_thumbnail("image/png", &mut Cursor::new(vec![0; PREVIEW_BYTES + 1]))
+            .unwrap();
+        let mut output = Cursor::new(Vec::new());
+        builder
+            .sign(
+                signer.as_ref(),
+                "image/png",
+                &mut Cursor::new(include_bytes!("../../tests/fixtures/preview.png")),
+                &mut output,
+            )
+            .unwrap();
+        let reader = Reader::from_context(Context::new())
+            .with_stream("image/png", output)
+            .unwrap();
+        let manifest = reader.active_manifest().unwrap();
+        let reference = manifest.thumbnail_ref().unwrap();
+        let resources = manifest.resources();
+        assert!(
+            resources.resources().get(&reference.identifier).is_none(),
+            "real own preview is lazy, not already resident"
+        );
+        assert_eq!(
+            resources.resource_len(&reference.identifier).unwrap(),
+            (PREVIEW_BYTES + 1) as u64
+        );
+        assert!(resources.resources().get(&reference.identifier).is_none());
+        let json = reader_manifest_json_value(reader).unwrap();
+        let thumbnail = &json["manifests"][json["active_manifest"].as_str().unwrap()]["thumbnail"];
+        assert_eq!(thumbnail["resolution"], "oversize");
+        assert!(thumbnail.get("data").is_none());
+    }
+
+    #[test]
+    fn preview_traversal_and_context_annotations_are_bounded() {
+        let reader = Reader::from_context(Context::new())
+            .with_stream("image/png", std::io::Cursor::new(preview_fixture()))
+            .unwrap();
+        let thumbnail = serde_json::json!({"identifier":"missing","format":"image/png"});
+        let label = "\"\n".repeat(PREVIEW_CONTEXT / 2);
+        let ingredients: Vec<_> = (0..PREVIEW_REFS + 20)
+            .map(|_| serde_json::json!({"thumbnail":thumbnail}))
+            .collect();
+        let mut value = serde_json::json!({"manifests":{label.clone():{"thumbnail":thumbnail,"ingredients":ingredients}}});
+        let baseline_bytes = value.to_string().len();
+        hydrate_previews(&reader, &mut value);
+        assert!(value.to_string().len() - baseline_bytes <= TOTAL_PREVIEW_BYTES);
+        assert_eq!(value["preview_resources_truncated"], true);
+        let annotated = value["manifests"][&label]["ingredients"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|i| i["thumbnail"].get("resolution").is_some())
+            .count();
+        assert_eq!(annotated + 1, PREVIEW_REFS);
+        let mut manifests = serde_json::Map::new();
+        for i in 0..PREVIEW_NODES + 10 {
+            manifests.insert(
+                format!("node-{i:04}"),
+                serde_json::json!({"thumbnail":thumbnail}),
+            );
+        }
+        let mut value = serde_json::json!({"manifests":manifests});
+        hydrate_previews(&reader, &mut value);
+        let manifests = value["manifests"].as_object().unwrap();
+        assert_eq!(
+            manifests.len(),
+            PREVIEW_NODES + 10,
+            "full SDK metadata is preserved"
+        );
+        assert_eq!(
+            manifests
+                .values()
+                .filter(|m| m["thumbnail"].get("resolution").is_some())
+                .count(),
+            PREVIEW_NODES
+        );
+        assert_eq!(value["preview_resources_truncated"], true);
+    }
+
+    #[test]
+    fn embedded_preview_limits_and_bad_references_are_truthful() {
+        use std::io::Write;
+        let mut writer = PreviewWriter {
+            cursor: std::io::Cursor::new(Vec::new()),
+            limit: PREVIEW_BYTES,
+            exceeded: false,
+        };
+        assert!(writer.write_all(&vec![1; PREVIEW_BYTES + 1]).is_err());
+        assert!(writer.exceeded);
+        assert!(writer.cursor.get_ref().is_empty());
+        let bytes = preview_fixture();
+        let reader = Reader::from_stream("image/png", std::io::Cursor::new(bytes)).unwrap();
+        let label = reader.active_label().unwrap();
+        assert_eq!(
+            lookup_preview(
+                &reader,
+                label,
+                "https://example.invalid/image.jpg",
+                "image/jpeg",
+                TOTAL_PREVIEW_BYTES,
+                TOTAL_PREVIEW_DECODED_BYTES
+            )
+            .0,
+            "malformed"
+        );
+        assert_eq!(
+            lookup_preview(
+                &reader,
+                label,
+                "../../secret",
+                "image/png",
+                TOTAL_PREVIEW_BYTES,
+                TOTAL_PREVIEW_DECODED_BYTES
+            )
+            .0,
+            "malformed"
+        );
+        assert_eq!(
+            lookup_preview(
+                &reader,
+                label,
+                &"x".repeat(PREVIEW_IDENTIFIER + 1),
+                "image/png",
+                TOTAL_PREVIEW_BYTES,
+                TOTAL_PREVIEW_DECODED_BYTES
+            )
+            .0,
+            "malformed"
+        );
+        assert_eq!(
+            lookup_preview(
+                &reader,
+                label,
+                "missing",
+                "image/jpeg",
+                TOTAL_PREVIEW_BYTES,
+                TOTAL_PREVIEW_DECODED_BYTES
+            )
+            .0,
+            "missing"
+        );
+        assert_eq!(
+            lookup_preview(
+                &reader,
+                label,
+                "missing",
+                "image/svg+xml",
+                TOTAL_PREVIEW_BYTES,
+                TOTAL_PREVIEW_DECODED_BYTES
+            )
+            .0,
+            "unsupported"
+        );
+        assert_eq!(
+            preview_image_size("image/png", b"not an image", TOTAL_PREVIEW_DECODED_BYTES),
+            Err("malformed")
+        );
+        assert_eq!(
+            preview_image_size(
+                "image/png",
+                include_bytes!("../../tests/fixtures/oversize.png"),
+                TOTAL_PREVIEW_DECODED_BYTES
+            ),
+            Err("oversize")
+        );
+        assert_eq!(
+            preview_image_size(
+                "image/png",
+                include_bytes!("../../tests/fixtures/animated.png"),
+                TOTAL_PREVIEW_DECODED_BYTES
+            ),
+            Err("unsupported")
+        );
+        assert_eq!(
+            preview_image_size(
+                "image/jpeg",
+                &[0xff, 0xd8, 0xff, 0xd9],
+                TOTAL_PREVIEW_DECODED_BYTES
+            ),
+            Err("malformed")
+        );
+        let mut value: serde_json::Value = serde_json::from_str(&reader.json()).unwrap();
+        let thumbnail = value["manifests"][label]["thumbnail"].clone();
+        value["manifests"][label]["ingredients"] = serde_json::json!((0..PREVIEW_REFS + 10)
+            .map(|_| serde_json::json!({"active_manifest":label,"thumbnail":thumbnail}))
+            .collect::<Vec<_>>());
+        hydrate_previews(&reader, &mut value);
+        assert_eq!(value["preview_resources_truncated"], true);
+        assert!(
+            value["manifests"][label]["ingredients"][PREVIEW_REFS + 1]["thumbnail"]
+                .get("resolution")
+                .is_none()
+        );
+        let mut refs = 0;
+        let mut total = TOTAL_PREVIEW_BYTES;
+        let mut decoded_total = 0;
+        let mut cache = std::collections::HashMap::new();
+        let mut thumbnail = thumbnail.clone();
+        hydrate_thumbnail(
+            &reader,
+            label,
+            &mut thumbnail,
+            0,
+            &mut refs,
+            &mut total,
+            &mut decoded_total,
+            &mut cache,
+        );
+        assert!(thumbnail.get("data").is_none());
+        total = 0;
+        decoded_total = TOTAL_PREVIEW_DECODED_BYTES - 16;
+        let mut thumbnail = value["manifests"][label]["thumbnail"].clone();
+        hydrate_thumbnail(
+            &reader,
+            label,
+            &mut thumbnail,
+            0,
+            &mut refs,
+            &mut total,
+            &mut decoded_total,
+            &mut cache,
+        );
+        assert_eq!(thumbnail["resolution"], "resolved");
+        assert_eq!(decoded_total, TOTAL_PREVIEW_DECODED_BYTES);
+        hydrate_thumbnail(
+            &reader,
+            label,
+            &mut thumbnail,
+            0,
+            &mut refs,
+            &mut total,
+            &mut decoded_total,
+            &mut cache,
+        );
+        assert_eq!(thumbnail["resolution"], "limit");
+        assert!(thumbnail.get("data").is_none());
+        assert!(preview_json_bytes(&vec![255; PREVIEW_BYTES]) > PREVIEW_BYTES * 3);
+        decoded_total = 0;
+        total = 0;
+        hydrate_thumbnail(
+            &reader,
+            label,
+            &mut thumbnail,
+            PREVIEW_NODES,
+            &mut refs,
+            &mut total,
+            &mut decoded_total,
+            &mut cache,
+        );
+        assert_eq!(thumbnail["resolution"], "limit");
     }
 }

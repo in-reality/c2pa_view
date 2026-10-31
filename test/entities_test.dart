@@ -1,4 +1,5 @@
 import 'package:c2pa_view/domain/entities/entities.dart';
+import 'package:c2pa_view/domain/mappers/manifest_view_data_mapper.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -331,7 +332,10 @@ void main() {
 
       expect(manifest.exifData, isNotNull);
       expect(manifest.exifData!.cameraMake, 'Nikon');
-      expect(manifest.assertions.where((final a) => a.label == 'stds.exif'), isEmpty);
+      expect(
+        manifest.assertions.where((final a) => a.label == 'stds.exif'),
+        isEmpty,
+      );
     });
 
     test('fromJson routes creative work assertion', () {
@@ -467,12 +471,22 @@ void main() {
 
       final manifest = Manifest.fromJson(json);
 
-      final customActionFields =
-          manifest.customFields
-              .where((final f) => f.source == 'action_parameter')
-              .toList();
+      expect(
+        manifest.actions!.single.parameters?['vendorCustomParam'],
+        'custom_value',
+      );
+      expect(
+        manifest.customFields.where(
+          (final field) => field.source == 'action_parameter',
+        ),
+        isEmpty,
+      );
+      final customActionFields = ManifestViewDataMapper.map(
+        manifest,
+      ).actions.single.customParams;
       expect(customActionFields.length, 1);
       expect(customActionFields.first.key, 'vendorCustomParam');
+      expect(customActionFields.first.value, 'custom_value');
       expect(customActionFields.first.parentLabel, 'c2pa.created');
     });
   });

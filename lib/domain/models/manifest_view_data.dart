@@ -2,17 +2,19 @@ import 'package:c2pa_view/c2pa_view.dart' show ProvenanceNode;
 import 'package:c2pa_view/domain/entities/custom_field.dart';
 import 'package:c2pa_view/domain/entities/validation_status.dart';
 import 'package:c2pa_view/domain/models/manifest_summary.dart';
-import 'package:c2pa_view/domain/models/provenance_node.dart' show ProvenanceNode;
+import 'package:c2pa_view/domain/models/provenance_node.dart'
+    show ProvenanceNode;
 import 'package:c2pa_view/domain/models/validation_result.dart';
 import 'package:flutter/widgets.dart';
 
 /// Display-ready data for the manifest detail panel.
 @immutable
 class ManifestViewData {
-
   const ManifestViewData({
     this.title,
     this.thumbnail,
+    this.previewSource,
+    this.inputValidationEvidence = const [],
     this.validationResult = const ValidationResult.noCredential(),
     this.validationFailures = const [],
     this.issuer,
@@ -34,6 +36,12 @@ class ManifestViewData {
   });
   final String? title;
   final ImageProvider? thumbnail;
+
+  /// Claim and trust context of the image, independent of node validation.
+  final PreviewSource? previewSource;
+
+  /// Reported input failures retained with their containing-claim provenance.
+  final List<InputValidationEvidence> inputValidationEvidence;
   final ValidationResult validationResult;
 
   /// Raw error-flavoured validation entries surfaced for the tampered-asset
@@ -69,7 +77,6 @@ class ManifestViewData {
 /// AI generation information.
 @immutable
 class GenerativeInfo {
-
   const GenerativeInfo({required this.type, this.softwareAgents = const []});
   final GenerativeType type;
   final List<String> softwareAgents;
@@ -92,7 +99,6 @@ enum GenerativeType { aiGenerated, compositeWithAi, legacy }
 /// Display info for the claim generator (app/device).
 @immutable
 class ClaimGeneratorDisplayInfo {
-
   const ClaimGeneratorDisplayInfo({
     required this.name,
     this.version,
@@ -108,7 +114,6 @@ class ClaimGeneratorDisplayInfo {
 /// Display info for a single action in the process section.
 @immutable
 class ActionDisplayInfo {
-
   const ActionDisplayInfo({
     required this.actionType,
     required this.label,
@@ -152,13 +157,13 @@ class ActionDisplayInfo {
 /// structurally guaranteed to show identical information.
 @immutable
 class IngredientDisplayInfo {
-
   const IngredientDisplayInfo({
     required this.summary,
     this.hasManifest = false,
     this.format,
     this.relationship,
   });
+
   /// Display summary (always non-null).  For ingredients without a resolved
   /// manifest this still carries the ingredient's title so that the UI never
   /// shows "Untitled".
@@ -182,7 +187,6 @@ enum IngredientRelationship { parentOf, componentOf, inputTo }
 /// Display-ready EXIF / camera capture data.
 @immutable
 class ExifDisplayData {
-
   const ExifDisplayData({
     this.creator,
     this.copyright,
@@ -245,7 +249,6 @@ class ExifDisplayData {
 /// Social account display info.
 @immutable
 class SocialAccountDisplayInfo {
-
   const SocialAccountDisplayInfo({required this.platform, required this.url});
   final String platform;
   final String url;

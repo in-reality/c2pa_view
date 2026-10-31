@@ -99,6 +99,99 @@ monorepo signing corpus; uses `dart:io` — not a Chrome target).
    Without trust-list initialization, `signingCredential.untrusted` in the JSON
    is normal — the smoke check only requires hash binding success.
 
+## Embedded preview reader contract
+
+Every native and WASM read entry point enriches only manifest and ingredient
+`thumbnail` objects using SDK resource stores belonging to the containing claim.
+SDK `resource_len` preflights borrowed assertion/databox lengths before any lazy
+copy; unknown or flattened-manifest-only references fail closed. A bounded output
+writer also protects the subsequent copy.
+The object retains `format`/`identifier` and adds `resolution`,
+`containing_manifest`, and a byte-array `data` only when resolved. Outcomes are
+`resolved`, `missing`, `malformed`, `unsupported`, `oversize`, or `limit`;
+an absent thumbnail remains absent (including deliberate producer omission).
+HTTP/file/data resource identifiers are never fetched. JPEG and PNG previews,
+including JPEG video posters, use the same portable contract.
+
+Hydration visits at most 256 manifests and 1024 ingredient/thumbnail references.
+Identifiers are limited to 4096 bytes, copied containing-claim labels to 256 bytes,
+and MIME strings to 128 bytes. Each image is limited to 1 MiB encoded; all new
+preview bytes and annotations together use at most 8 MiB serialized JSON,
+including escaped context strings, failure outcomes, keys and repeated copies.
+Each image is limited to 4096 pixels on either edge and 4 MiB decoded RGBA;
+all emitted references together may require at most 16 MiB decoded RGBA.
+Standard JPEG/PNG decoders validate pixels before emission, preserve original
+encoded bytes and reject animated PNG. Codec max_alloc assists these checks;
+it is not a hard heap ceiling. Repeated references
+share bounded lookup outcomes but each returned byte copy counts toward the
+aggregate limits. Work is iterative, visits each manifest once and does not follow
+ingredient cycles. When traversal or annotation stops, the store emits
+`preview_resources_truncated: true`; unvisited references retain their original
+metadata and the Dart entities expose `limit`, without copying more labels/data. These bounds cover additional preview hydration, not SDK
+parsing of the caller-supplied original store. Unsupported, malformed and oversized images are omitted before Flutter decode;
+resolution alone proves no validity,
+issuer trust or access authorization.
+
+Graph previews prefer a node's own claim bytes, then an ingredient preview from
+its consuming claim. The latter retains that containing claim's label and
+validation result separately from the ancestor's signature/validation.
+Per-claim `validation_status` comes from the current SDK validation log before
+delta de-duplication; historical ingredient reports never override current trust.
+A present empty list is a current clean result; an absent sideband is not
+computed, represented by null PreviewSource.validationResult. Node summaries,
+details, and latest-Seal presentation show a neutral **Not verified** state when
+current diagnostics are absent. That state still has a credential and is distinct
+from **No CR** for an unresolved leaf without one. Computed clean `[]` remains
+valid; nonempty invalid/untrusted evidence retains precedence. The shared
+`mapValidation` bare-list API continues to treat explicitly supplied lists as
+computed for compatibility; manifest-aware callers pass `validationStatusComputed`.
+The compact indicator uses the same neutral theme color and an unknown icon. A computed list
+must be complete and well-formed: malformed/partial diagnostics never become a
+clean result after filtering. Store attribution retains raw malformed rows so the
+containing claim stays unverified (unattributable rows fall back to the active
+claim), while valid failure/untrusted evidence still takes precedence. Null
+optional URL/explanation fields and extensible status codes/extra fields retain
+their existing semantics. Attribution and loading consume the same normalized manifest
+collection; non-map target values are skipped once and existing strict parse
+failures still reject the store. Missing or unloaded targets retain negative and
+incomplete evidence through active fallback. Unmatched claim-specific successes
+remain global evidence and cannot establish active validity; genuine active clean
+results, matched-claim successes and existing unscoped active successes remain
+supported. Recorded non-trust
+input failures (for example dataHash mismatch) remain separate incoming evidence,
+with their containing claim and its current validation. They still make the
+corresponding input presentation invalid, even when its current signature is
+trusted; neither preview resolution nor a clean latest Seal erases that evidence. Unresolved
+leaves retain no-credential labels. Real components and two-hop ancestry remain
+visible. Authorized host thumbnails still take precedence and mediaImage remains
+a root-only fallback; embedded lookup never requests an original or remote URL.
+
+Resource regression: `flutter test --no-pub test/embedded_preview_test.dart`.
+The synthetic pixel fixture must decode/render and preserve source/trust context,
+not merely contain a resource key. Native readback lives in the Rust API tests.
+Native/WASM signed readback: `flutter test --no-pub --concurrency=1
+test/embedded_resource_readback_test.dart`. This uses the same synthetic signed
+2x2 PNG on both targets, checking claim bytes, JPEG ingredient posters, two hops,
+multiple components, source validation and decoded red/blue pixels.
+
+Browser resource-resolution smoke (local synthetic input only):
+
+1. Build `CARGO_BUILD_JOBS=1 bash scripts/sync_web_pkg.sh --no-demo-copies`.
+2. Serve `web/` locally with CORS allowed for the Flutter test runner origin
+   (for example on `http://127.0.0.1:8765`; no credentials or hosted content).
+3. Run `flutter test --no-pub --platform chrome --concurrency=1
+   --dart-define=VERIFIER_ASSET_BASE=http://127.0.0.1:8765/pkg/
+   test/embedded_resource_readback_test.dart test/embedded_preview_test.dart`.
+4. Expect both signed resource readback and rendered pixel tests to pass.
+   The native and browser test use identical fixture bytes and pixel/outcome
+   assertions. The test runner must have a working local Chrome executable.
+
+To regenerate the signed synthetic fixture, run the Rust
+`embedded_previews_use_containing_stores_and_all_reader_paths` test with
+`T2057_FIXTURE_DIR=/tmp/preview-fixtures`; base64-encode its
+`embedded-preview.png` into `test/fixtures/embedded_preview_fixture.dart`.
+Only public SDK test certificates are embedded, never signing keys.
+
 ## Usage: Full Viewer
 
 `C2paManifestViewer` shows an interactive provenance tree on the left and a detail panel on the right. Clicking a tree node updates the detail panel.

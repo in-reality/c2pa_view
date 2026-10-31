@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 /// Provides colors, text styles, and other visual properties that
 /// can be customized by wrapping your widget tree with [C2paViewerTheme].
 class C2paViewerThemeData {
-
   const C2paViewerThemeData({
     this.validColor = const Color(0xFF1B8D3E),
     this.invalidColor = const Color(0xFFD93025),
@@ -166,6 +165,7 @@ class C2paViewerThemeData {
       case ValidationStatus.untrusted:
         return unrecognizedColor;
       case ValidationStatus.noCredential:
+      case ValidationStatus.notVerified:
         return noCredentialColor;
     }
   }
@@ -173,7 +173,6 @@ class C2paViewerThemeData {
 
 /// InheritedWidget providing [C2paViewerThemeData] to descendant widgets.
 class C2paViewerTheme extends InheritedWidget {
-
   const C2paViewerTheme({required this.data, required super.child, super.key});
   final C2paViewerThemeData data;
 
@@ -183,7 +182,8 @@ class C2paViewerTheme extends InheritedWidget {
   }
 
   @override
-  bool updateShouldNotify(final C2paViewerTheme oldWidget) => data != oldWidget.data;
+  bool updateShouldNotify(final C2paViewerTheme oldWidget) =>
+      data != oldWidget.data;
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {

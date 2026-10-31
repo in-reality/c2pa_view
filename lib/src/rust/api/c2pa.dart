@@ -6,7 +6,9 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `detached_manifest_json`, `mime_type_from_path`, `normalize_detached_manifest_format`, `read_path_bytes`, `reader_manifest_json_value`, `trust_validation_settings`, `validate_detached_manifest_format`
+// These functions are ignored because they are not marked as `pub`: `detached_manifest_json`, `hydrate_previews`, `hydrate_thumbnail`, `local_preview_identifier`, `lookup_preview`, `mime_type_from_path`, `normalize_detached_manifest_format`, `preview_decode_error`, `preview_decoded_pixels`, `preview_image_size`, `preview_json_bytes`, `read_path_bytes`, `reader_manifest_json_value`, `trust_validation_settings`, `validate_detached_manifest_format`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `PreviewWriter`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `flush`, `read`, `seek`, `write`
 
 Future<String?> getFileManifest({
   required List<int> fileBytes,

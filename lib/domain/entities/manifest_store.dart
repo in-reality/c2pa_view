@@ -12,58 +12,93 @@ class ManifestStore extends Equatable {
     this.manifests = const {},
     this.rawManifestJsons = const {},
     this.validationStatus = const [],
+    this.previewResourcesTruncated = false,
   });
 
   /// Creates a ManifestStore from a JSON map.
   factory ManifestStore.fromJson(final Map<String, dynamic> json) {
-    // Parse top-level validation status entries.
-    final topLevelValidation = <ValidationStatusEntry>[];
-    if (json['validation_status'] is List) {
-      for (final item in json['validation_status'] as List) {
-        if (item is Map<String, dynamic>) {
-          topLevelValidation.add(ValidationStatusEntry.fromJson(item));
-        }
-      }
-    }
-
-    final activeLabel = json['active_manifest'] as String?;
-
-    // Group validation entries by the manifest label they reference.
-    // Entry URLs look like: self#jumbf=/c2pa/<manifestLabel>/c2pa.signature
-    // Entries that cannot be attributed to any specific manifest fall back
-    // to the active manifest.
-    final perManifestValidation = <String, List<Map<String, dynamic>>>{};
-    for (final entry in topLevelValidation) {
-      final manifestLabel = _extractManifestLabel(entry.url);
-      final key = (manifestLabel != null) ? manifestLabel : (activeLabel ?? '');
-      perManifestValidation.putIfAbsent(key, () => []).add({
-        'code': entry.code,
-        if (entry.url != null) 'url': entry.url,
-        if (entry.explanation != null) 'explanation': entry.explanation,
-      });
-    }
-
+    // Use the same normalized collection for attribution and final loading.
+    // Non-map values are skipped once; strict key/Manifest parsing failures
+    // still reject the whole store, as before, rather than silently disappearing.
     final rawManifestJsons = <String, Map<String, dynamic>>{};
-    final manifests = <String, Manifest>{};
     final manifestsJson = json['manifests'];
     if (manifestsJson is Map) {
       for (final entry in manifestsJson.entries) {
         final raw = entry.value;
-        if (raw is! Map) {
-          continue;
+        if (raw is Map) {
+          rawManifestJsons[entry.key] = Map<String, dynamic>.from(raw);
         }
-        final manifestJson = Map<String, dynamic>.from(raw);
-        // Inject the entries attributed to this manifest when the
-        // manifest JSON does not already carry its own validation_status.
-        if (manifestJson['validation_status'] == null) {
-          final entries = perManifestValidation[entry.key];
-          if (entries != null && entries.isNotEmpty) {
-            manifestJson['validation_status'] = entries;
-          }
-        }
-        rawManifestJsons[entry.key] = manifestJson;
-        manifests[entry.key] = Manifest.fromJson(manifestJson);
       }
+    }
+
+    final rawValidation = json['validation_status'];
+    // A non-list container must remain an invalid row, even if its map happens
+    // to look like a status. Do not coerce malformed containers into valid rows.
+    final rawEntries = rawValidation is List
+        ? rawValidation
+        : rawValidation == null
+        ? const <dynamic>[]
+        : <dynamic>[
+            [rawValidation],
+          ];
+    final topLevelValidation = <ValidationStatusEntry>[];
+    final activeLabel = json['active_manifest'] as String?;
+
+    // Preserve every raw row through attribution, including malformed rows.
+    // Otherwise filtering here could turn partial diagnostics into a clean
+    // computed claim list. Unattributable rows retain the active-claim fallback.
+    final perManifestValidation = <String, List<dynamic>>{};
+    for (final item in rawEntries) {
+      ValidationStatusEntry? parsed;
+      // Public top-level evidence contains only rows the strict entry parser
+      // can read. Keep unmatched successes here without attesting another claim.
+      if (item is Map<String, dynamic> &&
+          item['code'] is String &&
+          (item['code'] as String).trim().isNotEmpty &&
+          (item['url'] == null || item['url'] is String) &&
+          (item['explanation'] == null || item['explanation'] is String)) {
+        parsed = ValidationStatusEntry.fromJson(item);
+        topLevelValidation.add(parsed);
+      }
+      final rawUrl = item is Map ? item['url'] : null;
+      final manifestLabel = _extractManifestLabel(
+        rawUrl is String ? rawUrl : null,
+      );
+      final target =
+          manifestLabel != null && rawManifestJsons.containsKey(manifestLabel)
+          ? manifestLabel
+          : null;
+      if (manifestLabel != null &&
+          target == null &&
+          parsed != null &&
+          !parsed.isError &&
+          !parsed.isUntrusted) {
+        // A claim-specific success for an unloaded target cannot verify the
+        // active claim. Do not create an empty computed-clean active bucket.
+        continue;
+      }
+      final key = target ?? activeLabel ?? '';
+      perManifestValidation.putIfAbsent(key, () => []).add(item);
+    }
+
+    final manifests = <String, Manifest>{};
+    for (final entry in rawManifestJsons.entries) {
+      final manifestJson = entry.value;
+      // Merge attributed evidence without losing malformed-row completeness.
+      final entries = perManifestValidation[entry.key];
+      if (entries != null && entries.isNotEmpty) {
+        manifestJson['validation_status'] = [
+          if (manifestJson['validation_status'] is List)
+            ...manifestJson['validation_status'] as List
+          else if (manifestJson['validation_status'] != null)
+            [manifestJson['validation_status']],
+          ...entries,
+        ];
+      }
+      manifests[entry.key] = Manifest.fromJson(
+        manifestJson,
+        previewsTruncated: json['preview_resources_truncated'] == true,
+      );
     }
 
     return ManifestStore(
@@ -71,6 +106,7 @@ class ManifestStore extends Equatable {
       manifests: manifests,
       rawManifestJsons: rawManifestJsons,
       validationStatus: topLevelValidation,
+      previewResourcesTruncated: json['preview_resources_truncated'] == true,
     );
   }
 
@@ -202,6 +238,14 @@ class ManifestStore extends Equatable {
   /// Top-level validation status entries.
   final List<ValidationStatusEntry> validationStatus;
 
+  /// Preview traversal/augmentation limit reached; unvisited references use limit.
+  final bool previewResourcesTruncated;
+
   @override
-  List<Object?> get props => [activeManifest, manifests, validationStatus];
+  List<Object?> get props => [
+    activeManifest,
+    manifests,
+    validationStatus,
+    previewResourcesTruncated,
+  ];
 }

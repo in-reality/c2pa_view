@@ -12,8 +12,9 @@ class ProvenanceMapper {
   /// incoming [ProvenanceEdge]s rather than being duplicated.
   static ProvenanceGraph mapToGraph(final ManifestStore store) {
     final activeLabel = store.activeManifest;
-    final activeManifest =
-        activeLabel != null ? store.manifests[activeLabel] : null;
+    final activeManifest = activeLabel != null
+        ? store.manifests[activeLabel]
+        : null;
     if (activeManifest == null) {
       throw StateError('No active manifest found in the manifest store');
     }
@@ -24,6 +25,7 @@ class ProvenanceMapper {
     // walking into potentially malformed ingredients.
     final activeResult = ManifestViewDataMapper.mapValidation(
       activeManifest.validationStatus,
+      isComputed: activeManifest.validationStatusComputed,
     );
     if (activeResult.isInvalid) {
       final viewData = ManifestViewDataMapper.map(
@@ -35,6 +37,7 @@ class ProvenanceMapper {
         summary: ManifestSummary(
           title: activeManifest.title,
           thumbnail: viewData.thumbnail,
+          previewSource: viewData.previewSource,
           validationResult: activeResult,
           issuer: activeManifest.signatureInfo?.issuer,
         ),
@@ -65,25 +68,9 @@ class ProvenanceMapper {
   }
 
   /// Pre-compute a [ManifestSummary] for every manifest in [store].
-  static Map<String, ManifestSummary> _buildSummaries(final ManifestStore store) {
-    final result = <String, ManifestSummary>{};
-    for (final entry in store.manifests.entries) {
-      final manifest = entry.value;
-      final viewData = ManifestViewDataMapper.map(
-        manifest,
-        rawJson: store.rawManifestJsons[entry.key],
-      );
-      result[entry.key] = ManifestSummary(
-        title: manifest.title,
-        thumbnail: viewData.thumbnail,
-        validationResult: ManifestViewDataMapper.mapValidation(
-          manifest.validationStatus,
-        ),
-        issuer: manifest.signatureInfo?.issuer,
-      );
-    }
-    return result;
-  }
+  static Map<String, ManifestSummary> _buildSummaries(
+    final ManifestStore store,
+  ) => ManifestViewDataMapper.buildSummaries(store);
 
   /// Recursively walk the manifest graph, creating nodes and edges.
   ///
@@ -119,6 +106,7 @@ class ProvenanceMapper {
       manifest,
       rawJson: rawJson,
       summaries: summaries,
+      previewSummary: summaries[label],
     );
 
     nodes[label] = ProvenanceNode(
@@ -129,6 +117,7 @@ class ProvenanceMapper {
             title: manifest.title,
             validationResult: ManifestViewDataMapper.mapValidation(
               manifest.validationStatus,
+              isComputed: manifest.validationStatusComputed,
             ),
             issuer: manifest.signatureInfo?.issuer,
           ),
@@ -155,8 +144,10 @@ class ProvenanceMapper {
         if (!nodes.containsKey(leafId)) {
           nodes[leafId] = ProvenanceNode(
             id: leafId,
-            summary: ManifestSummary(
-              title: ingredient.title,
+            summary: ManifestViewDataMapper.ingredientSummary(
+              ingredient,
+              manifest,
+              containingLabel: label,
             ),
           );
         }

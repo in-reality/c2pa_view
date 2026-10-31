@@ -6,9 +6,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 /// A small indicator showing credential status with icon and text.
 class CredentialIndicator extends StatelessWidget {
-
   const CredentialIndicator({
-    required this.result, super.key,
+    required this.result,
+    super.key,
     this.compact = false,
   });
   final ValidationResult result;
@@ -32,8 +32,8 @@ class CredentialIndicator extends StatelessWidget {
           package: 'c2pa_view',
           width: 16,
           height: 16,
-          placeholderBuilder:
-              (_) => Icon(Icons.verified, size: 16, color: color),
+          placeholderBuilder: (_) =>
+              Icon(Icons.verified, size: 16, color: color),
         );
         text = 'CR';
       case ValidationStatus.invalid:
@@ -42,6 +42,9 @@ class CredentialIndicator extends StatelessWidget {
       case ValidationStatus.untrusted:
         leading = Icon(Icons.verified_outlined, size: 16, color: color);
         text = 'Untrusted';
+      case ValidationStatus.notVerified:
+        leading = Icon(Icons.help_outline, size: 16, color: color);
+        text = 'Not verified';
       case ValidationStatus.noCredential:
         leading = Icon(Icons.remove_circle_outline, size: 16, color: color);
         text = 'No CR';
@@ -70,7 +73,8 @@ class CredentialIndicator extends StatelessWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<ValidationResult>('result', result))
-    ..add(DiagnosticsProperty<bool>('compact', compact));
+    properties
+      ..add(DiagnosticsProperty<ValidationResult>('result', result))
+      ..add(DiagnosticsProperty<bool>('compact', compact));
   }
 }

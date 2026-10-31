@@ -41,11 +41,15 @@ class Manifest extends Equatable {
     this.creativeWork,
     this.trainingMining,
     this.validationStatus = const [],
+    this.validationStatusComputed = false,
     this.customFields = const [],
   });
 
   /// Parses a Manifest from a JSON map.
-  factory Manifest.fromJson(final Map<String, dynamic> json) {
+  factory Manifest.fromJson(
+    final Map<String, dynamic> json, {
+    final bool previewsTruncated = false,
+  }) {
     // Parse all assertions
     final allAssertions = <ManifestAssertion>[];
     if (json['assertions'] is List) {
@@ -61,42 +65,42 @@ class Manifest extends Equatable {
     }
 
     // Extract c2pa.actions or c2pa.actions.v2 assertion
-    final actionsAssertion =
-        allAssertions
-            .where(
-              (final a) => a.label == 'c2pa.actions' || a.label == 'c2pa.actions.v2',
-            )
-            .toList();
+    final actionsAssertion = allAssertions
+        .where(
+          (final a) =>
+              a.label == 'c2pa.actions' || a.label == 'c2pa.actions.v2',
+        )
+        .toList();
     List<Action>? actions;
     if (actionsAssertion.isNotEmpty) {
-      actions =
-          (actionsAssertion.first.data['actions'] as List?)
-              ?.map((final e) => Action.fromJson(e as Map<String, dynamic>))
-              .toList();
+      actions = (actionsAssertion.first.data['actions'] as List?)
+          ?.map((final e) => Action.fromJson(e as Map<String, dynamic>))
+          .toList();
     }
 
     // Extract EXIF data
     ExifData? exifData;
-    final exifAssertions =
-        allAssertions.where((final a) => a.label == 'stds.exif').toList();
+    final exifAssertions = allAssertions
+        .where((final a) => a.label == 'stds.exif')
+        .toList();
     if (exifAssertions.isNotEmpty) {
       exifData = ExifData.fromAssertionData(exifAssertions.first.data);
     }
 
     // Extract CreativeWork
     CreativeWork? creativeWork;
-    final cwAssertions =
-        allAssertions
-            .where((final a) => a.label == 'stds.schema-org.CreativeWork')
-            .toList();
+    final cwAssertions = allAssertions
+        .where((final a) => a.label == 'stds.schema-org.CreativeWork')
+        .toList();
     if (cwAssertions.isNotEmpty) {
       creativeWork = CreativeWork.fromAssertionData(cwAssertions.first.data);
     }
 
     // Extract TrainingMining
     TrainingMining? trainingMining;
-    final tmAssertions =
-        allAssertions.where((final a) => a.label == 'c2pa.training-mining').toList();
+    final tmAssertions = allAssertions
+        .where((final a) => a.label == 'c2pa.training-mining')
+        .toList();
     if (tmAssertions.isNotEmpty) {
       trainingMining = TrainingMining.fromAssertionData(
         tmAssertions.first.data,
@@ -108,12 +112,12 @@ class Manifest extends Equatable {
     if (json['thumbnail'] is Map<String, dynamic>) {
       thumbnail = ThumbnailData.fromJson(
         json['thumbnail'] as Map<String, dynamic>,
+        previewsTruncated: previewsTruncated,
       );
     } else {
-      final thumbAssertions =
-          allAssertions
-              .where((final a) => a.label.startsWith('c2pa.thumbnail.'))
-              .toList();
+      final thumbAssertions = allAssertions
+          .where((final a) => a.label.startsWith('c2pa.thumbnail.'))
+          .toList();
       if (thumbAssertions.isNotEmpty) {
         thumbnail = ThumbnailData(
           format: thumbAssertions.first.label.replaceFirst(
@@ -121,23 +125,23 @@ class Manifest extends Equatable {
             'image/',
           ),
           identifier: thumbAssertions.first.label,
+          resolution: previewsTruncated ? 'limit' : null,
         );
       }
     }
 
     // Filter assertions: keep only custom/unknown ones
-    final filteredAssertions =
-        allAssertions.where((final a) {
-          if (_routedAssertionLabels.contains(a.label)) {
-            return false;
-          }
-          for (final prefix in _internalAssertionPrefixes) {
-            if (a.label.startsWith(prefix)) {
-              return false;
-            }
-          }
-          return true;
-        }).toList();
+    final filteredAssertions = allAssertions.where((final a) {
+      if (_routedAssertionLabels.contains(a.label)) {
+        return false;
+      }
+      for (final prefix in _internalAssertionPrefixes) {
+        if (a.label.startsWith(prefix)) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
 
     // Collect custom fields from remaining (unknown) assertions only
     final customFields = <CustomField>[];
@@ -171,11 +175,21 @@ class Manifest extends Equatable {
 
     // Parse validation status
     final validationStatus = <ValidationStatusEntry>[];
-    if (json['validation_status'] is List) {
-      for (final item in json['validation_status'] as List) {
-        if (item is Map<String, dynamic>) {
-          validationStatus.add(ValidationStatusEntry.fromJson(item));
+    final rawValidationStatus = json['validation_status'];
+    var validationStatusComputed = rawValidationStatus is List;
+    if (rawValidationStatus is List) {
+      for (final item in rawValidationStatus) {
+        // Partial diagnostics cannot attest a clean check. Retain well-formed
+        // failure/untrusted evidence even when another entry is malformed.
+        if (item is! Map<String, dynamic> ||
+            item['code'] is! String ||
+            (item['code'] as String).trim().isEmpty ||
+            (item['url'] != null && item['url'] is! String) ||
+            (item['explanation'] != null && item['explanation'] is! String)) {
+          validationStatusComputed = false;
+          continue;
         }
+        validationStatus.add(ValidationStatusEntry.fromJson(item));
       }
     }
 
@@ -187,7 +201,12 @@ class Manifest extends Equatable {
       instanceId: json['instance_id'] as String?,
       ingredients:
           (json['ingredients'] as List?)
-              ?.map((final e) => Ingredient.fromJson(e as Map<String, dynamic>))
+              ?.map(
+                (final e) => Ingredient.fromJson(
+                  e as Map<String, dynamic>,
+                  previewsTruncated: previewsTruncated,
+                ),
+              )
               .toList() ??
           [],
       assertions: filteredAssertions,
@@ -199,6 +218,7 @@ class Manifest extends Equatable {
       creativeWork: creativeWork,
       trainingMining: trainingMining,
       validationStatus: validationStatus,
+      validationStatusComputed: validationStatusComputed,
       customFields: customFields,
     );
   }
@@ -249,7 +269,12 @@ class Manifest extends Equatable {
   /// Validation status entries.
   final List<ValidationStatusEntry> validationStatus;
 
-  /// Custom fields collected from non-standard assertions and parameters.
+  /// Whether a complete, well-formed current diagnostic list was supplied.
+  /// Empty is a clean check; absent, malformed or partial lists are uncomputed.
+  /// Well-formed failure/untrusted evidence is retained even for partial lists.
+  final bool validationStatusComputed;
+
+  /// Custom fields from unknown assertions; custom action parameters remain on [actions].
   final List<CustomField> customFields;
 
   @override
@@ -269,6 +294,7 @@ class Manifest extends Equatable {
     creativeWork,
     trainingMining,
     validationStatus,
+    validationStatusComputed,
     customFields,
   ];
 }
