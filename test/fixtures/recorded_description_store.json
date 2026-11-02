@@ -1,0 +1,25 @@
+{
+  "active_manifest": "urn:c2pa:output",
+  "manifests": {
+    "urn:c2pa:output": {
+      "label": "urn:c2pa:output",
+      "title": "Synthetic output",
+      "validation_status": [],
+      "ingredients": [
+        {
+          "label": "c2pa.ingredient.v3",
+          "title": "Synthetic source.mp4",
+          "format": "video/mp4",
+          "active_manifest": "urn:c2pa:source",
+          "relationship": "parentOf",
+          "description": "Source media binding validation was not performed: source format has no supported SDK media validation handler. Exact source SHA-256 identity was checked; genuine credential-store findings are recorded separately and do not establish source-media validity."
+        }
+      ]
+    },
+    "urn:c2pa:source": {
+      "label": "urn:c2pa:source",
+      "title": "Synthetic source.mp4",
+      "validation_status": []
+    }
+  }
+}

@@ -2,7 +2,8 @@ import 'package:c2pa_view/c2pa_view.dart' show ManifestDetailPanel;
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/manifest_detail_section.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
-import 'package:c2pa_view/features/manifest_detail/manifest_detail_panel.dart' show ManifestDetailPanel;
+import 'package:c2pa_view/features/manifest_detail/manifest_detail_panel.dart'
+    show ManifestDetailPanel;
 import 'package:c2pa_view/features/manifest_detail/sections/about_section.dart';
 import 'package:c2pa_view/features/manifest_detail/sections/camera_capture_section.dart';
 import 'package:c2pa_view/features/manifest_detail/sections/content_summary_section.dart';
@@ -12,6 +13,7 @@ import 'package:c2pa_view/features/manifest_detail/sections/error_banner.dart';
 import 'package:c2pa_view/features/manifest_detail/sections/process_section.dart';
 import 'package:c2pa_view/features/manifest_detail/sections/tampered_placeholder.dart';
 import 'package:c2pa_view/features/manifest_detail/sections/thumbnail_section.dart';
+import 'package:c2pa_view/features/shared/widgets/ingredient_descriptions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -25,7 +27,6 @@ import 'package:flutter/material.dart';
 /// (background color, width, shape). For common use cases, prefer
 /// [ManifestDetailPanel] (sidebar) or [showManifestDetailPopup] (popup).
 class ManifestDetailContent extends StatelessWidget {
-
   const ManifestDetailContent({
     required this.data,
     super.key,
@@ -59,6 +60,7 @@ class ManifestDetailContent extends StatelessWidget {
               result: data.validationResult,
               failures: data.validationFailures,
             ),
+            IngredientDescriptions(descriptions: data.ingredientDescriptions),
             ThumbnailSection(
               thumbnail: data.thumbnail ?? mediaImage,
               mimeType: mimeType,
@@ -79,6 +81,9 @@ class ManifestDetailContent extends StatelessWidget {
                 TamperedPlaceholder(
                   result: data.validationResult,
                   failures: data.validationFailures,
+                ),
+                IngredientDescriptions(
+                  descriptions: data.ingredientDescriptions,
                 ),
                 ThumbnailSection(
                   thumbnail: data.thumbnail ?? mediaImage,
@@ -129,12 +134,24 @@ class ManifestDetailContent extends StatelessWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<ManifestViewData>('data', data))
-    ..add(StringProperty('mimeType', mimeType))
-    ..add(ObjectFlagProperty<VoidCallback?>.has('onThumbnailTap', onThumbnailTap))
-    ..add(ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has('onIngredientTap', onIngredientTap))
-    ..add(IterableProperty<ManifestDetailSection>('extraSections', extraSections))
-    ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage));
+    properties
+      ..add(DiagnosticsProperty<ManifestViewData>('data', data))
+      ..add(StringProperty('mimeType', mimeType))
+      ..add(
+        ObjectFlagProperty<VoidCallback?>.has('onThumbnailTap', onThumbnailTap),
+      )
+      ..add(
+        ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has(
+          'onIngredientTap',
+          onIngredientTap,
+        ),
+      )
+      ..add(
+        IterableProperty<ManifestDetailSection>('extraSections', extraSections),
+      )
+      ..add(
+        DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage),
+      );
   }
 }
 
@@ -160,12 +177,24 @@ class _ScrollBody extends StatefulWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<ManifestViewData>('data', data))
-    ..add(StringProperty('mimeType', mimeType))
-    ..add(ObjectFlagProperty<VoidCallback?>.has('onThumbnailTap', onThumbnailTap))
-    ..add(ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has('onIngredientTap', onIngredientTap))
-    ..add(IterableProperty<ManifestDetailSection>('extraSections', extraSections))
-    ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage));
+    properties
+      ..add(DiagnosticsProperty<ManifestViewData>('data', data))
+      ..add(StringProperty('mimeType', mimeType))
+      ..add(
+        ObjectFlagProperty<VoidCallback?>.has('onThumbnailTap', onThumbnailTap),
+      )
+      ..add(
+        ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has(
+          'onIngredientTap',
+          onIngredientTap,
+        ),
+      )
+      ..add(
+        IterableProperty<ManifestDetailSection>('extraSections', extraSections),
+      )
+      ..add(
+        DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage),
+      );
   }
 }
 
@@ -250,7 +279,21 @@ class _ManifestDetailSections extends StatelessWidget {
   @override
   Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
-    final sortedExtra = [...extraSections]..sort((final a, final b) => a.order.compareTo(b.order));
+    final sortedExtra = [...extraSections]
+      ..sort((final a, final b) => a.order.compareTo(b.order));
+    final listedEdges = {
+      for (final ingredient in data.ingredients)
+        for (final note in ingredient.summary.ingredientDescriptions)
+          (note.containingManifest, note.ingredientIndex),
+    };
+    final unlistedDescriptions = data.ingredientDescriptions
+        .where(
+          (final note) => !listedEdges.contains((
+            note.containingManifest,
+            note.ingredientIndex,
+          )),
+        )
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -262,10 +305,8 @@ class _ManifestDetailSections extends StatelessWidget {
           onTapFullScreen: onThumbnailTap,
         ),
         ContentSummarySection(generativeInfo: data.generativeInfo),
-        ProcessSection(
-          data: data,
-          onIngredientTap: onIngredientTap,
-        ),
+        IngredientDescriptions(descriptions: unlistedDescriptions),
+        ProcessSection(data: data, onIngredientTap: onIngredientTap),
         CameraCaptureSection(
           exifData: data.exifData,
           exifCustomFields: data.exifCustomFields,
@@ -274,7 +315,8 @@ class _ManifestDetailSections extends StatelessWidget {
           data: data,
           creativeWorkCustomFields: data.creativeWorkCustomFields,
         ),
-        if (data.customFields.isNotEmpty) CustomFieldsSection(fields: data.customFields),
+        if (data.customFields.isNotEmpty)
+          CustomFieldsSection(fields: data.customFields),
         for (final section in sortedExtra) section.builder(context, data),
         Divider(height: 1, color: theme.borderColor),
         const SizedBox(height: 24),

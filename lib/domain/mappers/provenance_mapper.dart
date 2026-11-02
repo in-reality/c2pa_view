@@ -1,6 +1,7 @@
 import 'package:c2pa_view/domain/entities/manifest_store.dart';
 import 'package:c2pa_view/domain/mappers/manifest_view_data_mapper.dart';
 import 'package:c2pa_view/domain/models/manifest_summary.dart';
+import 'package:c2pa_view/domain/models/manifest_view_data.dart';
 import 'package:c2pa_view/domain/models/provenance_node.dart';
 
 /// Converts a [ManifestStore] into a [ProvenanceGraph].
@@ -31,6 +32,7 @@ class ProvenanceMapper {
       final viewData = ManifestViewDataMapper.map(
         activeManifest,
         rawJson: store.rawManifestJsons[activeLabel],
+        containingLabel: activeLabel,
       );
       final node = ProvenanceNode(
         id: activeLabel!,
@@ -38,6 +40,7 @@ class ProvenanceMapper {
           title: activeManifest.title,
           thumbnail: viewData.thumbnail,
           previewSource: viewData.previewSource,
+          ingredientDescriptions: viewData.ingredientDescriptions,
           validationResult: activeResult,
           issuer: activeManifest.signatureInfo?.issuer,
         ),
@@ -107,6 +110,7 @@ class ProvenanceMapper {
       rawJson: rawJson,
       summaries: summaries,
       previewSummary: summaries[label],
+      containingLabel: label,
     );
 
     nodes[label] = ProvenanceNode(
@@ -126,7 +130,8 @@ class ProvenanceMapper {
     );
 
     // Recurse into ingredients.
-    for (final ingredient in manifest.ingredients) {
+    for (var index = 0; index < manifest.ingredients.length; index++) {
+      final ingredient = manifest.ingredients[index];
       final childLabel = ingredient.activeManifest;
       if (childLabel != null && store.manifests.containsKey(childLabel)) {
         _walk(
@@ -139,18 +144,32 @@ class ProvenanceMapper {
         );
       } else {
         // Unresolvable ingredient — create a unique leaf node.
-        final leafId =
+        final baseId =
             '$label/${ingredient.label ?? ingredient.title ?? 'unknown'}';
-        if (!nodes.containsKey(leafId)) {
-          nodes[leafId] = ProvenanceNode(
-            id: leafId,
-            summary: ManifestViewDataMapper.ingredientSummary(
-              ingredient,
-              manifest,
-              containingLabel: label,
-            ),
-          );
+        var leafId = baseId;
+        var collision = 0;
+        while (nodes.containsKey(leafId)) {
+          collision++;
+          leafId = '$baseId/$index/$collision';
         }
+        final summary = ManifestViewDataMapper.ingredientSummary(
+          ingredient,
+          manifest,
+          containingLabel: label,
+          ingredientIndex: index,
+        );
+        nodes[leafId] = ProvenanceNode(
+          id: leafId,
+          summary: summary,
+          manifestViewData: ManifestViewData(
+            title: summary.title,
+            thumbnail: summary.thumbnail,
+            previewSource: summary.previewSource,
+            inputValidationEvidence: summary.inputValidationEvidence,
+            ingredientDescriptions: summary.ingredientDescriptions,
+            validationResult: summary.validationResult,
+          ),
+        );
         edges.add(ProvenanceEdge(parentId: label, childId: leafId));
       }
     }

@@ -63,17 +63,18 @@ class TreeNodeCard extends StatelessWidget {
       theme: theme,
     );
 
-    final thumbnail =
-        thumbnailOverride ?? node.summary.thumbnail ?? mediaImage;
-    final summary =
-        thumbnail != node.summary.thumbnail
-            ? ManifestSummary(
-              title: node.summary.title,
-              thumbnail: thumbnail,
-              validationResult: node.summary.validationResult,
-              issuer: node.summary.issuer,
-            )
-            : node.summary;
+    final thumbnail = thumbnailOverride ?? node.summary.thumbnail ?? mediaImage;
+    final summary = thumbnail != node.summary.thumbnail
+        ? ManifestSummary(
+            title: node.summary.title,
+            thumbnail: thumbnail,
+            previewSource: node.summary.previewSource,
+            inputValidationEvidence: node.summary.inputValidationEvidence,
+            ingredientDescriptions: node.summary.ingredientDescriptions,
+            validationResult: node.summary.validationResult,
+            issuer: node.summary.issuer,
+          )
+        : node.summary;
 
     final innerCard = ManifestSummaryCard(
       summary: summary,
@@ -95,10 +96,7 @@ class TreeNodeCard extends StatelessWidget {
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: theme.cardRadius,
-        child: innerCard,
-      ),
+      child: ClipRRect(borderRadius: theme.cardRadius, child: innerCard),
     );
 
     final badges = decoration?.badges ?? const [];
@@ -136,10 +134,7 @@ class TreeNodeCard extends StatelessWidget {
       );
     }
 
-    return GestureDetector(
-      onTap: onTap,
-      child: card,
-    );
+    return GestureDetector(onTap: onTap, child: card);
   }
 
   @override
@@ -164,7 +159,9 @@ class TreeNodeCard extends StatelessWidget {
           onBadgeTap,
         ),
       )
-      ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage))
+      ..add(
+        DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage),
+      )
       ..add(
         DiagnosticsProperty<ImageProvider<Object>?>(
           'thumbnailOverride',
@@ -175,10 +172,7 @@ class TreeNodeCard extends StatelessWidget {
 }
 
 class _DecorationBadgeChip extends StatelessWidget {
-  const _DecorationBadgeChip({
-    required this.badge,
-    this.onTap,
-  });
+  const _DecorationBadgeChip({required this.badge, this.onTap});
 
   final DecorationBadge badge;
   final VoidCallback? onTap;

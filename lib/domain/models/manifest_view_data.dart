@@ -15,6 +15,7 @@ class ManifestViewData {
     this.thumbnail,
     this.previewSource,
     this.inputValidationEvidence = const [],
+    this.ingredientDescriptions = const [],
     this.validationResult = const ValidationResult.noCredential(),
     this.validationFailures = const [],
     this.issuer,
@@ -42,6 +43,9 @@ class ManifestViewData {
 
   /// Reported input failures retained with their containing-claim provenance.
   final List<InputValidationEvidence> inputValidationEvidence;
+
+  /// Recorded prose with consuming-claim and ingredient-edge attribution.
+  final List<IngredientDescription> ingredientDescriptions;
   final ValidationResult validationResult;
 
   /// Raw error-flavoured validation entries surfaced for the tampered-asset
@@ -151,10 +155,9 @@ class ActionDisplayInfo {
 
 /// Display info for an ingredient in the process section.
 ///
-/// [summary] is the single source of truth for what to show in a card
-/// (thumbnail, title, credential status).  It is the same [ManifestSummary]
-/// that the corresponding [ProvenanceNode] carries, so the two widgets are
-/// structurally guaranteed to show identical information.
+/// [summary] reuses the corresponding [ProvenanceNode]'s title, preview and
+/// credential result. Recorded descriptions retain this specific incoming
+/// ingredient edge plus its ancestry, rather than other parents' import notes.
 @immutable
 class IngredientDisplayInfo {
   const IngredientDisplayInfo({

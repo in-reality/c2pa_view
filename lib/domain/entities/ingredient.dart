@@ -67,7 +67,9 @@ class Ingredient extends Equatable {
       provenance: json['provenance'] as String?,
       hash: json['hash'] as String?,
       activeManifest: json['active_manifest'] as String?,
-      description: json['description'] as String?,
+      description: json['description'] is String
+          ? json['description'] as String
+          : null,
       informationalUri: json['informational_uri'] as String?,
       label: json['label'] as String?,
       relationship: json['relationship'] as String?,

@@ -315,3 +315,19 @@ compatibility default remains `pkg/`, with native loading unchanged. Concurrent
 calls share one initialization future. Browser hot restart reuses only a
 successfully initialized bridge from that exact prefix; failed or timed-out
 initialization requires a full page reload so partial globals cannot be reused.
+
+
+## Recorded ingredient descriptions
+
+The shared Dart projection preserves nonempty `Ingredient.description` strings
+verbatim, with consuming-claim label and ingredient-array position. This is
+recorded payload prose, not a new viewer check or trust verdict. Reachable
+ancestry, distinct incoming edges, unresolved leaves and collapsed Seals retain
+that context; unrelated loaded consumers do not contribute prose. Optional
+presentation fields default to empty for compatible existing constructors.
+Generic lists/details use plain wrapped text and fixed graph cards expose full
+text on hover; InReality popovers use the existing highlight-row transport,
+including hosts that already have other highlights. Host thumbnails preserve the
+projection. Invalid/untrusted precedence, Not verified versus No CR, previews,
+authenticated fetches and interaction/export callbacks retain their existing
+meaning. No description causes original-media or remote-resource fetching.

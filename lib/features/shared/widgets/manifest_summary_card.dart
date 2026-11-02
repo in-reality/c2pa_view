@@ -1,9 +1,12 @@
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/manifest_summary.dart';
-import 'package:c2pa_view/features/provenance_tree/widgets/tree_node_card.dart' show TreeNodeCard;
+import 'package:c2pa_view/features/provenance_tree/widgets/tree_node_card.dart'
+    show TreeNodeCard;
 import 'package:c2pa_view/features/shared/widgets/c2pa_thumbnail.dart';
 import 'package:c2pa_view/features/shared/widgets/credential_indicator.dart';
-import 'package:c2pa_view/features/shared/widgets/ingredient_card.dart' show IngredientCard;
+import 'package:c2pa_view/features/shared/widgets/ingredient_card.dart'
+    show IngredientCard;
+import 'package:c2pa_view/features/shared/widgets/ingredient_descriptions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -20,29 +23,32 @@ enum ManifestSummaryCardVariant {
 /// A unified card that renders a [ManifestSummary] (thumbnail, title, and
 /// credential status) in either a tree-node or an ingredient-list style.
 ///
-/// Both variants render *exactly the same data from the same source*, making
-/// it structurally impossible for a tree node and its corresponding ingredient
-/// list item to show different information.
+/// Both variants share title, preview and credential rendering. Recorded prose
+/// preserves the edge context projected for the caller; fixed graph cards expose
+/// its full text through a tooltip and list items wrap it inline.
 ///
 /// The widget is deliberately minimal: it knows nothing about parent nodes,
 /// child nodes, or selection state.  Those concerns are handled by the callers
 /// ([TreeNodeCard] and [IngredientCard]).
 class ManifestSummaryCard extends StatelessWidget {
-
   const ManifestSummaryCard({
-    required this.summary, required this.variant, super.key,
+    required this.summary,
+    required this.variant,
+    super.key,
   });
   final ManifestSummary summary;
   final ManifestSummaryCardVariant variant;
 
   @override
-  Widget build(final BuildContext context) => _SummaryContent(summary: summary, variant: variant);
+  Widget build(final BuildContext context) =>
+      _SummaryContent(summary: summary, variant: variant);
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<ManifestSummary>('summary', summary))
-    ..add(EnumProperty<ManifestSummaryCardVariant>('variant', variant));
+    properties
+      ..add(DiagnosticsProperty<ManifestSummary>('summary', summary))
+      ..add(EnumProperty<ManifestSummaryCardVariant>('variant', variant));
   }
 }
 
@@ -51,7 +57,6 @@ class ManifestSummaryCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _SummaryContent extends StatelessWidget {
-
   const _SummaryContent({required this.summary, required this.variant});
   final ManifestSummary summary;
   final ManifestSummaryCardVariant variant;
@@ -69,22 +74,20 @@ class _SummaryContent extends StatelessWidget {
       theme: theme,
     );
 
-    return Row(
+    final content = Row(
       children: [
         thumbnail,
         if (!isTreeNode) const SizedBox(width: 12),
         Expanded(
           child: Padding(
-            padding:
-                isTreeNode
-                    ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
-                    : EdgeInsets.zero,
+            padding: isTreeNode
+                ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
+                : EdgeInsets.zero,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment:
-                  isTreeNode
-                      ? MainAxisAlignment.center
-                      : MainAxisAlignment.start,
+              mainAxisAlignment: isTreeNode
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (summary.title != null) ...[
@@ -113,19 +116,33 @@ class _SummaryContent extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
+                if (!isTreeNode)
+                  IngredientDescriptions(
+                    descriptions: summary.ingredientDescriptions,
+                  ),
               ],
             ),
           ),
         ),
       ],
     );
+    if (!isTreeNode || summary.ingredientDescriptions.isEmpty) {
+      return content;
+    }
+    return Tooltip(
+      message: summary.ingredientDescriptions
+          .map((final note) => '${note.sourceLabel}\n${note.description}')
+          .join('\n\n'),
+      child: content,
+    );
   }
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<ManifestSummary>('summary', summary))
-    ..add(EnumProperty<ManifestSummaryCardVariant>('variant', variant));
+    properties
+      ..add(DiagnosticsProperty<ManifestSummary>('summary', summary))
+      ..add(EnumProperty<ManifestSummaryCardVariant>('variant', variant));
   }
 }
 
@@ -134,7 +151,6 @@ class _SummaryContent extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _Thumbnail extends StatelessWidget {
-
   const _Thumbnail({
     required this.image,
     required this.size,
@@ -158,14 +174,13 @@ class _Thumbnail extends StatelessWidget {
       return SizedBox(
         width: size,
         height: size,
-        child:
-            image != null
-                ? Image(
-                  image: image!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, final __, final ___) => _placeholder(),
-                )
-                : _placeholder(),
+        child: image != null
+            ? Image(
+                image: image!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, final __, final ___) => _placeholder(),
+              )
+            : _placeholder(),
       );
     }
 
@@ -177,22 +192,23 @@ class _Thumbnail extends StatelessWidget {
   }
 
   Widget _placeholder() => ColoredBox(
-      color: theme.surfaceVariantColor,
-      child: Center(
-        child: Icon(
-          Icons.image_outlined,
-          size: size * 0.4,
-          color: theme.iconColor,
-        ),
+    color: theme.surfaceVariantColor,
+    child: Center(
+      child: Icon(
+        Icons.image_outlined,
+        size: size * 0.4,
+        color: theme.iconColor,
       ),
-    );
+    ),
+  );
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<ImageProvider<Object>?>('image', image))
-    ..add(DoubleProperty('size', size))
-    ..add(DiagnosticsProperty<bool>('square', square))
-    ..add(DiagnosticsProperty<C2paViewerThemeData>('theme', theme));
+    properties
+      ..add(DiagnosticsProperty<ImageProvider<Object>?>('image', image))
+      ..add(DoubleProperty('size', size))
+      ..add(DiagnosticsProperty<bool>('square', square))
+      ..add(DiagnosticsProperty<C2paViewerThemeData>('theme', theme));
   }
 }

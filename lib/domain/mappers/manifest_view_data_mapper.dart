@@ -29,11 +29,14 @@ const _knownActionParams = {
 
 /// Converts a [Manifest] domain entity into a [ManifestViewData] view model.
 class ManifestViewDataMapper {
+  /// Projects supplied claim data without fetching ancestors or inferring checks.
+  /// [containingLabel] supplies store-key identity when the payload lacks a label.
   static ManifestViewData map(
     final Manifest manifest, {
     final Map<String, dynamic>? rawJson,
     final Map<String, ManifestSummary>? summaries,
     final ManifestSummary? previewSummary,
+    final String? containingLabel,
   }) => ManifestViewData(
     title: manifest.title,
     thumbnail: previewSummary?.thumbnail ?? imageProvider(manifest.thumbnail),
@@ -50,6 +53,9 @@ class ManifestViewDataMapper {
               )),
     inputValidationEvidence:
         previewSummary?.inputValidationEvidence ?? const [],
+    ingredientDescriptions:
+        previewSummary?.ingredientDescriptions ??
+        _directDescriptions(manifest, label: containingLabel),
     validationResult:
         previewSummary?.validationResult ??
         mapValidation(
@@ -67,7 +73,7 @@ class ManifestViewDataMapper {
     generativeInfo: _extractGenerativeInfo(manifest),
     claimGenerator: _mapClaimGenerator(manifest),
     actions: _mapActions(manifest.actions),
-    ingredients: _mapIngredients(manifest, summaries),
+    ingredients: _mapIngredients(manifest, summaries, containingLabel),
     aiToolsUsed: _extractAiTools(manifest),
     exifData: _mapExif(manifest.exifData),
     producer: manifest.creativeWork?.producer,
@@ -88,11 +94,36 @@ class ManifestViewDataMapper {
   ) {
     final result = <String, ManifestSummary>{};
     final labels = store.manifests.keys.toList()..sort();
+    final reachable = _reachableLabels(store, store.activeManifest);
+    final direct = {
+      for (final label in labels)
+        label: _directDescriptions(store.manifests[label]!, label: label),
+    };
+    final descriptions = <String, List<IngredientDescription>>{};
+    for (final label in labels) {
+      final ancestry = _reachableLabels(store, label);
+      descriptions[label] = mergeIngredientDescriptions([
+        for (final ancestor in ancestry) ...direct[ancestor]!,
+        for (final consumer in reachable)
+          for (final note in direct[consumer]!)
+            if (note.targetManifest == label)
+              IngredientDescription(
+                containingManifest: note.containingManifest,
+                ingredientIndex: note.ingredientIndex,
+                description: note.description,
+                ingredientLabel: note.ingredientLabel,
+                ingredientTitle: note.ingredientTitle,
+                targetManifest: note.targetManifest,
+                isExternalIncomingEdge: true,
+              ),
+      ]);
+    }
     for (final label in labels) {
       final manifest = store.manifests[label]!;
       final image = imageProvider(manifest.thumbnail);
       result[label] = ManifestSummary(
         title: manifest.title,
+        ingredientDescriptions: descriptions[label]!,
         thumbnail: image,
         previewSource: image == null
             ? null
@@ -123,6 +154,7 @@ class ManifestViewDataMapper {
         ];
         result[target!] = ManifestSummary(
           title: summary.title,
+          ingredientDescriptions: summary.ingredientDescriptions,
           thumbnail: summary.thumbnail,
           previewSource: summary.previewSource,
           issuer: summary.issuer,
@@ -148,6 +180,7 @@ class ManifestViewDataMapper {
         if (fallback.thumbnail == null) continue;
         result[target!] = ManifestSummary(
           title: summary.title,
+          ingredientDescriptions: summary.ingredientDescriptions,
           thumbnail: fallback.thumbnail,
           previewSource: fallback.previewSource,
           inputValidationEvidence: summary.inputValidationEvidence,
@@ -160,14 +193,38 @@ class ManifestViewDataMapper {
   }
 
   /// An unresolved leaf keeps no credential; its preview belongs to its parent.
+  /// Without an explicit index, only a unique identical containing object
+  /// establishes an edge. Equal values and detached objects cannot invent one.
   static ManifestSummary ingredientSummary(
     final Ingredient ingredient,
     final Manifest containing, {
     final String? containingLabel,
+    final int? ingredientIndex,
   }) {
+    final positions = [
+      for (var index = 0; index < containing.ingredients.length; index++)
+        if (identical(containing.ingredients[index], ingredient)) index,
+    ];
+    final index =
+        ingredientIndex ?? (positions.length == 1 ? positions.single : null);
     final image = imageProvider(ingredient.thumbnail);
     return ManifestSummary(
       title: ingredient.title,
+      ingredientDescriptions: [
+        if (index != null &&
+            index >= 0 &&
+            index < containing.ingredients.length &&
+            containing.ingredients[index] == ingredient)
+          if (_description(
+                ingredient,
+                containing,
+                index,
+                label: containingLabel,
+                externalIncoming: true,
+              )
+              case final note?)
+            note,
+      ],
       inputValidationEvidence: ingredient.inputValidationFailures.isEmpty
           ? const []
           : [
@@ -371,37 +428,126 @@ class ManifestViewDataMapper {
   static List<IngredientDisplayInfo> _mapIngredients(
     final Manifest manifest,
     final Map<String, ManifestSummary>? summaries,
-  ) => manifest.ingredients.map((final i) {
-    IngredientRelationship? relationship;
-    if (i.relationship != null) {
-      switch (i.relationship) {
-        case 'parentOf':
-          relationship = IngredientRelationship.parentOf;
-        case 'componentOf':
-          relationship = IngredientRelationship.componentOf;
-        case 'inputTo':
-          relationship = IngredientRelationship.inputTo;
-      }
-    }
+    final String? containingLabel,
+  ) => [
+    for (var index = 0; index < manifest.ingredients.length; index++)
+      _mapIngredient(manifest, index, summaries, containingLabel),
+  ];
 
-    // Look up the pre-computed summary for this ingredient's manifest.
-    // This is the same ManifestSummary that the corresponding ProvenanceNode
-    // carries, ensuring the ingredient list item and the tree node always
-    // show identical data.
-    // When no manifest is resolved we still build a summary with the
-    // ingredient's title so that it shows the name rather than "Untitled".
-    final resolvedSummary = (i.activeManifest != null && summaries != null)
-        ? summaries[i.activeManifest]
-        : null;
-    final hasManifest = resolvedSummary != null || i.activeManifest != null;
-
+  static IngredientDisplayInfo _mapIngredient(
+    final Manifest manifest,
+    final int index,
+    final Map<String, ManifestSummary>? summaries,
+    final String? containingLabel,
+  ) {
+    final ingredient = manifest.ingredients[index];
+    final relationship = switch (ingredient.relationship) {
+      'parentOf' => IngredientRelationship.parentOf,
+      'componentOf' => IngredientRelationship.componentOf,
+      'inputTo' => IngredientRelationship.inputTo,
+      _ => null,
+    };
+    final resolved = summaries?[ingredient.activeManifest];
+    final base =
+        resolved ??
+        ingredientSummary(
+          ingredient,
+          manifest,
+          ingredientIndex: index,
+          containingLabel: containingLabel,
+        );
+    final descriptions = mergeIngredientDescriptions([
+      if (_description(ingredient, manifest, index, label: containingLabel)
+          case final note?)
+        note,
+      ...base.ingredientDescriptions.where(
+        (final note) => !note.isExternalIncomingEdge,
+      ),
+    ]);
     return IngredientDisplayInfo(
-      summary: resolvedSummary ?? ingredientSummary(i, manifest),
-      hasManifest: hasManifest,
-      format: i.format,
+      summary: ManifestSummary(
+        title: base.title,
+        thumbnail: base.thumbnail,
+        previewSource: base.previewSource,
+        inputValidationEvidence: base.inputValidationEvidence,
+        ingredientDescriptions: descriptions,
+        validationResult: base.validationResult,
+        issuer: base.issuer,
+      ),
+      hasManifest: resolved != null || ingredient.activeManifest != null,
+      format: ingredient.format,
       relationship: relationship,
     );
-  }).toList();
+  }
+
+  static IngredientDescription? _description(
+    final Ingredient ingredient,
+    final Manifest containing,
+    final int index, {
+    final String? label,
+    final bool externalIncoming = false,
+  }) {
+    final text = ingredient.description;
+    if (text == null || text.isEmpty) {
+      return null;
+    }
+    return IngredientDescription(
+      containingManifest: label ?? containing.label ?? '',
+      ingredientIndex: index,
+      description: text,
+      ingredientLabel: ingredient.label,
+      ingredientTitle: ingredient.title,
+      targetManifest: ingredient.activeManifest,
+      isExternalIncomingEdge: externalIncoming,
+    );
+  }
+
+  static List<IngredientDescription> _directDescriptions(
+    final Manifest manifest, {
+    final String? label,
+  }) => [
+    for (var index = 0; index < manifest.ingredients.length; index++)
+      if (_description(
+            manifest.ingredients[index],
+            manifest,
+            index,
+            label: label,
+          )
+          case final note?)
+        note,
+  ];
+
+  static Set<String> _reachableLabels(
+    final ManifestStore store,
+    final String? start,
+  ) {
+    final visited = <String>{};
+    final pending = [if (start != null) start];
+    while (pending.isNotEmpty) {
+      final label = pending.removeLast();
+      final manifest = store.manifests[label];
+      if (manifest == null || !visited.add(label)) {
+        continue;
+      }
+      pending.addAll(
+        manifest.ingredients
+            .map((final ingredient) => ingredient.activeManifest)
+            .whereType<String>(),
+      );
+    }
+    return visited;
+  }
+
+  /// Unions recorded edges without combining equal prose on distinct edges.
+  static List<IngredientDescription> mergeIngredientDescriptions(
+    final Iterable<IngredientDescription> notes,
+  ) {
+    final seen = <(String, int)>{};
+    return List.unmodifiable([
+      for (final note in notes)
+        if (seen.add((note.containingManifest, note.ingredientIndex))) note,
+    ]);
+  }
 
   static List<String> _extractAiTools(final Manifest manifest) {
     if (manifest.actions == null) {
