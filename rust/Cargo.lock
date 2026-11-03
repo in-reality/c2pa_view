@@ -391,7 +391,7 @@ checksum = "1e748733b7cbc798e1434b6ac524f0c1ff2ab456fe201501e6497c8417a4fc33"
 [[package]]
 name = "c2pa"
 version = "0.90.19"
-source = "git+https://github.com/in-reality/c2pa-rs?rev=67c0a31c718876f54238be81b484ca3cfc0d273d#67c0a31c718876f54238be81b484ca3cfc0d273d"
+source = "git+https://github.com/in-reality/c2pa-rs?rev=a882e87ade9f89559b9973bb6b0799c3a8bdb3ec#a882e87ade9f89559b9973bb6b0799c3a8bdb3ec"
 dependencies = [
  "asn1-rs",
  "async-generic",
