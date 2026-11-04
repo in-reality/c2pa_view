@@ -10,9 +10,11 @@ import 'package:intl/intl.dart';
 
 /// Sticky header at the top of the detail panel.
 class DetailHeader extends StatefulWidget {
-
-  const DetailHeader({required this.data, super.key});
+  const DetailHeader({required this.data, this.compact = false, super.key});
   final ManifestViewData data;
+
+  /// Omits duplicate unknown-status/copy chrome in a host-owned inspector.
+  final bool compact;
 
   @override
   State<DetailHeader> createState() => _DetailHeaderState();
@@ -20,6 +22,7 @@ class DetailHeader extends StatefulWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
+    properties.add(FlagProperty('compact', value: compact, ifTrue: 'compact'));
     properties.add(DiagnosticsProperty<ManifestViewData>('data', data));
   }
 }
@@ -59,19 +62,22 @@ class _DetailHeaderState extends State<DetailHeader> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child:
-                    data.title != null
-                        ? Text(
-                          data.title!,
-                          style: theme.titleLargeStyle.copyWith(
-                            color: theme.textPrimaryColor,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        )
-                        : const SizedBox.shrink(),
+                child: data.title != null
+                    ? Text(
+                        data.title!,
+                        style:
+                            (widget.compact
+                                    ? theme.titleMediumStyle
+                                    : theme.titleLargeStyle)
+                                .copyWith(color: theme.textPrimaryColor),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      )
+                    : const SizedBox.shrink(),
               ),
-              if (data.rawJson != null && !data.validationResult.isInvalid)
+              if (!widget.compact &&
+                  data.rawJson != null &&
+                  !data.validationResult.isInvalid)
                 Tooltip(
                   message: _copied ? 'Copied!' : 'Copy manifest JSON',
                   child: IconButton(
@@ -80,16 +86,19 @@ class _DetailHeaderState extends State<DetailHeader> {
                     padding: const EdgeInsets.all(6),
                     constraints: const BoxConstraints(),
                     style: IconButton.styleFrom(
-                      foregroundColor:
-                          _copied ? theme.validColor : theme.iconColor,
+                      foregroundColor: _copied
+                          ? theme.validColor
+                          : theme.iconColor,
                     ),
                     icon: Icon(_copied ? Icons.check : Icons.copy_outlined),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 4),
-          CredentialIndicator(result: data.validationResult),
+          if (!widget.compact || !data.validationResult.isNotVerified) ...[
+            const SizedBox(height: 4),
+            CredentialIndicator(result: data.validationResult),
+          ],
           if (!data.validationResult.isInvalid &&
               (data.issuer != null || data.signedDate != null)) ...[
             const SizedBox(height: 4),

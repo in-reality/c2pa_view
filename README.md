@@ -349,3 +349,11 @@ attempt remains failed until page reload. Reader hosts with their own asset
 prefix keep using `VERIFIER_ASSET_BASE`, including cross-origin servers that
 allow CORS. Host CSP controls which script and WASM origins are permitted; the
 editor host requires same-origin assets.
+
+### Compact embedded inspector
+
+`ManifestDetailContent(compact: true)` retains selected credential identity,
+issuer, actions, ingredients and assertion sections while omitting the large
+thumbnail panel, repeated unknown-status badge and explanatory Process wrapper.
+This is an opt-in presentation mode for a host that supplies its own context
+status; ordinary viewer defaults and validation/error handling are unchanged.

@@ -112,11 +112,22 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
   late Size _treeSize;
   Size _viewportSize = Size.zero;
   bool _autoFitPending = true;
+  C2paViewerThemeData? _layoutTheme;
 
   @override
-  void initState() {
-    super.initState();
-    _computeLayout();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final theme = C2paViewerTheme.of(context);
+    final previous = _layoutTheme;
+    _layoutTheme = theme;
+    if (previous == null ||
+        previous.nodeWidth != theme.nodeWidth ||
+        previous.nodeHeight != theme.nodeHeight ||
+        previous.nodeSpacingX != theme.nodeSpacingX ||
+        previous.nodeSpacingY != theme.nodeSpacingY) {
+      _computeLayout();
+      _autoFitPending = true;
+    }
   }
 
   @override
@@ -138,7 +149,7 @@ class _ProvenanceTreeViewerState extends State<ProvenanceTreeViewer> {
   }
 
   void _computeLayout() {
-    const theme = C2paViewerThemeData.defaults;
+    final theme = _layoutTheme!;
     final graph = widget.graph;
 
     final depthMap = _assignDepths(graph);

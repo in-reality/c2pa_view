@@ -36,6 +36,7 @@ class ManifestDetailContent extends StatelessWidget {
     this.extraSections = const [],
     this.mediaImage,
     this.inlineInParentScroll = false,
+    this.compact = false,
   });
   final ManifestViewData data;
   final String? mimeType;
@@ -47,6 +48,9 @@ class ManifestDetailContent extends StatelessWidget {
   /// When true, sections render in a [Column] for an outer scroll host.
   final bool inlineInParentScroll;
 
+  /// Compact host inspector: retain facts, omit large thumbnail and repeat chrome.
+  final bool compact;
+
   @override
   Widget build(final BuildContext context) {
     if (data.validationResult.isInvalid) {
@@ -54,18 +58,19 @@ class ManifestDetailContent extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            DetailHeader(data: data),
+            DetailHeader(data: data, compact: compact),
             const SizedBox(height: 12),
             TamperedPlaceholder(
               result: data.validationResult,
               failures: data.validationFailures,
             ),
             IngredientDescriptions(descriptions: data.ingredientDescriptions),
-            ThumbnailSection(
-              thumbnail: data.thumbnail ?? mediaImage,
-              mimeType: mimeType,
-              onTapFullScreen: onThumbnailTap,
-            ),
+            if (!compact)
+              ThumbnailSection(
+                thumbnail: data.thumbnail ?? mediaImage,
+                mimeType: mimeType,
+                onTapFullScreen: onThumbnailTap,
+              ),
             const SizedBox(height: 24),
           ],
         );
@@ -73,7 +78,7 @@ class ManifestDetailContent extends StatelessWidget {
 
       return Column(
         children: [
-          DetailHeader(data: data),
+          DetailHeader(data: data, compact: compact),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
@@ -85,11 +90,12 @@ class ManifestDetailContent extends StatelessWidget {
                 IngredientDescriptions(
                   descriptions: data.ingredientDescriptions,
                 ),
-                ThumbnailSection(
-                  thumbnail: data.thumbnail ?? mediaImage,
-                  mimeType: mimeType,
-                  onTapFullScreen: onThumbnailTap,
-                ),
+                if (!compact)
+                  ThumbnailSection(
+                    thumbnail: data.thumbnail ?? mediaImage,
+                    mimeType: mimeType,
+                    onTapFullScreen: onThumbnailTap,
+                  ),
               ],
             ),
           ),
@@ -101,7 +107,7 @@ class ManifestDetailContent extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          DetailHeader(data: data),
+          DetailHeader(data: data, compact: compact),
           _ManifestDetailSections(
             data: data,
             mimeType: mimeType,
@@ -109,6 +115,7 @@ class ManifestDetailContent extends StatelessWidget {
             onIngredientTap: onIngredientTap,
             extraSections: extraSections,
             mediaImage: mediaImage,
+            compact: compact,
           ),
         ],
       );
@@ -116,7 +123,7 @@ class ManifestDetailContent extends StatelessWidget {
 
     return Column(
       children: [
-        DetailHeader(data: data),
+        DetailHeader(data: data, compact: compact),
         Expanded(
           child: _ScrollBody(
             data: data,
@@ -125,6 +132,7 @@ class ManifestDetailContent extends StatelessWidget {
             onIngredientTap: onIngredientTap,
             extraSections: extraSections,
             mediaImage: mediaImage,
+            compact: compact,
           ),
         ),
       ],
@@ -134,6 +142,7 @@ class ManifestDetailContent extends StatelessWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
+    properties.add(FlagProperty('compact', value: compact, ifTrue: 'compact'));
     properties
       ..add(DiagnosticsProperty<ManifestViewData>('data', data))
       ..add(StringProperty('mimeType', mimeType))
@@ -163,6 +172,7 @@ class _ScrollBody extends StatefulWidget {
     this.onIngredientTap,
     this.extraSections = const [],
     this.mediaImage,
+    this.compact = false,
   });
   final ManifestViewData data;
   final String? mimeType;
@@ -170,6 +180,7 @@ class _ScrollBody extends StatefulWidget {
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
   final List<ManifestDetailSection> extraSections;
   final ImageProvider? mediaImage;
+  final bool compact;
 
   @override
   State<_ScrollBody> createState() => _ScrollBodyState();
@@ -177,6 +188,7 @@ class _ScrollBody extends StatefulWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
+    properties.add(FlagProperty('compact', value: compact, ifTrue: 'compact'));
     properties
       ..add(DiagnosticsProperty<ManifestViewData>('data', data))
       ..add(StringProperty('mimeType', mimeType))
@@ -250,6 +262,7 @@ class _ScrollBodyState extends State<_ScrollBody> {
                 onIngredientTap: widget.onIngredientTap,
                 extraSections: widget.extraSections,
                 mediaImage: widget.mediaImage,
+                compact: widget.compact,
               ),
             ],
           ),
@@ -267,6 +280,7 @@ class _ManifestDetailSections extends StatelessWidget {
     this.onIngredientTap,
     this.extraSections = const [],
     this.mediaImage,
+    this.compact = false,
   });
 
   final ManifestViewData data;
@@ -275,6 +289,7 @@ class _ManifestDetailSections extends StatelessWidget {
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
   final List<ManifestDetailSection> extraSections;
   final ImageProvider? mediaImage;
+  final bool compact;
 
   @override
   Widget build(final BuildContext context) {
@@ -299,14 +314,19 @@ class _ManifestDetailSections extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ErrorBanner(result: data.validationResult),
-        ThumbnailSection(
-          thumbnail: data.thumbnail ?? mediaImage,
-          mimeType: mimeType,
-          onTapFullScreen: onThumbnailTap,
-        ),
+        if (!compact)
+          ThumbnailSection(
+            thumbnail: data.thumbnail ?? mediaImage,
+            mimeType: mimeType,
+            onTapFullScreen: onThumbnailTap,
+          ),
         ContentSummarySection(generativeInfo: data.generativeInfo),
         IngredientDescriptions(descriptions: unlistedDescriptions),
-        ProcessSection(data: data, onIngredientTap: onIngredientTap),
+        ProcessSection(
+          data: data,
+          onIngredientTap: onIngredientTap,
+          compact: compact,
+        ),
         CameraCaptureSection(
           exifData: data.exifData,
           exifCustomFields: data.exifCustomFields,

@@ -10,9 +10,16 @@ import 'package:flutter/material.dart';
 /// Collapsible "Process" section showing claim generator, AI tools,
 /// actions, and ingredients.
 class ProcessSection extends StatelessWidget {
-
-  const ProcessSection({required this.data, super.key, this.onIngredientTap});
+  const ProcessSection({
+    required this.data,
+    this.compact = false,
+    super.key,
+    this.onIngredientTap,
+  });
   final ManifestViewData data;
+
+  /// Direct edit rows without the explanatory Process wrapper.
+  final bool compact;
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
 
   bool get _hasContent =>
@@ -27,32 +34,38 @@ class ProcessSection extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (data.claimGenerator != null) _AppDeviceSubSection(data: data),
+        if (data.aiToolsUsed.isNotEmpty) _AiToolSubSection(data: data),
+        if (data.actions.isNotEmpty)
+          _ActionsSubSection(data: data, compact: compact),
+        if (data.ingredients.isNotEmpty)
+          _IngredientsSubSection(data: data, onIngredientTap: onIngredientTap),
+      ],
+    );
+    if (compact) return content;
     return CollapsibleSection(
       title: 'Process',
       description:
-          'The app or device used to produce this content '
-          'recorded the following information:',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (data.claimGenerator != null) _AppDeviceSubSection(data: data),
-          if (data.aiToolsUsed.isNotEmpty) _AiToolSubSection(data: data),
-          if (data.actions.isNotEmpty) _ActionsSubSection(data: data),
-          if (data.ingredients.isNotEmpty)
-            _IngredientsSubSection(
-              data: data,
-              onIngredientTap: onIngredientTap,
-            ),
-        ],
-      ),
+          'The app or device used to produce this content recorded the following information:',
+      child: content,
     );
   }
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<ManifestViewData>('data', data))
-    ..add(ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has('onIngredientTap', onIngredientTap));
+    properties.add(FlagProperty('compact', value: compact, ifTrue: 'compact'));
+    properties
+      ..add(DiagnosticsProperty<ManifestViewData>('data', data))
+      ..add(
+        ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has(
+          'onIngredientTap',
+          onIngredientTap,
+        ),
+      );
   }
 }
 
@@ -76,9 +89,8 @@ class _AppDeviceSubSection extends StatelessWidget {
                 image: gen.icon!,
                 width: 24,
                 height: 24,
-                errorBuilder:
-                    (_, final __, final ___) =>
-                        Icon(Icons.apps, size: 24, color: theme.iconColor),
+                errorBuilder: (_, final __, final ___) =>
+                    Icon(Icons.apps, size: 24, color: theme.iconColor),
               ),
             ),
             const SizedBox(width: 8),
@@ -148,19 +160,35 @@ class _AiToolSubSection extends StatelessWidget {
 }
 
 class _ActionsSubSection extends StatelessWidget {
-  const _ActionsSubSection({required this.data});
+  const _ActionsSubSection({required this.data, this.compact = false});
+  final bool compact;
   final ManifestViewData data;
 
   @override
-  Widget build(final BuildContext context) => SubSection(
-      label: 'Edits and activity',
+  Widget build(final BuildContext context) {
+    final rows = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [for (final action in data.actions) _ActionRow(action: action)],
+    );
+    if (!compact) return SubSection(label: 'Edits and activity', child: rows);
+    final theme = C2paViewerTheme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final action in data.actions) _ActionRow(action: action),
+          Text(
+            'Edits',
+            style: theme.titleSmallStyle.copyWith(
+              color: theme.textSecondaryColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          rows,
         ],
       ),
     );
+  }
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
@@ -202,10 +230,9 @@ class _ActionRowState extends State<_ActionRow> {
               Icon(
                 _iconForAction(action.actionType),
                 size: 16,
-                color:
-                    action.isAiGenerated
-                        ? theme.unrecognizedColor
-                        : theme.iconColor,
+                color: action.isAiGenerated
+                    ? theme.unrecognizedColor
+                    : theme.iconColor,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -281,34 +308,38 @@ class _ActionRowState extends State<_ActionRow> {
 }
 
 class _IngredientsSubSection extends StatelessWidget {
-
   const _IngredientsSubSection({required this.data, this.onIngredientTap});
   final ManifestViewData data;
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
 
   @override
   Widget build(final BuildContext context) => SubSection(
-      label: 'Ingredients',
-      child: Column(
-        children: [
-          for (int i = 0; i < data.ingredients.length; i++) ...[
-            if (i > 0) const SizedBox(height: 8),
-            IngredientCard(
-              ingredient: data.ingredients[i],
-              onTap:
-                  onIngredientTap != null
-                      ? () => onIngredientTap!(data.ingredients[i])
-                      : null,
-            ),
-          ],
+    label: 'Ingredients',
+    child: Column(
+      children: [
+        for (int i = 0; i < data.ingredients.length; i++) ...[
+          if (i > 0) const SizedBox(height: 8),
+          IngredientCard(
+            ingredient: data.ingredients[i],
+            onTap: onIngredientTap != null
+                ? () => onIngredientTap!(data.ingredients[i])
+                : null,
+          ),
         ],
-      ),
-    );
+      ],
+    ),
+  );
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<ManifestViewData>('data', data))
-    ..add(ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has('onIngredientTap', onIngredientTap));
+    properties
+      ..add(DiagnosticsProperty<ManifestViewData>('data', data))
+      ..add(
+        ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has(
+          'onIngredientTap',
+          onIngredientTap,
+        ),
+      );
   }
 }
