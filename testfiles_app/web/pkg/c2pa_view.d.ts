@@ -1,4 +1,4 @@
-declare namespace wasm_bindgen {
+declare namespace c2pa_view_bindgen {
     /* tslint:disable */
     /* eslint-disable */
 
@@ -60,19 +60,20 @@ declare interface InitOutput {
     readonly frb_dart_fn_deliver_output: (a: number, b: any, c: number, d: number) => void;
     readonly frb_dart_opaque_dart2rust_encode: (a: any, b: any) => number;
     readonly frb_dart_opaque_drop_thread_box_persistent_handle: (a: number) => void;
+    readonly frb_dart_opaque_rust2dart_decode: (a: number) => any;
+    readonly frb_get_rust_content_hash: () => number;
     readonly frb_rust_vec_u8_free: (a: number, b: number) => void;
     readonly frb_rust_vec_u8_new: (a: number) => number;
     readonly frb_rust_vec_u8_resize: (a: number, b: number, c: number) => number;
-    readonly frb_dart_opaque_rust2dart_decode: (a: number) => any;
-    readonly frb_get_rust_content_hash: () => number;
     readonly frb_pde_ffi_dispatcher_primary: (a: number, b: any, c: any, d: number, e: number) => void;
     readonly frb_pde_ffi_dispatcher_sync: (a: number, b: any, c: number, d: number) => any;
     readonly receive_transfer_closure: (a: number, b: number, c: number) => [number, number];
     readonly wasm_start_callback: () => void;
     readonly workerpool_new: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number, number];
     readonly workerpool_new_raw: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number, number];
-    readonly wasm_bindgen__convert__closures_____invoke__h80339b5f8cd30c37: (a: number, b: number, c: any) => [number, number];
-    readonly wasm_bindgen__convert__closures_____invoke__h6f4c18ca6ccdd941: (a: number, b: number, c: any) => void;
+    readonly wasm_bindgen_52e2b17b7df19771___convert__closures_____invoke___wasm_bindgen_52e2b17b7df19771___JsValue__core_9b3796e30d99ddb7___result__Result_____wasm_bindgen_52e2b17b7df19771___JsError___true_: (a: number, b: number, c: any) => [number, number];
+    readonly wasm_bindgen_52e2b17b7df19771___convert__closures_____invoke___web_sys_9c913fd61ce9a05___features__gen_MessageEvent__MessageEvent______true_: (a: number, b: number, c: any) => void;
+    readonly wasm_bindgen_52e2b17b7df19771___convert__closures_____invoke_______true_: (a: number, b: number) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_exn_store: (a: number) => void;
@@ -86,7 +87,7 @@ declare interface InitOutput {
 
 declare type SyncInitInput = BufferSource | WebAssembly.Module;
 
-declare namespace wasm_bindgen {
+declare namespace c2pa_view_bindgen {
     /**
      * Instantiates the given `module`, which can either be bytes or
      * a precompiled `WebAssembly.Module`.
@@ -106,4 +107,4 @@ declare namespace wasm_bindgen {
  *
  * @returns {Promise<InitOutput>}
  */
-declare function wasm_bindgen (module_or_path?: { module_or_path: InitInput | Promise<InitInput> } | InitInput | Promise<InitInput>): Promise<InitOutput>;
+declare function c2pa_view_bindgen (module_or_path?: { module_or_path: InitInput | Promise<InitInput> } | InitInput | Promise<InitInput>): Promise<InitOutput>;

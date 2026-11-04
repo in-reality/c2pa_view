@@ -331,3 +331,21 @@ including hosts that already have other highlights. Host thumbnails preserve the
 projection. Invalid/untrusted precedence, Not verified versus No CR, previews,
 authenticated fetches and interaction/export callbacks retain their existing
 meaning. No description causes original-media or remote-resource fetching.
+
+### Browser coexistence and CSP
+
+The generated bridge uses `c2pa_view_bindgen`, independent of other FRB libraries.
+After changing bindings or upgrading from the old global, rebuild assets using
+`scripts/sync_web_pkg.sh` (add `--no-demo-copies` for a release-only build). The
+script uses wasm-bindgen's named no-modules output and publishes that namespace
+for static JS interop. It needs the matching wasm-bindgen installed by wasm-pack;
+`WASM_BINDGEN` can select an exact CLI explicitly. Do not pair new bindings with
+old example assets. Native loading and public Dart APIs remain unchanged.
+
+`initRustLib()` injects configured scripts and calls the generated initializer
+directly; it needs WebAssembly compilation permission (`wasm-unsafe-eval`) but
+no JavaScript `unsafe-eval`. The first initialization is shared, and a failed
+attempt remains failed until page reload. Reader hosts with their own asset
+prefix keep using `VERIFIER_ASSET_BASE`, including cross-origin servers that
+allow CORS. Host CSP controls which script and WASM origins are permitted; the
+editor host requires same-origin assets.
