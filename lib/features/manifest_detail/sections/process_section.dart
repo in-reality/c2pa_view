@@ -4,13 +4,13 @@ import 'package:c2pa_view/features/custom_fields/custom_fields_table.dart';
 import 'package:c2pa_view/features/shared/widgets/collapsible_section.dart';
 import 'package:c2pa_view/features/shared/widgets/ingredient_card.dart';
 import 'package:c2pa_view/features/shared/widgets/sub_section.dart';
+import 'package:c2pa_view/l10n/localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Collapsible "Process" section showing claim generator, AI tools,
 /// actions, and ingredients.
 class ProcessSection extends StatelessWidget {
-
   const ProcessSection({required this.data, super.key, this.onIngredientTap});
   final ManifestViewData data;
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
@@ -28,10 +28,10 @@ class ProcessSection extends StatelessWidget {
     }
 
     return CollapsibleSection(
-      title: 'Process',
-      description:
-          'The app or device used to produce this content '
-          'recorded the following information:',
+      title: c2paViewL10n(context).processSectionProcess,
+      description: c2paViewL10n(
+        context,
+      ).processSectionTheAppOrDeviceUsedToProduceThisContentRecorded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -51,8 +51,14 @@ class ProcessSection extends StatelessWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<ManifestViewData>('data', data))
-    ..add(ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has('onIngredientTap', onIngredientTap));
+    properties
+      ..add(DiagnosticsProperty<ManifestViewData>('data', data))
+      ..add(
+        ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has(
+          'onIngredientTap',
+          onIngredientTap,
+        ),
+      );
   }
 }
 
@@ -66,7 +72,7 @@ class _AppDeviceSubSection extends StatelessWidget {
     final gen = data.claimGenerator!;
 
     return SubSection(
-      label: 'App or device used',
+      label: c2paViewL10n(context).processSectionAppOrDeviceUsed,
       child: Row(
         children: [
           if (gen.icon != null) ...[
@@ -76,9 +82,8 @@ class _AppDeviceSubSection extends StatelessWidget {
                 image: gen.icon!,
                 width: 24,
                 height: 24,
-                errorBuilder:
-                    (_, final __, final ___) =>
-                        Icon(Icons.apps, size: 24, color: theme.iconColor),
+                errorBuilder: (_, final __, final ___) =>
+                    Icon(Icons.apps, size: 24, color: theme.iconColor),
               ),
             ),
             const SizedBox(width: 8),
@@ -113,7 +118,7 @@ class _AiToolSubSection extends StatelessWidget {
     final theme = C2paViewerTheme.of(context);
 
     return SubSection(
-      label: 'AI tool used',
+      label: c2paViewL10n(context).processSectionAIToolUsed,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -153,14 +158,12 @@ class _ActionsSubSection extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) => SubSection(
-      label: 'Edits and activity',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (final action in data.actions) _ActionRow(action: action),
-        ],
-      ),
-    );
+    label: c2paViewL10n(context).processSectionEditsAndActivity,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [for (final action in data.actions) _ActionRow(action: action)],
+    ),
+  );
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
@@ -202,15 +205,44 @@ class _ActionRowState extends State<_ActionRow> {
               Icon(
                 _iconForAction(action.actionType),
                 size: 16,
-                color:
-                    action.isAiGenerated
-                        ? theme.unrecognizedColor
-                        : theme.iconColor,
+                color: action.isAiGenerated
+                    ? theme.unrecognizedColor
+                    : theme.iconColor,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  action.label,
+                  // Translate only the package's default human label. A host's
+                  // explicit custom label is data and retains its public contract.
+                  action.label !=
+                          ActionDisplayInfo.humanLabel(action.actionType)
+                      ? action.label
+                      : switch (action.actionType) {
+                          'c2pa.created' => c2paViewL10n(context).actionCreated,
+                          'c2pa.opened' => c2paViewL10n(context).actionOpened,
+                          'c2pa.placed' => c2paViewL10n(context).actionPlaced,
+                          'c2pa.edited' => c2paViewL10n(context).actionEdited,
+                          'c2pa.cropped' => c2paViewL10n(context).actionCropped,
+                          'c2pa.resized' => c2paViewL10n(context).actionResized,
+                          'c2pa.color_adjustments' => c2paViewL10n(
+                            context,
+                          ).actionColorAdjustments,
+                          'c2pa.drawing' => c2paViewL10n(context).actionDrawing,
+                          'c2pa.filtered' => c2paViewL10n(
+                            context,
+                          ).actionFiltered,
+                          'c2pa.orientation' => c2paViewL10n(
+                            context,
+                          ).actionOrientation,
+                          'c2pa.published' => c2paViewL10n(
+                            context,
+                          ).actionPublished,
+                          'c2pa.transcoded' => c2paViewL10n(
+                            context,
+                          ).actionTranscoded,
+                          'c2pa.unknown' => c2paViewL10n(context).actionUnknown,
+                          _ => action.label,
+                        },
                   style: theme.bodyStyle.copyWith(
                     color: theme.textPrimaryColor,
                   ),
@@ -227,7 +259,7 @@ class _ActionRowState extends State<_ActionRow> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    'AI',
+                    c2paViewL10n(context).aiBadge,
                     style: theme.labelStyle.copyWith(
                       color: theme.unrecognizedColor,
                       fontSize: 10,
@@ -281,34 +313,38 @@ class _ActionRowState extends State<_ActionRow> {
 }
 
 class _IngredientsSubSection extends StatelessWidget {
-
   const _IngredientsSubSection({required this.data, this.onIngredientTap});
   final ManifestViewData data;
   final ValueChanged<IngredientDisplayInfo>? onIngredientTap;
 
   @override
   Widget build(final BuildContext context) => SubSection(
-      label: 'Ingredients',
-      child: Column(
-        children: [
-          for (int i = 0; i < data.ingredients.length; i++) ...[
-            if (i > 0) const SizedBox(height: 8),
-            IngredientCard(
-              ingredient: data.ingredients[i],
-              onTap:
-                  onIngredientTap != null
-                      ? () => onIngredientTap!(data.ingredients[i])
-                      : null,
-            ),
-          ],
+    label: c2paViewL10n(context).processSectionIngredients,
+    child: Column(
+      children: [
+        for (int i = 0; i < data.ingredients.length; i++) ...[
+          if (i > 0) const SizedBox(height: 8),
+          IngredientCard(
+            ingredient: data.ingredients[i],
+            onTap: onIngredientTap != null
+                ? () => onIngredientTap!(data.ingredients[i])
+                : null,
+          ),
         ],
-      ),
-    );
+      ],
+    ),
+  );
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<ManifestViewData>('data', data))
-    ..add(ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has('onIngredientTap', onIngredientTap));
+    properties
+      ..add(DiagnosticsProperty<ManifestViewData>('data', data))
+      ..add(
+        ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has(
+          'onIngredientTap',
+          onIngredientTap,
+        ),
+      );
   }
 }

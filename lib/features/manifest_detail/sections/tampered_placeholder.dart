@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/entities/validation_status.dart';
 import 'package:c2pa_view/domain/models/validation_result.dart';
+import 'package:c2pa_view/l10n/localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,7 +20,6 @@ const _tapsForDebugDialog = 10;
 /// [failures] plus a Copy button that pretty-prints the entries to the
 /// clipboard. The tap counter resets when the dialog dismisses.
 class TamperedPlaceholder extends StatefulWidget {
-
   const TamperedPlaceholder({
     required this.result,
     required this.failures,
@@ -42,9 +42,7 @@ class TamperedPlaceholder extends StatefulWidget {
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty<ValidationResult>('result', result))
-      ..add(
-        IterableProperty<ValidationStatusEntry>('failures', failures),
-      )
+      ..add(IterableProperty<ValidationStatusEntry>('failures', failures))
       ..add(StringProperty('validationState', validationState));
   }
 }
@@ -70,7 +68,9 @@ class _TamperedPlaceholderState extends State<TamperedPlaceholder> {
       builder: (final dialogContext) {
         final theme = C2paViewerTheme.of(dialogContext);
         return AlertDialog(
-          title: const Text('Validation problem details'),
+          title: Text(
+            c2paViewL10n(context).tamperedPlaceholderValidationProblemDetails,
+          ),
           content: SizedBox(
             width: 480,
             child: SingleChildScrollView(
@@ -89,7 +89,9 @@ class _TamperedPlaceholderState extends State<TamperedPlaceholder> {
                   ],
                   if (widget.failures.isEmpty)
                     SelectableText(
-                      'No error-coded validation entries were reported.',
+                      c2paViewL10n(
+                        context,
+                      ).tamperedPlaceholderNoErrorCodedValidationEntriesWereReported,
                       style: theme.bodyStyle.copyWith(
                         color: theme.textPrimaryColor,
                       ),
@@ -136,11 +138,11 @@ class _TamperedPlaceholderState extends State<TamperedPlaceholder> {
             TextButton.icon(
               onPressed: _copyFailuresJson,
               icon: const Icon(Icons.copy, size: 16),
-              label: const Text('Copy'),
+              label: Text(c2paViewL10n(context).tamperedPlaceholderCopy),
             ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Close'),
+              child: Text(c2paViewL10n(context).tamperedPlaceholderClose),
             ),
           ],
         );
@@ -181,16 +183,17 @@ class _TamperedPlaceholderState extends State<TamperedPlaceholder> {
             borderRadius: theme.sectionRadius,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
-          child: const Column(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.dangerous, color: Colors.white, size: 36),
-              SizedBox(height: 12),
+              const Icon(Icons.dangerous, color: Colors.white, size: 36),
+              const SizedBox(height: 12),
               Text(
-                "This file may have been tampered with. Its Content "
-                "Credentials can't be verified or viewed.",
+                c2paViewL10n(
+                  context,
+                ).tamperedPlaceholderThisFileMayHaveBeenTamperedWithItsContentCredentials,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
                   fontWeight: FontWeight.w700,

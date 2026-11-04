@@ -1,11 +1,11 @@
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
+import 'package:c2pa_view/l10n/localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Content summary section showing AI generation information.
 class ContentSummarySection extends StatelessWidget {
-
   const ContentSummarySection({super.key, this.generativeInfo});
   final GenerativeInfo? generativeInfo;
 
@@ -34,7 +34,17 @@ class ContentSummarySection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  generativeInfo!.description,
+                  switch (generativeInfo!.type) {
+                    GenerativeType.aiGenerated => c2paViewL10n(
+                      context,
+                    ).generativeAiGenerated,
+                    GenerativeType.compositeWithAi => c2paViewL10n(
+                      context,
+                    ).generativeCompositeWithAi,
+                    GenerativeType.legacy => c2paViewL10n(
+                      context,
+                    ).generativeLegacy,
+                  },
                   style: theme.bodySmallStyle.copyWith(
                     color: theme.textPrimaryColor,
                   ),
@@ -59,6 +69,8 @@ class ContentSummarySection extends StatelessWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<GenerativeInfo?>('generativeInfo', generativeInfo));
+    properties.add(
+      DiagnosticsProperty<GenerativeInfo?>('generativeInfo', generativeInfo),
+    );
   }
 }

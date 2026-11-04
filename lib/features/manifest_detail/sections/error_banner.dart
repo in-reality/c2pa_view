@@ -1,5 +1,6 @@
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/validation_result.dart';
+import 'package:c2pa_view/l10n/localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -10,7 +11,6 @@ import 'package:flutter/material.dart';
 /// the [TamperedPlaceholder] widget instead; valid and missing-credential
 /// states show nothing.
 class ErrorBanner extends StatelessWidget {
-
   const ErrorBanner({required this.result, super.key});
   final ValidationResult result;
 
@@ -40,8 +40,9 @@ class ErrorBanner extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "The Content Credential's signing certificate is not in any "
-              'trust list. Verify the issuer before trusting this content.',
+              c2paViewL10n(
+                context,
+              ).errorBannerTheContentCredentialSSigningCertificateIsNotInAny,
               style: theme.bodySmallStyle.copyWith(
                 color: theme.textPrimaryColor,
               ),

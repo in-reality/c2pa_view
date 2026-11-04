@@ -4,13 +4,13 @@ import 'package:c2pa_view/domain/models/manifest_view_data.dart';
 import 'package:c2pa_view/features/custom_fields/custom_fields_table.dart';
 import 'package:c2pa_view/features/shared/widgets/collapsible_section.dart';
 import 'package:c2pa_view/features/shared/widgets/sub_section.dart';
+import 'package:c2pa_view/l10n/localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 /// Collapsible "Camera capture details" section showing EXIF data.
 class CameraCaptureSection extends StatelessWidget {
-
   const CameraCaptureSection({
     super.key,
     this.exifData,
@@ -28,29 +28,39 @@ class CameraCaptureSection extends StatelessWidget {
     final exif = exifData;
 
     return CollapsibleSection(
-      title: 'Camera capture details',
-      description:
-          'Additional data sourced from the camera used to take an '
-          'image or video. EXIF data can be edited by the content producer.',
+      title: c2paViewL10n(context).cameraCaptureSectionCameraCaptureDetails,
+      description: c2paViewL10n(
+        context,
+      ).cameraCaptureSectionAdditionalDataSourcedFromTheCameraUsedToTakeAn,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (exif != null) ...[
             if (exif.creator != null)
-              _TextSubSection(label: 'Creator', value: exif.creator!),
+              _TextSubSection(
+                label: c2paViewL10n(context).cameraCaptureSectionCreator,
+                value: exif.creator!,
+              ),
             if (exif.copyright != null)
-              _TextSubSection(label: 'Copyright', value: exif.copyright!),
+              _TextSubSection(
+                label: c2paViewL10n(context).cameraCaptureSectionCopyright,
+                value: exif.copyright!,
+              ),
             if (exif.captureDate != null)
               _TextSubSection(
-                label: 'Capture date',
-                value: DateFormat.yMMMd().add_jm().format(exif.captureDate!),
+                label: c2paViewL10n(context).cameraCaptureSectionCaptureDate,
+                value: DateFormat.yMMMd(
+                  Localizations.localeOf(context).toLanguageTag(),
+                ).add_jm().format(exif.captureDate!),
               ),
             _CameraInfoCard(exif: exif),
             if (exif.hasLocation) _LocationInfo(exif: exif),
           ],
           if (exifCustomFields.isNotEmpty)
             SubSection(
-              label: 'Additional EXIF data',
+              label: c2paViewL10n(
+                context,
+              ).cameraCaptureSectionAdditionalEXIFData,
               child: CustomFieldsTable(fields: exifCustomFields),
             ),
         ],
@@ -61,13 +71,15 @@ class CameraCaptureSection extends StatelessWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<ExifDisplayData?>('exifData', exifData))
-    ..add(IterableProperty<CustomField>('exifCustomFields', exifCustomFields));
+    properties
+      ..add(DiagnosticsProperty<ExifDisplayData?>('exifData', exifData))
+      ..add(
+        IterableProperty<CustomField>('exifCustomFields', exifCustomFields),
+      );
   }
 }
 
 class _TextSubSection extends StatelessWidget {
-
   const _TextSubSection({required this.label, required this.value});
   final String label;
   final String value;
@@ -87,8 +99,9 @@ class _TextSubSection extends StatelessWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(StringProperty('label', label))
-    ..add(StringProperty('value', value));
+    properties
+      ..add(StringProperty('label', label))
+      ..add(StringProperty('value', value));
   }
 }
 
@@ -103,25 +116,50 @@ class _CameraInfoCard extends StatelessWidget {
     final rows = <_InfoRow>[];
 
     if (exif.cameraLabel != null) {
-      rows.add(_InfoRow('Camera', exif.cameraLabel!));
+      rows.add(
+        _InfoRow(
+          c2paViewL10n(context).cameraCaptureSectionCamera,
+          exif.cameraLabel!,
+        ),
+      );
     }
     if (exif.lensLabel != null) {
-      rows.add(_InfoRow('Lens', exif.lensLabel!));
+      rows.add(
+        _InfoRow(
+          c2paViewL10n(context).cameraCaptureSectionLens,
+          exif.lensLabel!,
+        ),
+      );
     }
     if (exif.dimensionsLabel != null) {
-      rows.add(_InfoRow('Dimensions', exif.dimensionsLabel!));
+      rows.add(
+        _InfoRow(
+          c2paViewL10n(context).cameraCaptureSectionDimensions,
+          exif.dimensionsLabel!,
+        ),
+      );
     }
     if (exif.iso != null) {
       rows.add(_InfoRow('ISO', exif.iso!));
     }
     if (exif.focalLength != null) {
-      rows.add(_InfoRow('Focal length', '${exif.focalLength}mm'));
+      rows.add(
+        _InfoRow(
+          c2paViewL10n(context).cameraCaptureSectionFocalLength,
+          '${exif.focalLength}mm',
+        ),
+      );
     }
     if (exif.fNumber != null) {
       rows.add(_InfoRow('F-number', 'f/${exif.fNumber}'));
     }
     if (exif.exposureTime != null) {
-      rows.add(_InfoRow('Exposure', exif.exposureTime!));
+      rows.add(
+        _InfoRow(
+          c2paViewL10n(context).cameraCaptureSectionExposure,
+          exif.exposureTime!,
+        ),
+      );
     }
 
     if (rows.isEmpty) {
@@ -195,7 +233,7 @@ class _LocationInfo extends StatelessWidget {
     final theme = C2paViewerTheme.of(context);
 
     return SubSection(
-      label: 'Approximate location',
+      label: c2paViewL10n(context).cameraCaptureSectionApproximateLocation,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
