@@ -429,8 +429,42 @@ fn reader_manifest_json_value(reader: Reader) -> Result<serde_json::Value, Strin
     if let Some(statuses) = reader.validation_status() {
         value["validation_status"] = serde_json::to_value(statuses).map_err(|e| e.to_string())?;
     }
+    if let Some(statuses) = reader.current_validation_status() {
+        value["current_validation_status"] = serde_json::Value::Array(
+            statuses
+                .iter()
+                .map(|status| {
+                    serde_json::json!({
+                        "code": status.code(),
+                        "url": status.url(),
+                        "explanation": status.explanation(),
+                        "kind": match status.kind() {
+                            c2pa::status_tracker::LogKind::Success => "success",
+                            c2pa::status_tracker::LogKind::Informational => "informational",
+                            c2pa::status_tracker::LogKind::Failure => "failure",
+                        },
+                        "ingredient_uri": status.ingredient_uri(),
+                    })
+                })
+                .collect(),
+        );
+    }
     hydrate_previews(&reader, &mut value);
     Ok(value)
+}
+
+// Read failures stay failures for every shared public reader. Stable sanitized
+// error tags preserve their category without leaking SDK payloads or paths.
+// Only a genuine absent embedded JUMBF store is the optional `None` case.
+fn reader_result_json(result: Result<Reader, c2pa::Error>) -> Result<Option<String>, String> {
+    match result {
+        Ok(reader) => Ok(Some(reader_manifest_json_value(reader)?.to_string())),
+        Err(c2pa::Error::JumbfNotFound) => Ok(None),
+        Err(c2pa::Error::UnsupportedType | c2pa::Error::CoseSignatureAlgorithmNotSupported) => {
+            Err("c2pa.read.unsupported".into())
+        }
+        Err(_) => Err("c2pa.read.invalid".into()),
+    }
 }
 
 pub async fn get_manifest_with_validation(
@@ -438,11 +472,7 @@ pub async fn get_manifest_with_validation(
     format: String,
 ) -> Result<Option<String>, String> {
     let stream = std::io::Cursor::new(file_bytes);
-    let reader = Reader::from_stream(&format, stream).ok();
-    match reader {
-        Some(r) => Ok(Some(reader_manifest_json_value(r)?.to_string())),
-        None => Ok(None),
-    }
+    reader_result_json(Reader::from_stream(&format, stream))
 }
 
 /// UTF-8 JSON bytes for [`get_manifest_with_validation`].
@@ -454,14 +484,9 @@ pub async fn get_manifest_with_validation_utf8(
     file_bytes: Vec<u8>,
     format: String,
 ) -> Result<Option<Vec<u8>>, String> {
-    let stream = std::io::Cursor::new(file_bytes);
-    let reader = Reader::from_stream(&format, stream).ok();
-    match reader {
-        Some(r) => Ok(Some(
-            reader_manifest_json_value(r)?.to_string().into_bytes(),
-        )),
-        None => Ok(None),
-    }
+    Ok(get_manifest_with_validation(file_bytes, format)
+        .await?
+        .map(String::into_bytes))
 }
 
 pub async fn get_manifest_with_validation_from_path(
@@ -537,17 +562,7 @@ pub async fn get_manifest_with_trust_validation_allow_list(
         .map_err(|e| format!("context error: {e}"))?;
 
     let stream = std::io::Cursor::new(file_bytes);
-    let reader = Reader::from_context(context)
-        .with_stream(&format, stream)
-        .ok();
-
-    match reader {
-        Some(r) => {
-            let value = reader_manifest_json_value(r)?;
-            Ok(Some(value.to_string()))
-        }
-        None => Ok(None),
-    }
+    reader_result_json(Reader::from_context(context).with_stream(&format, stream))
 }
 
 /// Convenience wrapper that guesses MIME from file path and reads bytes on the
@@ -715,10 +730,17 @@ fn detached_manifest_json(
 ) -> Result<Option<String>, String> {
     validate_detached_manifest_format(manifest_format)?;
     let stream = std::io::Cursor::new(asset_bytes);
-    let reader = Reader::from_context(context)
-        .with_manifest_data_and_stream(manifest_bytes, asset_format, stream)
-        .map_err(|e| format!("detached manifest validation failed: {e}"))?;
-    Ok(Some(reader_manifest_json_value(reader)?.to_string()))
+    let result = Reader::from_context(context).with_manifest_data_and_stream(
+        manifest_bytes,
+        asset_format,
+        stream,
+    );
+    // Supplying an unreadable sidecar is invalid input, not an absent embedded
+    // credential. It must propagate as a read error to every public wrapper.
+    match result {
+        Err(c2pa::Error::JumbfNotFound) => Err("c2pa.read.invalid".into()),
+        result => reader_result_json(result),
+    }
 }
 
 #[cfg(test)]
@@ -880,18 +902,14 @@ mod tests {
             return;
         };
 
-        let err = pollster::block_on(get_detached_manifest_with_validation(
+        let report = pollster::block_on(get_detached_manifest_with_validation(
             vec![0x00, 0x01, 0x02, 0x03],
             "application/c2pa".to_string(),
             asset_bytes,
             "image/jpeg".to_string(),
         ))
-        .expect_err("invalid manifest store should error");
-
-        assert!(
-            err.contains("detached manifest validation failed"),
-            "unexpected error: {err}"
-        );
+        .expect_err("invalid detached input remains an error");
+        assert_eq!(report, "c2pa.read.invalid");
     }
 
     fn fixture_certs_dir() -> PathBuf {
@@ -1102,6 +1120,57 @@ mod tests {
             final_claim.add_ingredient(ingredient);
         }
         sign(&mut final_claim, false)
+    }
+
+    #[test]
+    fn failed_reads_are_sanitized_errors_without_credentials() {
+        assert_eq!(
+            reader_result_json(Err(c2pa::Error::JumbfNotFound)).unwrap(),
+            None
+        );
+        for (error, expected) in [
+            (c2pa::Error::UnsupportedType, "unsupported"),
+            (
+                c2pa::Error::InvalidAsset("private/path/or/payload".into()),
+                "invalid",
+            ),
+        ] {
+            let error =
+                reader_result_json(Err(error)).expect_err("failed reads cannot return stores");
+            assert_eq!(error, format!("c2pa.read.{expected}"));
+            assert!(!error.contains("private"));
+        }
+    }
+
+    #[test]
+    fn current_checks_keep_ancestor_successes_and_do_not_survive_json_import() {
+        let report = pollster::block_on(get_manifest_with_validation(
+            preview_fixture(),
+            "image/png".into(),
+        ))
+        .expect("read signed fixture")
+        .expect("manifest report");
+        let value: serde_json::Value = serde_json::from_str(&report).unwrap();
+        let current = value["current_validation_status"].as_array().unwrap();
+        for label in value["manifests"].as_object().unwrap().keys() {
+            let signature = format!("self#jumbf=/c2pa/{label}/c2pa.signature");
+            assert!(
+                current
+                    .iter()
+                    .any(|row| row["code"] == "claimSignature.validated"
+                        && row["kind"] == "success"
+                        && row["url"] == signature),
+                "current signature evidence missing for {label}"
+            );
+        }
+        assert!(current
+            .iter()
+            .any(|row| row["code"] == "ingredient.manifest.validated"
+                && row["ingredient_uri"].is_string()));
+        // A report is not a new SDK validation, including if a caller injects
+        // a current_validation_status member into deserialized Reader JSON.
+        let imported: Reader = serde_json::from_value(value).unwrap();
+        assert!(imported.current_validation_status().is_none());
     }
 
     #[test]
