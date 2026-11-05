@@ -23,6 +23,12 @@ package no longer registers a native Flutter plugin. `RustLib.init()` and
 the viewer API are unchanged. Web continues to load the separately built
 `web/pkg` WASM package; Native Assets does not replace it.
 
+The build hook tracks Cargo's source inputs and crate configuration, including
+paths containing spaces. It repairs the upstream dep-info path splitting before
+publishing the hook output, so source changes rebuild the native reader during
+ordinary incremental app builds. Missing or unreadable dep-info fails the build
+instead of leaving an untracked library in the cache.
+
 ### Version compatibility note
 
 This package intentionally pins `flutter_rust_bridge` to a specific tested

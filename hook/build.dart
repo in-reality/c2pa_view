@@ -1,14 +1,31 @@
+import 'package:code_assets/code_assets.dart';
 import 'package:flutter_rust_bridge_hooks/flutter_rust_bridge_hooks.dart';
+
+import 'cargo_dependencies.dart';
 
 Future<void> main(final List<String> args) async {
   await build(args, (final input, final output) async {
+    final nativeOutput = BuildOutputBuilder();
     await FlutterRustBridgeNativeAssetsBuilder(
       extraCargoEnvironmentVariables: {
         'CARGO_BUILD_JOBS': '1',
         'CARGO_INCREMENTAL': '0',
         ..._appleCargoEnvironment(input.json),
       },
-    ).run(input: input, output: output);
+    ).run(input: input, output: nativeOutput);
+    // Keep the builder's bundle assets, replacing its incorrectly split inputs.
+    for (final asset in nativeOutput.build().assets.code) {
+      output.assets.code.add(asset);
+      final library = asset.file;
+      if (library != null) {
+        output.dependencies.addAll(
+          cargoDependencies(
+            library: library,
+            crate: input.packageRoot.resolve('rust/'),
+          ),
+        );
+      }
+    }
   });
 }
 
