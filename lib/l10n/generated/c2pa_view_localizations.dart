@@ -5,7 +5,11 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'c2pa_view_localizations_da.dart';
 import 'c2pa_view_localizations_en.dart';
+import 'c2pa_view_localizations_es.dart';
+import 'c2pa_view_localizations_it.dart';
+import 'c2pa_view_localizations_pt.dart';
 
 // ignore_for_file: type=lint
 
@@ -95,7 +99,13 @@ abstract class C2paViewLocalizations {
       ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[Locale('en')];
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('da'),
+    Locale('en'),
+    Locale('es'),
+    Locale('it'),
+    Locale('pt'),
+  ];
 
   /// credentialIndicator presentation copy. Translate the complete message; preserve user and signed-data values.
   ///
@@ -527,7 +537,7 @@ class _C2paViewLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en'].contains(locale.languageCode);
+      <String>['da', 'en', 'es', 'it', 'pt'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_C2paViewLocalizationsDelegate old) => false;
@@ -536,8 +546,16 @@ class _C2paViewLocalizationsDelegate
 C2paViewLocalizations lookupC2paViewLocalizations(Locale locale) {
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'da':
+      return C2paViewLocalizationsDa();
     case 'en':
       return C2paViewLocalizationsEn();
+    case 'es':
+      return C2paViewLocalizationsEs();
+    case 'it':
+      return C2paViewLocalizationsIt();
+    case 'pt':
+      return C2paViewLocalizationsPt();
   }
 
   throw FlutterError(

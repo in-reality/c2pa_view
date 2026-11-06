@@ -1,0 +1,315 @@
+{
+  "@@locale": "pt",
+  "credentialIndicatorInvalid": "Inválido",
+  "@credentialIndicatorInvalid": {
+    "description": "credentialIndicator presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "credentialIndicatorUntrusted": "Confiança não estabelecida",
+  "@credentialIndicatorUntrusted": {
+    "description": "credentialIndicator presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "credentialIndicatorNotVerified": "Não verificado",
+  "@credentialIndicatorNotVerified": {
+    "description": "credentialIndicator presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "credentialIndicatorNoCR": "Sem CR",
+  "@credentialIndicatorNoCR": {
+    "description": "credentialIndicator presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "rustInitBannerRustLibraryFailedToLoad": "Não foi possível carregar a biblioteca Rust",
+  "@rustInitBannerRustLibraryFailedToLoad": {
+    "description": "rustInitBanner presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "zoomControlsZoomIn": "Ampliar",
+  "@zoomControlsZoomIn": {
+    "description": "zoomControls presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "zoomControlsFitToView": "Ajustar à vista",
+  "@zoomControlsFitToView": {
+    "description": "zoomControls presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "zoomControlsZoomOut": "Reduzir",
+  "@zoomControlsZoomOut": {
+    "description": "zoomControls presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "processSectionProcess": "Processo",
+  "@processSectionProcess": {
+    "description": "processSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "processSectionTheAppOrDeviceUsedToProduceThisContentRecorded": "A aplicação ou o dispositivo usado para produzir este conteúdo registou as seguintes informações:",
+  "@processSectionTheAppOrDeviceUsedToProduceThisContentRecorded": {
+    "description": "processSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "processSectionAppOrDeviceUsed": "Aplicação ou dispositivo usado",
+  "@processSectionAppOrDeviceUsed": {
+    "description": "processSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "processSectionAIToolUsed": "Ferramenta de IA usada",
+  "@processSectionAIToolUsed": {
+    "description": "processSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "processSectionEditsAndActivity": "Edições e atividade",
+  "@processSectionEditsAndActivity": {
+    "description": "processSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "processSectionIngredients": "Ingredientes",
+  "@processSectionIngredients": {
+    "description": "processSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "errorBannerTheContentCredentialSSigningCertificateIsNotInAny": "O certificado de assinatura da credencial Content Credentials não consta de nenhuma lista de confiança. Verifique o emissor antes de confiar neste conteúdo.",
+  "@errorBannerTheContentCredentialSSigningCertificateIsNotInAny": {
+    "description": "errorBanner presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "customFieldsSectionCustomFields": "Campos personalizados",
+  "@customFieldsSectionCustomFields": {
+    "description": "customFieldsSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "customFieldsSectionAdditionalVendorSpecificOrNonStandardDataFoundInThis": "Dados adicionais específicos do fornecedor ou não normalizados encontrados nesta credencial Content Credentials.",
+  "@customFieldsSectionAdditionalVendorSpecificOrNonStandardDataFoundInThis": {
+    "description": "customFieldsSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "cameraCaptureSectionCameraCaptureDetails": "Detalhes da captura com câmara",
+  "@cameraCaptureSectionCameraCaptureDetails": {
+    "description": "cameraCaptureSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "cameraCaptureSectionAdditionalDataSourcedFromTheCameraUsedToTakeAn": "Dados adicionais provenientes da câmara usada para captar uma imagem ou um vídeo. Os dados EXIF podem ser editados pelo produtor do conteúdo.",
+  "@cameraCaptureSectionAdditionalDataSourcedFromTheCameraUsedToTakeAn": {
+    "description": "cameraCaptureSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "cameraCaptureSectionCreator": "Criador",
+  "@cameraCaptureSectionCreator": {
+    "description": "cameraCaptureSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "cameraCaptureSectionCopyright": "Direitos de autor",
+  "@cameraCaptureSectionCopyright": {
+    "description": "cameraCaptureSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "cameraCaptureSectionCaptureDate": "Data da captura",
+  "@cameraCaptureSectionCaptureDate": {
+    "description": "cameraCaptureSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "cameraCaptureSectionAdditionalEXIFData": "Dados EXIF adicionais",
+  "@cameraCaptureSectionAdditionalEXIFData": {
+    "description": "cameraCaptureSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "cameraCaptureSectionCamera": "Câmara",
+  "@cameraCaptureSectionCamera": {
+    "description": "cameraCaptureSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "cameraCaptureSectionLens": "Objetiva",
+  "@cameraCaptureSectionLens": {
+    "description": "cameraCaptureSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "cameraCaptureSectionDimensions": "Dimensões",
+  "@cameraCaptureSectionDimensions": {
+    "description": "cameraCaptureSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "cameraCaptureSectionFocalLength": "Distância focal",
+  "@cameraCaptureSectionFocalLength": {
+    "description": "cameraCaptureSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "cameraCaptureSectionExposure": "Exposição",
+  "@cameraCaptureSectionExposure": {
+    "description": "cameraCaptureSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "cameraCaptureSectionApproximateLocation": "Localização aproximada",
+  "@cameraCaptureSectionApproximateLocation": {
+    "description": "cameraCaptureSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "aboutSectionAboutThisContentCredential": "Sobre esta credencial Content Credentials",
+  "@aboutSectionAboutThisContentCredential": {
+    "description": "aboutSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "aboutSectionAdditionalMetadata": "Metadados adicionais",
+  "@aboutSectionAdditionalMetadata": {
+    "description": "aboutSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "aboutSectionIssuedBy": "Emitido por",
+  "@aboutSectionIssuedBy": {
+    "description": "aboutSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "aboutSectionThisIsTheOrganizationDeviceOrIndividualThatRecordedThe": "Esta é a organização, o dispositivo ou a pessoa que registou os detalhes acima e assinou esta credencial Content Credentials.",
+  "@aboutSectionThisIsTheOrganizationDeviceOrIndividualThatRecordedThe": {
+    "description": "aboutSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "aboutSectionIssuedOn": "Emitido em",
+  "@aboutSectionIssuedOn": {
+    "description": "aboutSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "aboutSectionProducer": "Produtor",
+  "@aboutSectionProducer": {
+    "description": "aboutSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "aboutSectionSocialAccounts": "Contas nas redes sociais",
+  "@aboutSectionSocialAccounts": {
+    "description": "aboutSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "aboutSectionAITraining": "Treino de IA",
+  "@aboutSectionAITraining": {
+    "description": "aboutSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "aboutSectionTheCreatorDoesNotWantThisContentUsedForAI": "O criador não pretende que este conteúdo seja usado para treino de IA.",
+  "@aboutSectionTheCreatorDoesNotWantThisContentUsedForAI": {
+    "description": "aboutSection presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "tamperedPlaceholderValidationProblemDetails": "Detalhes do problema de validação",
+  "@tamperedPlaceholderValidationProblemDetails": {
+    "description": "tamperedPlaceholder presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "tamperedPlaceholderNoErrorCodedValidationEntriesWereReported": "Não foram comunicadas entradas de validação com códigos de erro.",
+  "@tamperedPlaceholderNoErrorCodedValidationEntriesWereReported": {
+    "description": "tamperedPlaceholder presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "tamperedPlaceholderCopy": "Copiar",
+  "@tamperedPlaceholderCopy": {
+    "description": "tamperedPlaceholder presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "tamperedPlaceholderClose": "Fechar",
+  "@tamperedPlaceholderClose": {
+    "description": "tamperedPlaceholder presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "tamperedPlaceholderThisFileMayHaveBeenTamperedWithItsContentCredentials": "Este ficheiro pode ter sido adulterado. As suas Content Credentials não podem ser verificadas nem visualizadas.",
+  "@tamperedPlaceholderThisFileMayHaveBeenTamperedWithItsContentCredentials": {
+    "description": "tamperedPlaceholder presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "detailHeaderCopied": "Copiado!",
+  "@detailHeaderCopied": {
+    "description": "detailHeader presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "detailHeaderCopyManifestJSON": "Copiar JSON do manifesto",
+  "@detailHeaderCopyManifestJSON": {
+    "description": "detailHeader presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "detailHeaderIssuedByDataIssuer": "Emitido por {dataIssuer}",
+  "@detailHeaderIssuedByDataIssuer": {
+    "description": "detailHeader presentation copy. Translate the complete message; preserve user and signed-data values.",
+    "placeholders": {
+      "dataIssuer": {
+        "type": "String",
+        "description": "Display value: data.issuer"
+      }
+    }
+  },
+  "detailHeaderIssuedOnFormatted": "Emitido em {formatted}",
+  "@detailHeaderIssuedOnFormatted": {
+    "description": "detailHeader presentation copy. Translate the complete message; preserve user and signed-data values.",
+    "placeholders": {
+      "formatted": {
+        "type": "String",
+        "description": "Display value: formatted"
+      }
+    }
+  },
+  "detailHeaderOnFormatted": "em {formatted}",
+  "@detailHeaderOnFormatted": {
+    "description": "detailHeader presentation copy. Translate the complete message; preserve user and signed-data values.",
+    "placeholders": {
+      "formatted": {
+        "type": "String",
+        "description": "Display value: formatted"
+      }
+    }
+  },
+  "manifestDetailPopupDismissManifestDetails": "Fechar detalhes do manifesto",
+  "@manifestDetailPopupDismissManifestDetails": {
+    "description": "manifestDetailPopup presentation copy. Translate the complete message; preserve user and signed-data values."
+  },
+  "actionCreated": "Criado",
+  "@actionCreated": {
+    "description": "User-facing action Created. Translate the complete message."
+  },
+  "actionOpened": "Aberto",
+  "@actionOpened": {
+    "description": "User-facing action Opened. Translate the complete message."
+  },
+  "actionPlaced": "Inserido",
+  "@actionPlaced": {
+    "description": "User-facing action Placed. Translate the complete message."
+  },
+  "actionEdited": "Editado",
+  "@actionEdited": {
+    "description": "User-facing action Edited. Translate the complete message."
+  },
+  "actionCropped": "Recortado",
+  "@actionCropped": {
+    "description": "User-facing action Cropped. Translate the complete message."
+  },
+  "actionResized": "Redimensionado",
+  "@actionResized": {
+    "description": "User-facing action Resized. Translate the complete message."
+  },
+  "actionColorAdjustments": "Ajustes de cor",
+  "@actionColorAdjustments": {
+    "description": "User-facing action Color Adjustments. Translate the complete message."
+  },
+  "actionDrawing": "Desenho",
+  "@actionDrawing": {
+    "description": "User-facing action Drawing. Translate the complete message."
+  },
+  "actionFiltered": "Filtrado",
+  "@actionFiltered": {
+    "description": "User-facing action Filtered. Translate the complete message."
+  },
+  "actionOrientation": "Orientação alterada",
+  "@actionOrientation": {
+    "description": "User-facing action Orientation. Translate the complete message."
+  },
+  "actionPublished": "Publicado",
+  "@actionPublished": {
+    "description": "User-facing action Published. Translate the complete message."
+  },
+  "actionTranscoded": "Transcodificado",
+  "@actionTranscoded": {
+    "description": "User-facing action Transcoded. Translate the complete message."
+  },
+  "actionUnknown": "Ação desconhecida",
+  "@actionUnknown": {
+    "description": "User-facing action Unknown. Translate the complete message."
+  },
+  "generativeAiGenerated": "Este conteúdo foi gerado com uma ferramenta de IA.",
+  "@generativeAiGenerated": {
+    "description": "User-facing generative Ai Generated. Translate the complete message."
+  },
+  "generativeCompositeWithAi": "Este conteúdo combina vários conteúdos. Pelo menos um foi gerado com uma ferramenta de IA.",
+  "@generativeCompositeWithAi": {
+    "description": "User-facing generative Composite With Ai. Translate the complete message."
+  },
+  "generativeLegacy": "Este conteúdo pode incluir elementos gerados por IA.",
+  "@generativeLegacy": {
+    "description": "User-facing generative Legacy. Translate the complete message."
+  },
+  "aiBadge": "IA",
+  "@aiBadge": {
+    "description": "Compact badge for an artificial-intelligence-generated action."
+  },
+  "credentialIssuedByOn": "Emitido por {issuer} em {date}",
+  "@credentialIssuedByOn": {
+    "description": "Presentation message: credentialIssuedByOn. Use the active locale; preserve recorded and user values.",
+    "placeholders": {
+      "issuer": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "credentialIssuedBy": "Emitido por {issuer}",
+  "@credentialIssuedBy": {
+    "description": "Presentation message: credentialIssuedBy. Use the active locale; preserve recorded and user values.",
+    "placeholders": {
+      "issuer": {
+        "type": "String"
+      }
+    }
+  },
+  "credentialIssuedOn": "Emitido em {date}",
+  "@credentialIssuedOn": {
+    "description": "Presentation message: credentialIssuedOn. Use the active locale; preserve recorded and user values.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
+}
