@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
 import 'package:c2pa_view/features/manifest_detail/manifest_detail_content.dart';
+import 'package:c2pa_view/l10n/localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -44,36 +45,42 @@ Future<void> showManifestDetailPopup(
   return showGeneralDialog<void>(
     context: context,
     barrierDismissible: true,
-    barrierLabel: 'Dismiss manifest details',
+    barrierLabel: c2paViewL10n(
+      context,
+    ).manifestDetailPopupDismissManifestDetails,
     barrierColor: Colors.black26,
-    transitionBuilder: (final context, final animation, _, final child) => FadeTransition(
-        opacity: animation,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 0.02),
-            end: Offset.zero,
-          ).animate(
-            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+    transitionBuilder: (final context, final animation, _, final child) =>
+        FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position:
+                Tween<Offset>(
+                  begin: const Offset(0, 0.02),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
+            child: child,
           ),
-          child: child,
         ),
-      ),
     pageBuilder: (final context, _, final __) => _ManifestDetailPopupLayout(
-        triggerPosition: triggerPosition,
-        triggerSize: triggerSize,
-        data: data,
-        mimeType: mimeType,
-        onThumbnailTap: onThumbnailTap,
-        onIngredientTap: onIngredientTap,
-        mediaImage: mediaImage,
-        popupWidth: width,
-        maxHeight: maxHeight,
-      ),
+      triggerPosition: triggerPosition,
+      triggerSize: triggerSize,
+      data: data,
+      mimeType: mimeType,
+      onThumbnailTap: onThumbnailTap,
+      onIngredientTap: onIngredientTap,
+      mediaImage: mediaImage,
+      popupWidth: width,
+      maxHeight: maxHeight,
+    ),
   );
 }
 
 class _ManifestDetailPopupLayout extends StatelessWidget {
-
   const _ManifestDetailPopupLayout({
     required this.triggerPosition,
     required this.triggerSize,
@@ -151,14 +158,24 @@ class _ManifestDetailPopupLayout extends StatelessWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<Offset>('triggerPosition', triggerPosition))
-    ..add(DiagnosticsProperty<Size>('triggerSize', triggerSize))
-    ..add(DiagnosticsProperty<ManifestViewData>('data', data))
-    ..add(StringProperty('mimeType', mimeType))
-    ..add(ObjectFlagProperty<VoidCallback?>.has('onThumbnailTap', onThumbnailTap))
-    ..add(ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has('onIngredientTap', onIngredientTap))
-    ..add(DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage))
-    ..add(DoubleProperty('popupWidth', popupWidth))
-    ..add(DoubleProperty('maxHeight', maxHeight));
+    properties
+      ..add(DiagnosticsProperty<Offset>('triggerPosition', triggerPosition))
+      ..add(DiagnosticsProperty<Size>('triggerSize', triggerSize))
+      ..add(DiagnosticsProperty<ManifestViewData>('data', data))
+      ..add(StringProperty('mimeType', mimeType))
+      ..add(
+        ObjectFlagProperty<VoidCallback?>.has('onThumbnailTap', onThumbnailTap),
+      )
+      ..add(
+        ObjectFlagProperty<ValueChanged<IngredientDisplayInfo>?>.has(
+          'onIngredientTap',
+          onIngredientTap,
+        ),
+      )
+      ..add(
+        DiagnosticsProperty<ImageProvider<Object>?>('mediaImage', mediaImage),
+      )
+      ..add(DoubleProperty('popupWidth', popupWidth))
+      ..add(DoubleProperty('maxHeight', maxHeight));
   }
 }

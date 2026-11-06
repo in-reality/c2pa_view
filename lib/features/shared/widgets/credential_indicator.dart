@@ -1,5 +1,6 @@
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/validation_result.dart';
+import 'package:c2pa_view/l10n/localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -38,16 +39,16 @@ class CredentialIndicator extends StatelessWidget {
         text = 'CR';
       case ValidationStatus.invalid:
         leading = Icon(Icons.dangerous, size: 16, color: color);
-        text = 'Invalid';
+        text = c2paViewL10n(context).credentialIndicatorInvalid;
       case ValidationStatus.untrusted:
         leading = Icon(Icons.verified_outlined, size: 16, color: color);
-        text = 'Untrusted';
+        text = c2paViewL10n(context).credentialIndicatorUntrusted;
       case ValidationStatus.notVerified:
         leading = Icon(Icons.help_outline, size: 16, color: color);
-        text = 'Not verified';
+        text = c2paViewL10n(context).credentialIndicatorNotVerified;
       case ValidationStatus.noCredential:
         leading = Icon(Icons.remove_circle_outline, size: 16, color: color);
-        text = 'No CR';
+        text = c2paViewL10n(context).credentialIndicatorNoCR;
     }
 
     if (compact) {

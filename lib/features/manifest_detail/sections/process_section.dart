@@ -4,6 +4,7 @@ import 'package:c2pa_view/features/custom_fields/custom_fields_table.dart';
 import 'package:c2pa_view/features/shared/widgets/collapsible_section.dart';
 import 'package:c2pa_view/features/shared/widgets/ingredient_card.dart';
 import 'package:c2pa_view/features/shared/widgets/sub_section.dart';
+import 'package:c2pa_view/l10n/localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -47,9 +48,10 @@ class ProcessSection extends StatelessWidget {
     );
     if (compact) return content;
     return CollapsibleSection(
-      title: 'Process',
-      description:
-          'The app or device used to produce this content recorded the following information:',
+      title: c2paViewL10n(context).processSectionProcess,
+      description: c2paViewL10n(
+        context,
+      ).processSectionTheAppOrDeviceUsedToProduceThisContentRecorded,
       child: content,
     );
   }
@@ -79,7 +81,7 @@ class _AppDeviceSubSection extends StatelessWidget {
     final gen = data.claimGenerator!;
 
     return SubSection(
-      label: 'App or device used',
+      label: c2paViewL10n(context).processSectionAppOrDeviceUsed,
       child: Row(
         children: [
           if (gen.icon != null) ...[
@@ -125,7 +127,7 @@ class _AiToolSubSection extends StatelessWidget {
     final theme = C2paViewerTheme.of(context);
 
     return SubSection(
-      label: 'AI tool used',
+      label: c2paViewL10n(context).processSectionAIToolUsed,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -170,7 +172,12 @@ class _ActionsSubSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [for (final action in data.actions) _ActionRow(action: action)],
     );
-    if (!compact) return SubSection(label: 'Edits and activity', child: rows);
+    if (!compact) {
+      return SubSection(
+        label: c2paViewL10n(context).processSectionEditsAndActivity,
+        child: rows,
+      );
+    }
     final theme = C2paViewerTheme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
@@ -237,7 +244,37 @@ class _ActionRowState extends State<_ActionRow> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  action.label,
+                  // Translate only the package's default human label. A host's
+                  // explicit custom label is data and retains its public contract.
+                  action.label !=
+                          ActionDisplayInfo.humanLabel(action.actionType)
+                      ? action.label
+                      : switch (action.actionType) {
+                          'c2pa.created' => c2paViewL10n(context).actionCreated,
+                          'c2pa.opened' => c2paViewL10n(context).actionOpened,
+                          'c2pa.placed' => c2paViewL10n(context).actionPlaced,
+                          'c2pa.edited' => c2paViewL10n(context).actionEdited,
+                          'c2pa.cropped' => c2paViewL10n(context).actionCropped,
+                          'c2pa.resized' => c2paViewL10n(context).actionResized,
+                          'c2pa.color_adjustments' => c2paViewL10n(
+                            context,
+                          ).actionColorAdjustments,
+                          'c2pa.drawing' => c2paViewL10n(context).actionDrawing,
+                          'c2pa.filtered' => c2paViewL10n(
+                            context,
+                          ).actionFiltered,
+                          'c2pa.orientation' => c2paViewL10n(
+                            context,
+                          ).actionOrientation,
+                          'c2pa.published' => c2paViewL10n(
+                            context,
+                          ).actionPublished,
+                          'c2pa.transcoded' => c2paViewL10n(
+                            context,
+                          ).actionTranscoded,
+                          'c2pa.unknown' => c2paViewL10n(context).actionUnknown,
+                          _ => action.label,
+                        },
                   style: theme.bodyStyle.copyWith(
                     color: theme.textPrimaryColor,
                   ),
@@ -254,7 +291,7 @@ class _ActionRowState extends State<_ActionRow> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    'AI',
+                    c2paViewL10n(context).aiBadge,
                     style: theme.labelStyle.copyWith(
                       color: theme.unrecognizedColor,
                       fontSize: 10,
@@ -314,7 +351,7 @@ class _IngredientsSubSection extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) => SubSection(
-    label: 'Ingredients',
+    label: c2paViewL10n(context).processSectionIngredients,
     child: Column(
       children: [
         for (int i = 0; i < data.ingredients.length; i++) ...[

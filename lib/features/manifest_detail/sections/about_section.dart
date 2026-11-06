@@ -4,15 +4,16 @@ import 'package:c2pa_view/domain/models/manifest_view_data.dart';
 import 'package:c2pa_view/features/custom_fields/custom_fields_table.dart';
 import 'package:c2pa_view/features/shared/widgets/collapsible_section.dart';
 import 'package:c2pa_view/features/shared/widgets/sub_section.dart';
+import 'package:c2pa_view/l10n/localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 /// Collapsible "About this Content Credential" section.
 class AboutSection extends StatelessWidget {
-
   const AboutSection({
-    required this.data, super.key,
+    required this.data,
+    super.key,
     this.creativeWorkCustomFields = const [],
   });
   final ManifestViewData data;
@@ -33,7 +34,7 @@ class AboutSection extends StatelessWidget {
     }
 
     return CollapsibleSection(
-      title: 'About this Content Credential',
+      title: c2paViewL10n(context).aboutSectionAboutThisContentCredential,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -47,7 +48,7 @@ class AboutSection extends StatelessWidget {
           if (data.doNotTrain) const _DoNotTrainSubSection(),
           if (creativeWorkCustomFields.isNotEmpty)
             SubSection(
-              label: 'Additional metadata',
+              label: c2paViewL10n(context).aboutSectionAdditionalMetadata,
               child: CustomFieldsTable(fields: creativeWorkCustomFields),
             ),
         ],
@@ -58,8 +59,14 @@ class AboutSection extends StatelessWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<ManifestViewData>('data', data))
-    ..add(IterableProperty<CustomField>('creativeWorkCustomFields', creativeWorkCustomFields));
+    properties
+      ..add(DiagnosticsProperty<ManifestViewData>('data', data))
+      ..add(
+        IterableProperty<CustomField>(
+          'creativeWorkCustomFields',
+          creativeWorkCustomFields,
+        ),
+      );
   }
 }
 
@@ -72,7 +79,7 @@ class _IssuedBySubSection extends StatelessWidget {
     final theme = C2paViewerTheme.of(context);
 
     return SubSection(
-      label: 'Issued by',
+      label: c2paViewL10n(context).aboutSectionIssuedBy,
       child: Row(
         children: [
           Expanded(
@@ -82,10 +89,9 @@ class _IssuedBySubSection extends StatelessWidget {
             ),
           ),
           Tooltip(
-            message:
-                'This is the organization, device, or individual '
-                'that recorded the details above and signed this '
-                'Content Credential.',
+            message: c2paViewL10n(
+              context,
+            ).aboutSectionThisIsTheOrganizationDeviceOrIndividualThatRecordedThe,
             child: Icon(Icons.help_outline, size: 16, color: theme.iconColor),
           ),
         ],
@@ -108,9 +114,11 @@ class _IssuedOnSubSection extends StatelessWidget {
   Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
     return SubSection(
-      label: 'Issued on',
+      label: c2paViewL10n(context).aboutSectionIssuedOn,
       child: Text(
-        DateFormat.yMMMd().add_jm().format(date),
+        DateFormat.yMMMd(
+          Localizations.localeOf(context).toLanguageTag(),
+        ).add_jm().format(date),
         style: theme.bodyStyle.copyWith(color: theme.textPrimaryColor),
       ),
     );
@@ -131,7 +139,7 @@ class _ProducerSubSection extends StatelessWidget {
   Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
     return SubSection(
-      label: 'Producer',
+      label: c2paViewL10n(context).aboutSectionProducer,
       child: Text(
         producer,
         style: theme.bodyStyle.copyWith(color: theme.textPrimaryColor),
@@ -154,7 +162,7 @@ class _SocialAccountsSubSection extends StatelessWidget {
   Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
     return SubSection(
-      label: 'Social accounts',
+      label: c2paViewL10n(context).aboutSectionSocialAccounts,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -185,7 +193,9 @@ class _SocialAccountsSubSection extends StatelessWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(IterableProperty<SocialAccountDisplayInfo>('accounts', accounts));
+    properties.add(
+      IterableProperty<SocialAccountDisplayInfo>('accounts', accounts),
+    );
   }
 }
 
@@ -196,13 +206,15 @@ class _DoNotTrainSubSection extends StatelessWidget {
   Widget build(final BuildContext context) {
     final theme = C2paViewerTheme.of(context);
     return SubSection(
-      label: 'AI training',
+      label: c2paViewL10n(context).aboutSectionAITraining,
       child: Row(
         children: [
           Icon(Icons.block, size: 16, color: theme.invalidColor),
           const SizedBox(width: 6),
           Text(
-            'The creator does not want this content used for AI training.',
+            c2paViewL10n(
+              context,
+            ).aboutSectionTheCreatorDoesNotWantThisContentUsedForAI,
             style: theme.bodySmallStyle.copyWith(color: theme.textPrimaryColor),
           ),
         ],

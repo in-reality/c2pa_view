@@ -1,3 +1,4 @@
+import 'package:c2pa_view/l10n/localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -6,7 +7,12 @@ import 'package:flutter/material.dart';
 /// Visible for testing so the categorisation logic can be exercised without
 /// a full widget pump.
 @visibleForTesting
-enum RustInitErrorCategory { contentHashMismatch, webLoadFailure, timeout, unknown }
+enum RustInitErrorCategory {
+  contentHashMismatch,
+  webLoadFailure,
+  timeout,
+  unknown,
+}
 
 /// Categorise [message] into one of [RustInitErrorCategory] using a
 /// case-insensitive substring match. The underlying error strings come from
@@ -70,7 +76,10 @@ class RustInitErrorBanner extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Rust library failed to load', style: titleStyle),
+          Text(
+            c2paViewL10n(context).rustInitBannerRustLibraryFailedToLoad,
+            style: titleStyle,
+          ),
           const SizedBox(height: 4),
           SelectableText(message, style: bodyStyle),
           const SizedBox(height: 12),
@@ -177,10 +186,10 @@ class RustInitErrorBanner extends StatelessWidget {
     required final TextStyle? bodyStyle,
     required final TextStyle? commandStyle,
   }) => [
-        SelectableText(intro, style: bodyStyle),
-        const SizedBox(height: 8),
-        for (final line in commands) SelectableText(line, style: commandStyle),
-      ];
+    SelectableText(intro, style: bodyStyle),
+    const SizedBox(height: 8),
+    for (final line in commands) SelectableText(line, style: commandStyle),
+  ];
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {

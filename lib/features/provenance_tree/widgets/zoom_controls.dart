@@ -1,12 +1,15 @@
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
+import 'package:c2pa_view/l10n/localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Floating zoom control buttons (zoom in, fit, zoom out).
 class ZoomControls extends StatelessWidget {
-
   const ZoomControls({
-    required this.onZoomIn, required this.onZoomOut, required this.onFit, super.key,
+    required this.onZoomIn,
+    required this.onZoomOut,
+    required this.onFit,
+    super.key,
   });
   final VoidCallback onZoomIn;
   final VoidCallback onZoomOut;
@@ -35,21 +38,21 @@ class ZoomControls extends StatelessWidget {
           _ZoomButton(
             icon: Icons.add,
             onTap: onZoomIn,
-            tooltip: 'Zoom in',
+            tooltip: c2paViewL10n(context).zoomControlsZoomIn,
             theme: theme,
           ),
           Container(height: 1, width: 32, color: theme.borderColor),
           _ZoomButton(
             icon: Icons.fit_screen_outlined,
             onTap: onFit,
-            tooltip: 'Fit to view',
+            tooltip: c2paViewL10n(context).zoomControlsFitToView,
             theme: theme,
           ),
           Container(height: 1, width: 32, color: theme.borderColor),
           _ZoomButton(
             icon: Icons.remove,
             onTap: onZoomOut,
-            tooltip: 'Zoom out',
+            tooltip: c2paViewL10n(context).zoomControlsZoomOut,
             theme: theme,
           ),
         ],
@@ -60,14 +63,14 @@ class ZoomControls extends StatelessWidget {
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(ObjectFlagProperty<VoidCallback>.has('onZoomIn', onZoomIn))
-    ..add(ObjectFlagProperty<VoidCallback>.has('onZoomOut', onZoomOut))
-    ..add(ObjectFlagProperty<VoidCallback>.has('onFit', onFit));
+    properties
+      ..add(ObjectFlagProperty<VoidCallback>.has('onZoomIn', onZoomIn))
+      ..add(ObjectFlagProperty<VoidCallback>.has('onZoomOut', onZoomOut))
+      ..add(ObjectFlagProperty<VoidCallback>.has('onFit', onFit));
   }
 }
 
 class _ZoomButton extends StatelessWidget {
-
   const _ZoomButton({
     required this.icon,
     required this.onTap,
@@ -81,24 +84,25 @@ class _ZoomButton extends StatelessWidget {
 
   @override
   Widget build(final BuildContext context) => Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(4),
-        child: SizedBox(
-          width: 36,
-          height: 36,
-          child: Center(child: Icon(icon, size: 18, color: theme.iconColor)),
-        ),
+    message: tooltip,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: SizedBox(
+        width: 36,
+        height: 36,
+        child: Center(child: Icon(icon, size: 18, color: theme.iconColor)),
       ),
-    );
+    ),
+  );
 
   @override
   void debugFillProperties(final DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties..add(DiagnosticsProperty<IconData>('icon', icon))
-    ..add(ObjectFlagProperty<VoidCallback>.has('onTap', onTap))
-    ..add(StringProperty('tooltip', tooltip))
-    ..add(DiagnosticsProperty<C2paViewerThemeData>('theme', theme));
+    properties
+      ..add(DiagnosticsProperty<IconData>('icon', icon))
+      ..add(ObjectFlagProperty<VoidCallback>.has('onTap', onTap))
+      ..add(StringProperty('tooltip', tooltip))
+      ..add(DiagnosticsProperty<C2paViewerThemeData>('theme', theme));
   }
 }

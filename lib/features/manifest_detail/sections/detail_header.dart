@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:c2pa_view/core/theme/c2pa_theme.dart';
 import 'package:c2pa_view/domain/models/manifest_view_data.dart';
 import 'package:c2pa_view/features/shared/widgets/credential_indicator.dart';
+import 'package:c2pa_view/l10n/localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -79,7 +80,9 @@ class _DetailHeaderState extends State<DetailHeader> {
                   data.rawJson != null &&
                   !data.validationResult.isInvalid)
                 Tooltip(
-                  message: _copied ? 'Copied!' : 'Copy manifest JSON',
+                  message: _copied
+                      ? c2paViewL10n(context).detailHeaderCopied
+                      : c2paViewL10n(context).detailHeaderCopyManifestJSON,
                   child: IconButton(
                     onPressed: _copyJson,
                     iconSize: 18,
@@ -115,18 +118,23 @@ class _DetailHeaderState extends State<DetailHeader> {
   }
 
   String _issuedByLine(final ManifestViewData data) {
-    final parts = <String>[];
-    if (data.issuer != null) {
-      parts.add('Issued by ${data.issuer}');
+    final strings = c2paViewL10n(context);
+    final issuer = data.issuer;
+    final date = data.signedDate;
+    final formatted = date == null
+        ? null
+        : DateFormat.yMMMd(
+            Localizations.localeOf(context).toLanguageTag(),
+          ).add_jm().format(date);
+    if (issuer != null && formatted != null) {
+      return strings.credentialIssuedByOn(issuer, formatted);
     }
-    if (data.signedDate != null) {
-      final formatted = DateFormat.yMMMd().add_jm().format(data.signedDate!);
-      if (parts.isEmpty) {
-        parts.add('Issued on $formatted');
-      } else {
-        parts.add('on $formatted');
-      }
+    if (issuer != null) {
+      return strings.credentialIssuedBy(issuer);
     }
-    return parts.join(' ');
+    if (formatted != null) {
+      return strings.credentialIssuedOn(formatted);
+    }
+    return '';
   }
 }
