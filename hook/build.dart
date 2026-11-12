@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:code_assets/code_assets.dart';
 import 'package:flutter_rust_bridge_hooks/flutter_rust_bridge_hooks.dart';
 
@@ -11,6 +13,11 @@ Future<void> main(final List<String> args) async {
         'CARGO_BUILD_JOBS': '1',
         'CARGO_INCREMENTAL': '0',
         ..._appleCargoEnvironment(input.json),
+        ...configuredCargoEnvironment(
+          cargoHome: input.userDefines['cargo_home'],
+          cargoOffline: input.userDefines['cargo_offline'],
+          resolveCargoHome: () => input.userDefines.path('cargo_home'),
+        ),
       },
     ).run(input: input, output: nativeOutput);
     // Keep the builder's bundle assets, replacing its incorrectly split inputs.
@@ -27,6 +34,46 @@ Future<void> main(final List<String> args) async {
       }
     }
   });
+}
+
+/// Optional host build configuration, never media/verifier policy.
+/// Validate raw types before path(): hooks silently treats non-strings as absent.
+Map<String, String> configuredCargoEnvironment({
+  required final Object? cargoHome,
+  required final Object? cargoOffline,
+  required final Uri? Function() resolveCargoHome,
+}) {
+  if (cargoHome != null && (cargoHome is! String || cargoHome.trim().isEmpty)) {
+    throw const FormatException('cargo_home must be a nonempty path string');
+  }
+  if (cargoOffline != null && cargoOffline is! bool) {
+    throw const FormatException('cargo_offline must be a boolean');
+  }
+  String? home;
+  if (cargoHome != null) {
+    try {
+      final uri = resolveCargoHome();
+      if (uri == null ||
+          uri.scheme != 'file' ||
+          !uri.isAbsolute ||
+          uri.hasQuery ||
+          uri.hasFragment) {
+        throw const FormatException('cargo_home must resolve to a file URI');
+      }
+      home = Directory.fromUri(uri).path;
+      if (home.trim().isEmpty) {
+        throw const FormatException('cargo_home resolved to an empty path');
+      }
+    } on Object {
+      throw const FormatException(
+        'cargo_home must resolve to a valid file path',
+      );
+    }
+  }
+  return {
+    'CARGO_HOME': ?home,
+    if (cargoOffline != null) 'CARGO_NET_OFFLINE': '$cargoOffline',
+  };
 }
 
 /// Preserves loadable Apple libraries and forwards the iOS minimum into Cargo.
