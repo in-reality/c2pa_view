@@ -77,6 +77,18 @@ All methods return `null` if no C2PA manifest is found. For detached reads,
 invalid manifest bytes throw; hash/signature problems appear in
 `validationStatus` / `validation_results` like embedded manifests.
 
+### Trust inputs
+
+Pass Manifest CA PEMs in `trustAnchorsPem` and separately authorized TSA CA PEMs
+in `timestampTrustAnchorsPem`. The latter is optional on the existing reader
+methods; a Manifest anchor does not grant TSA authority. `allowedListPem` remains
+an exact Manifest signing-leaf allow-list. Current Reader diagnostics remain
+visible, including timestamp trust failures.
+
+`TrustListService` fetches the published Manifest and TSA lists separately. Pass
+both corresponding getters to readers. Its purpose-specific disk cache refetches
+legacy combined caches because their certificate purposes cannot be recovered.
+
 ### API summary
 
 | Entry point | Input | Validation |

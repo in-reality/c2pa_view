@@ -25,7 +25,9 @@ class TrustListService {
   static const tsaTrustListUrl =
       'https://raw.githubusercontent.com/c2pa-org/conformance-public/main/trust-list/C2PA-TSA-TRUST-LIST.pem';
 
-  static const _cacheFileName = 'c2pa_trust_anchors.pem';
+  // Legacy combined cache cannot recover purpose; refetch the two origins.
+  static const _cacheFileName = 'c2pa_manifest_trust_anchors.pem';
+  static const _tsaCacheFileName = 'c2pa_tsa_trust_anchors.pem';
   static const _cacheTimestampFileName = 'c2pa_trust_anchors_ts.txt';
 
   /// Local directory for caching trust lists, or null to disable caching.
@@ -35,12 +37,16 @@ class TrustListService {
   final http.Client _httpClient;
 
   String? _cachedPem;
+  String? _cachedTimestampPem;
 
   /// Whether a trust list is currently available (either from cache or fetch).
-  bool get isAvailable => _cachedPem != null;
+  bool get isAvailable => _cachedPem != null && _cachedTimestampPem != null;
 
-  /// The combined PEM bundle (C2PA + TSA trust lists), or null if unavailable.
+  /// Manifest-signing CAs from the C2PA trust list, or null if unavailable.
   String? get trustAnchorsPem => _cachedPem;
+
+  /// TSA CAs from the separate C2PA TSA trust list, or null if unavailable.
+  String? get timestampTrustAnchorsPem => _cachedTimestampPem;
 
   /// Attempt to load trust lists: first from local cache, then from network.
   ///
@@ -49,7 +55,8 @@ class TrustListService {
     if (cacheDirectory != null) {
       final cached = _readLocalCache();
       if (cached != null) {
-        _cachedPem = cached;
+        _cachedPem = cached.$1;
+        _cachedTimestampPem = cached.$2;
         _maybeRefreshInBackground();
         return true;
       }
@@ -65,10 +72,11 @@ class TrustListService {
     try {
       final c2paPem = await _fetchPem(c2paTrustListUrl);
       final tsaPem = await _fetchPem(tsaTrustListUrl);
-      _cachedPem = '$c2paPem\n$tsaPem';
+      _cachedPem = c2paPem;
+      _cachedTimestampPem = tsaPem;
 
       if (cacheDirectory != null) {
-        _writeLocalCache(_cachedPem!);
+        _writeLocalCache(c2paPem, tsaPem);
       }
       return true;
     } catch (e) {
@@ -85,21 +93,27 @@ class TrustListService {
     return response.body;
   }
 
-  String? _readLocalCache() {
+  (String, String)? _readLocalCache() {
     try {
       final file = File('$cacheDirectory/$_cacheFileName');
-      if (!file.existsSync()) return null;
-      return file.readAsStringSync();
+      final tsaFile = File('$cacheDirectory/$_tsaCacheFileName');
+      if (!file.existsSync() || !tsaFile.existsSync()) {
+        return null;
+      }
+      return (file.readAsStringSync(), tsaFile.readAsStringSync());
     } catch (e) {
       debugPrint('[TrustListService] Cache read failed: $e');
       return null;
     }
   }
 
-  void _writeLocalCache(String pem) {
+  void _writeLocalCache(final String pem, final String timestampPem) {
     try {
       final file = File('$cacheDirectory/$_cacheFileName');
       file.writeAsStringSync(pem);
+      File(
+        '$cacheDirectory/$_tsaCacheFileName',
+      ).writeAsStringSync(timestampPem);
 
       final tsFile = File('$cacheDirectory/$_cacheTimestampFileName');
       tsFile.writeAsStringSync(DateTime.now().toUtc().toIso8601String());

@@ -402,6 +402,7 @@ class _PopupDemoCardState extends State<_PopupDemoCard> {
       widget.testCase.imageUrl,
       widget.testCase.mimeType,
       widget.trustList.trustAnchorsPem,
+      widget.trustList.timestampTrustAnchorsPem,
     );
   }
 
@@ -410,6 +411,7 @@ class _PopupDemoCardState extends State<_PopupDemoCard> {
     String url,
     String format,
     String? trustAnchorsPem,
+    String? timestampTrustAnchorsPem,
   ) async {
     final response = await http.get(Uri.parse(url));
     final bytes = Uint8List.fromList(response.bodyBytes);
@@ -417,6 +419,7 @@ class _PopupDemoCardState extends State<_PopupDemoCard> {
       response.bodyBytes,
       format,
       trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
     );
     return (store: store, bytes: bytes);
   }
@@ -563,6 +566,7 @@ class _ManifestViewerPageState extends State<ManifestViewerPage> {
       widget.testCase.imageUrl,
       widget.testCase.mimeType,
       widget.trustList.trustAnchorsPem,
+      widget.trustList.timestampTrustAnchorsPem,
     );
   }
 
@@ -571,6 +575,7 @@ class _ManifestViewerPageState extends State<ManifestViewerPage> {
     String url,
     String format,
     String? trustAnchorsPem,
+    String? timestampTrustAnchorsPem,
   ) async {
     final response = await http.get(Uri.parse(url));
     final bytes = Uint8List.fromList(response.bodyBytes);
@@ -578,6 +583,7 @@ class _ManifestViewerPageState extends State<ManifestViewerPage> {
       response.bodyBytes,
       format,
       trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
     );
     return (store: store, bytes: bytes);
   }

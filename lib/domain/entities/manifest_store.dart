@@ -132,18 +132,20 @@ class ManifestStore extends Equatable {
 
   /// Creates a ManifestStore from a local file path.
   ///
-  /// When [trustAnchorsPem] and/or [allowedListPem] is provided, validation
-  /// runs against those PEM bundles (CA anchors and end-entity allow-list);
+  /// When [trustAnchorsPem], [timestampTrustAnchorsPem] and/or [allowedListPem] is provided, validation
+  /// runs against those PEM bundles (Manifest anchors, separate TSA anchors and Manifest end-entity allow-list);
   /// otherwise the underlying `c2pa-rs` defaults are used and certificates
   /// report as `untrusted`.
   static Future<ManifestStore?> fromLocalPath(
     final String localPath, {
     final String? trustAnchorsPem,
+    final String? timestampTrustAnchorsPem,
     final String? allowedListPem,
   }) async {
     final manifestJson = await getManifestJsonFromFile(
       localPath,
       trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
       allowedListPem: allowedListPem,
     );
     if (manifestJson == null) {
@@ -160,12 +162,14 @@ class ManifestStore extends Equatable {
     final String url, {
     final String? format,
     final String? trustAnchorsPem,
+    final String? timestampTrustAnchorsPem,
     final String? allowedListPem,
   }) async {
     final manifestJson = await getManifestJsonFromURL(
       url,
       format: format,
       trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
       allowedListPem: allowedListPem,
     );
     if (manifestJson == null) {
@@ -182,12 +186,14 @@ class ManifestStore extends Equatable {
     final List<int> fileBytes,
     final String format, {
     final String? trustAnchorsPem,
+    final String? timestampTrustAnchorsPem,
     final String? allowedListPem,
   }) async {
     final manifestJson = await getManifestJsonFromBytes(
       fileBytes: fileBytes,
       format: format,
       trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
       allowedListPem: allowedListPem,
     );
     if (manifestJson == null) {
@@ -209,6 +215,7 @@ class ManifestStore extends Equatable {
     required final String assetFormat,
     final String manifestFormat = 'application/c2pa',
     final String? trustAnchorsPem,
+    final String? timestampTrustAnchorsPem,
     final String? allowedListPem,
   }) async {
     final manifestJson = await getDetachedManifestJsonFromBytes(
@@ -217,6 +224,7 @@ class ManifestStore extends Equatable {
       assetFormat: assetFormat,
       manifestFormat: manifestFormat,
       trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
       allowedListPem: allowedListPem,
     );
     if (manifestJson == null) {

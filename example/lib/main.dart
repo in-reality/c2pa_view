@@ -434,6 +434,7 @@ class _ManifestViewScaffold extends StatelessWidget {
                 fileBytes,
                 mimeType,
                 trustAnchorsPem: trustList.trustAnchorsPem,
+                timestampTrustAnchorsPem: trustList.timestampTrustAnchorsPem,
               ),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {

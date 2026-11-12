@@ -6,7 +6,7 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `detached_manifest_json`, `hydrate_previews`, `hydrate_thumbnail`, `local_preview_identifier`, `lookup_preview`, `mime_type_from_path`, `normalize_detached_manifest_format`, `preview_decode_error`, `preview_decoded_pixels`, `preview_image_size`, `preview_json_bytes`, `read_path_bytes`, `reader_manifest_json_value`, `trust_validation_settings`, `validate_detached_manifest_format`
+// These functions are ignored because they are not marked as `pub`: `detached_manifest_json`, `hydrate_previews`, `hydrate_thumbnail`, `local_preview_identifier`, `lookup_preview`, `mime_type_from_path`, `normalize_detached_manifest_format`, `preview_decode_error`, `preview_decoded_pixels`, `preview_image_size`, `preview_json_bytes`, `read_path_bytes`, `reader_manifest_json_value`, `reader_result_json`, `trust_validation_settings`, `validate_detached_manifest_format`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `PreviewWriter`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `flush`, `read`, `seek`, `write`
 
@@ -64,34 +64,40 @@ Future<String?> getManifestWithValidationFromPath({required String path}) =>
 
 /// Validate a C2PA asset against provided trust anchor PEM bundles.
 ///
-/// `trust_anchors_pem` should contain CA certificates (and optionally TSA
-/// roots) as a PEM bundle. For end-entity allow-listing see
+/// `trust_anchors_pem` contains manifest-signing CA certificates.
+/// `timestamp_trust_anchors_pem` separately contains trusted TSA certificates;
+/// neither list grants the other purpose. For end-entity allow-listing see
 /// [`get_manifest_with_trust_validation_allow_list`].
 Future<String?> getManifestWithTrustValidation({
   required List<int> fileBytes,
   required String format,
   required String trustAnchorsPem,
+  String? timestampTrustAnchorsPem,
 }) => RustLib.instance.api.crateApiC2PaGetManifestWithTrustValidation(
   fileBytes: fileBytes,
   format: format,
   trustAnchorsPem: trustAnchorsPem,
+  timestampTrustAnchorsPem: timestampTrustAnchorsPem,
 );
 
 /// Validate a C2PA asset against trust anchors and/or an end-entity allow-list.
 ///
-/// `trust_anchors_pem` holds CA certificates (may be empty).
+/// `trust_anchors_pem` holds manifest CA certificates (may be empty).
+/// `timestamp_trust_anchors_pem` holds separately authorized TSA certificates.
 /// `allowed_list_pem` holds end-entity certificates accepted by fingerprint
-/// (c2pa-rs `trust.allowed_list`); omit or pass empty when unused.
+/// (the SDK manifest-purpose private credential store); omit or pass empty when unused.
 Future<String?> getManifestWithTrustValidationAllowList({
   required List<int> fileBytes,
   required String format,
   required String trustAnchorsPem,
   String? allowedListPem,
+  String? timestampTrustAnchorsPem,
 }) => RustLib.instance.api.crateApiC2PaGetManifestWithTrustValidationAllowList(
   fileBytes: fileBytes,
   format: format,
   trustAnchorsPem: trustAnchorsPem,
   allowedListPem: allowedListPem,
+  timestampTrustAnchorsPem: timestampTrustAnchorsPem,
 );
 
 /// Convenience wrapper that guesses MIME from file path and reads bytes on the
@@ -99,9 +105,11 @@ Future<String?> getManifestWithTrustValidationAllowList({
 Future<String?> getManifestWithTrustValidationFromPath({
   required String path,
   required String trustAnchorsPem,
+  String? timestampTrustAnchorsPem,
 }) => RustLib.instance.api.crateApiC2PaGetManifestWithTrustValidationFromPath(
   path: path,
   trustAnchorsPem: trustAnchorsPem,
+  timestampTrustAnchorsPem: timestampTrustAnchorsPem,
 );
 
 /// Path convenience wrapper with optional end-entity allow-list PEM.
@@ -109,11 +117,13 @@ Future<String?> getManifestWithTrustValidationFromPathAllowList({
   required String path,
   required String trustAnchorsPem,
   String? allowedListPem,
+  String? timestampTrustAnchorsPem,
 }) => RustLib.instance.api
     .crateApiC2PaGetManifestWithTrustValidationFromPathAllowList(
       path: path,
       trustAnchorsPem: trustAnchorsPem,
       allowedListPem: allowedListPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
     );
 
 /// Validate a detached manifest store (sidecar JUMBF) against asset bytes.
@@ -154,12 +164,14 @@ Future<String?> getDetachedManifestWithTrustValidation({
   required List<int> assetBytes,
   required String assetFormat,
   required String trustAnchorsPem,
+  String? timestampTrustAnchorsPem,
 }) => RustLib.instance.api.crateApiC2PaGetDetachedManifestWithTrustValidation(
   manifestBytes: manifestBytes,
   manifestFormat: manifestFormat,
   assetBytes: assetBytes,
   assetFormat: assetFormat,
   trustAnchorsPem: trustAnchorsPem,
+  timestampTrustAnchorsPem: timestampTrustAnchorsPem,
 );
 
 /// Detached manifest read with trust anchors and/or an end-entity allow-list.
@@ -170,6 +182,7 @@ Future<String?> getDetachedManifestWithTrustValidationAllowList({
   required String assetFormat,
   required String trustAnchorsPem,
   String? allowedListPem,
+  String? timestampTrustAnchorsPem,
 }) => RustLib.instance.api
     .crateApiC2PaGetDetachedManifestWithTrustValidationAllowList(
       manifestBytes: manifestBytes,
@@ -178,6 +191,7 @@ Future<String?> getDetachedManifestWithTrustValidationAllowList({
       assetFormat: assetFormat,
       trustAnchorsPem: trustAnchorsPem,
       allowedListPem: allowedListPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
     );
 
 /// UTF-8 JSON bytes for [`get_detached_manifest_with_trust_validation`].
@@ -187,6 +201,7 @@ Future<Uint8List?> getDetachedManifestWithTrustValidationUtf8({
   required List<int> assetBytes,
   required String assetFormat,
   required String trustAnchorsPem,
+  String? timestampTrustAnchorsPem,
 }) =>
     RustLib.instance.api.crateApiC2PaGetDetachedManifestWithTrustValidationUtf8(
       manifestBytes: manifestBytes,
@@ -194,6 +209,7 @@ Future<Uint8List?> getDetachedManifestWithTrustValidationUtf8({
       assetBytes: assetBytes,
       assetFormat: assetFormat,
       trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
     );
 
 /// UTF-8 JSON bytes for [`get_detached_manifest_with_trust_validation_allow_list`].
@@ -204,6 +220,7 @@ Future<Uint8List?> getDetachedManifestWithTrustValidationAllowListUtf8({
   required String assetFormat,
   required String trustAnchorsPem,
   String? allowedListPem,
+  String? timestampTrustAnchorsPem,
 }) => RustLib.instance.api
     .crateApiC2PaGetDetachedManifestWithTrustValidationAllowListUtf8(
       manifestBytes: manifestBytes,
@@ -212,4 +229,5 @@ Future<Uint8List?> getDetachedManifestWithTrustValidationAllowListUtf8({
       assetFormat: assetFormat,
       trustAnchorsPem: trustAnchorsPem,
       allowedListPem: allowedListPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
     );
