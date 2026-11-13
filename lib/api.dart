@@ -10,30 +10,35 @@ String? _manifestJsonFromUtf8Bytes(final Uint8List? bytes) =>
 
 bool _hasTrustMaterial({
   final String? trustAnchorsPem,
+  final String? timestampTrustAnchorsPem,
   final String? allowedListPem,
 }) =>
     (trustAnchorsPem != null && trustAnchorsPem.isNotEmpty) ||
+    (timestampTrustAnchorsPem != null && timestampTrustAnchorsPem.isNotEmpty) ||
     (allowedListPem != null && allowedListPem.isNotEmpty);
 
 /// Get the manifest from a file.
 ///
-/// When [trustAnchorsPem] and/or [allowedListPem] is provided, validation
-/// runs against those PEM bundles (CA anchors and end-entity allow-list);
+/// When [trustAnchorsPem], [timestampTrustAnchorsPem] and/or [allowedListPem] is provided, validation
+/// runs against those PEM bundles (Manifest anchors, separate TSA anchors and Manifest end-entity allow-list);
 /// otherwise the underlying `c2pa-rs` defaults are used and certificates
 /// report as `untrusted`.
 // ignore: type_annotate_public_apis
 Future<String?> getManifestJsonFromFile(
   final String path, {
   final String? trustAnchorsPem,
+  final String? timestampTrustAnchorsPem,
   final String? allowedListPem,
 }) async {
   if (_hasTrustMaterial(
     trustAnchorsPem: trustAnchorsPem,
+    timestampTrustAnchorsPem: timestampTrustAnchorsPem,
     allowedListPem: allowedListPem,
   )) {
     return getManifestWithTrustValidationFromPathAllowList(
       path: path,
       trustAnchorsPem: trustAnchorsPem ?? '',
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
       allowedListPem: allowedListPem,
     );
   }
@@ -49,25 +54,25 @@ Future<String?> getManifestJsonFromURL(
   final String url, {
   final String? format,
   final String? trustAnchorsPem,
+  final String? timestampTrustAnchorsPem,
   final String? allowedListPem,
 }) async {
   final response = await http.get(Uri.parse(url));
   final mime = response.headers['content-type'] ?? format ?? 'image/jpeg';
   if (_hasTrustMaterial(
     trustAnchorsPem: trustAnchorsPem,
+    timestampTrustAnchorsPem: timestampTrustAnchorsPem,
     allowedListPem: allowedListPem,
   )) {
     return getManifestWithTrustValidationAllowList(
       fileBytes: response.bodyBytes,
       format: mime,
       trustAnchorsPem: trustAnchorsPem ?? '',
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
       allowedListPem: allowedListPem,
     );
   }
-  return getManifestJsonFromBytes(
-    fileBytes: response.bodyBytes,
-    format: mime,
-  );
+  return getManifestJsonFromBytes(fileBytes: response.bodyBytes, format: mime);
 }
 
 /// Get the manifest from bytes and format (mime type).
@@ -78,16 +83,19 @@ Future<String?> getManifestJsonFromBytes({
   required final List<int> fileBytes,
   required final String format,
   final String? trustAnchorsPem,
+  final String? timestampTrustAnchorsPem,
   final String? allowedListPem,
 }) async {
   if (_hasTrustMaterial(
     trustAnchorsPem: trustAnchorsPem,
+    timestampTrustAnchorsPem: timestampTrustAnchorsPem,
     allowedListPem: allowedListPem,
   )) {
     return getManifestWithTrustValidationAllowList(
       fileBytes: fileBytes,
       format: format,
       trustAnchorsPem: trustAnchorsPem ?? '',
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
       allowedListPem: allowedListPem,
     );
   }
@@ -146,10 +154,12 @@ Future<String?> getDetachedManifestJsonFromBytes({
   required final String assetFormat,
   final String manifestFormat = 'application/c2pa',
   final String? trustAnchorsPem,
+  final String? timestampTrustAnchorsPem,
   final String? allowedListPem,
 }) async {
   if (_hasTrustMaterial(
     trustAnchorsPem: trustAnchorsPem,
+    timestampTrustAnchorsPem: timestampTrustAnchorsPem,
     allowedListPem: allowedListPem,
   )) {
     return getDetachedManifestWithTrustValidationAllowList(
@@ -158,6 +168,7 @@ Future<String?> getDetachedManifestJsonFromBytes({
       assetBytes: assetBytes,
       assetFormat: assetFormat,
       trustAnchorsPem: trustAnchorsPem ?? '',
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
       allowedListPem: allowedListPem,
     );
   }

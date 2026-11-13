@@ -17,8 +17,7 @@ MIIBkTCCATigAwIBAgIUFakeTSAforTest
 
 void main() {
   group('TrustListService', () {
-    test('memory-only cache fetches both lists and concatenates the PEMs',
-        () async {
+    test('memory-only cache preserves each published trust purpose', () async {
       final calls = <String>[];
       final client = http_testing.MockClient((final request) async {
         calls.add(request.url.toString());
@@ -43,9 +42,14 @@ void main() {
         reason: 'CA bundle should be present',
       );
       expect(
-        service.trustAnchorsPem,
+        service.timestampTrustAnchorsPem,
         contains('FakeTSAforTest'),
         reason: 'TSA bundle should be present',
+      );
+      expect(service.trustAnchorsPem, isNot(contains('FakeTSAforTest')));
+      expect(
+        service.timestampTrustAnchorsPem,
+        isNot(contains('FakeCAforTest')),
       );
       expect(calls.length, 2);
     });
@@ -74,11 +78,15 @@ void main() {
           }
         });
 
-        const cachedPem = '$_caPemBody\n$_tsaPemBody';
-        File('${dir.path}/c2pa_trust_anchors.pem').writeAsStringSync(cachedPem);
-        File('${dir.path}/c2pa_trust_anchors_ts.txt').writeAsStringSync(
-          DateTime.now().toUtc().toIso8601String(),
-        );
+        File(
+          '${dir.path}/c2pa_manifest_trust_anchors.pem',
+        ).writeAsStringSync(_caPemBody);
+        File(
+          '${dir.path}/c2pa_tsa_trust_anchors.pem',
+        ).writeAsStringSync(_tsaPemBody);
+        File(
+          '${dir.path}/c2pa_trust_anchors_ts.txt',
+        ).writeAsStringSync(DateTime.now().toUtc().toIso8601String());
 
         var calls = 0;
         final client = http_testing.MockClient((_) async {
@@ -94,12 +102,84 @@ void main() {
         final ok = await service.initialize();
 
         expect(ok, isTrue);
-        expect(service.trustAnchorsPem, cachedPem);
+        expect(service.trustAnchorsPem, _caPemBody);
+        expect(service.timestampTrustAnchorsPem, _tsaPemBody);
         // The cached PEM is fresh (timestamp = now), so the background
         // refresh path does not trigger a network call.
         await Future<void>.delayed(const Duration(milliseconds: 50));
         expect(calls, 0);
       },
     );
+    test(
+      'legacy combined and incomplete caches refetch separate origins',
+      () async {
+        for (final incomplete in [false, true]) {
+          final dir = await Directory.systemTemp.createTemp('trust_legacy_');
+          addTearDown(() => dir.delete(recursive: true));
+          File(
+            '${dir.path}/c2pa_trust_anchors.pem',
+          ).writeAsStringSync('$_caPemBody\n$_tsaPemBody');
+          if (incomplete) {
+            File(
+              '${dir.path}/c2pa_manifest_trust_anchors.pem',
+            ).writeAsStringSync(_caPemBody);
+          }
+          File(
+            '${dir.path}/c2pa_trust_anchors_ts.txt',
+          ).writeAsStringSync(DateTime.now().toUtc().toIso8601String());
+          final calls = <String>[];
+          final service = TrustListService(
+            cacheDirectory: dir.path,
+            httpClient: http_testing.MockClient((final request) async {
+              calls.add(request.url.toString());
+              return http.Response(
+                request.url.toString() == TrustListService.c2paTrustListUrl
+                    ? _caPemBody
+                    : _tsaPemBody,
+                200,
+              );
+            }),
+          );
+          expect(await service.initialize(), isTrue);
+          expect(calls, [
+            TrustListService.c2paTrustListUrl,
+            TrustListService.tsaTrustListUrl,
+          ]);
+          expect(service.trustAnchorsPem, _caPemBody);
+          expect(service.timestampTrustAnchorsPem, _tsaPemBody);
+          expect(
+            File(
+              '${dir.path}/c2pa_manifest_trust_anchors.pem',
+            ).readAsStringSync(),
+            _caPemBody,
+          );
+          expect(
+            File('${dir.path}/c2pa_tsa_trust_anchors.pem').readAsStringSync(),
+            _tsaPemBody,
+          );
+        }
+      },
+    );
+
+    test('failed TSA refresh retains the last complete pair', () async {
+      var failing = false;
+      final service = TrustListService(
+        httpClient: http_testing.MockClient((final request) async {
+          if (request.url.toString() == TrustListService.c2paTrustListUrl) {
+            return http.Response(failing ? 'replacement CA' : _caPemBody, 200);
+          }
+          return http.Response(
+            failing ? 'unavailable' : _tsaPemBody,
+            failing ? 503 : 200,
+          );
+        }),
+      );
+      expect(await service.initialize(), isTrue);
+      failing = true;
+      expect(await service.refresh(), isFalse);
+      expect(service.isAvailable, isTrue);
+      expect(service.trustAnchorsPem, _caPemBody);
+      expect(service.timestampTrustAnchorsPem, _tsaPemBody);
+    });
   });
 }

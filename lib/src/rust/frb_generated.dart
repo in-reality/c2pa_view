@@ -82,6 +82,7 @@ abstract class RustLibApi extends BaseApi {
     required List<int> assetBytes,
     required String assetFormat,
     required String trustAnchorsPem,
+    String? timestampTrustAnchorsPem,
   });
 
   Future<String?> crateApiC2PaGetDetachedManifestWithTrustValidationAllowList({
@@ -91,6 +92,7 @@ abstract class RustLibApi extends BaseApi {
     required String assetFormat,
     required String trustAnchorsPem,
     String? allowedListPem,
+    String? timestampTrustAnchorsPem,
   });
 
   Future<Uint8List?>
@@ -101,6 +103,7 @@ abstract class RustLibApi extends BaseApi {
     required String assetFormat,
     required String trustAnchorsPem,
     String? allowedListPem,
+    String? timestampTrustAnchorsPem,
   });
 
   Future<Uint8List?> crateApiC2PaGetDetachedManifestWithTrustValidationUtf8({
@@ -109,6 +112,7 @@ abstract class RustLibApi extends BaseApi {
     required List<int> assetBytes,
     required String assetFormat,
     required String trustAnchorsPem,
+    String? timestampTrustAnchorsPem,
   });
 
   Future<String?> crateApiC2PaGetDetachedManifestWithValidation({
@@ -144,6 +148,7 @@ abstract class RustLibApi extends BaseApi {
     required List<int> fileBytes,
     required String format,
     required String trustAnchorsPem,
+    String? timestampTrustAnchorsPem,
   });
 
   Future<String?> crateApiC2PaGetManifestWithTrustValidationAllowList({
@@ -151,17 +156,20 @@ abstract class RustLibApi extends BaseApi {
     required String format,
     required String trustAnchorsPem,
     String? allowedListPem,
+    String? timestampTrustAnchorsPem,
   });
 
   Future<String?> crateApiC2PaGetManifestWithTrustValidationFromPath({
     required String path,
     required String trustAnchorsPem,
+    String? timestampTrustAnchorsPem,
   });
 
   Future<String?> crateApiC2PaGetManifestWithTrustValidationFromPathAllowList({
     required String path,
     required String trustAnchorsPem,
     String? allowedListPem,
+    String? timestampTrustAnchorsPem,
   });
 
   Future<String?> crateApiC2PaGetManifestWithValidation({
@@ -194,6 +202,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required List<int> assetBytes,
     required String assetFormat,
     required String trustAnchorsPem,
+    String? timestampTrustAnchorsPem,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -204,6 +213,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_list_prim_u_8_loose(assetBytes, serializer);
           sse_encode_String(assetFormat, serializer);
           sse_encode_String(trustAnchorsPem, serializer);
+          sse_encode_opt_String(timestampTrustAnchorsPem, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -222,6 +232,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           assetBytes,
           assetFormat,
           trustAnchorsPem,
+          timestampTrustAnchorsPem,
         ],
         apiImpl: this,
       ),
@@ -238,6 +249,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           "assetBytes",
           "assetFormat",
           "trustAnchorsPem",
+          "timestampTrustAnchorsPem",
         ],
       );
 
@@ -249,6 +261,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required String assetFormat,
     required String trustAnchorsPem,
     String? allowedListPem,
+    String? timestampTrustAnchorsPem,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -260,6 +273,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_String(assetFormat, serializer);
           sse_encode_String(trustAnchorsPem, serializer);
           sse_encode_opt_String(allowedListPem, serializer);
+          sse_encode_opt_String(timestampTrustAnchorsPem, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -280,6 +294,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           assetFormat,
           trustAnchorsPem,
           allowedListPem,
+          timestampTrustAnchorsPem,
         ],
         apiImpl: this,
       ),
@@ -297,6 +312,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           "assetFormat",
           "trustAnchorsPem",
           "allowedListPem",
+          "timestampTrustAnchorsPem",
         ],
       );
 
@@ -309,6 +325,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required String assetFormat,
     required String trustAnchorsPem,
     String? allowedListPem,
+    String? timestampTrustAnchorsPem,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -320,6 +337,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_String(assetFormat, serializer);
           sse_encode_String(trustAnchorsPem, serializer);
           sse_encode_opt_String(allowedListPem, serializer);
+          sse_encode_opt_String(timestampTrustAnchorsPem, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -340,6 +358,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           assetFormat,
           trustAnchorsPem,
           allowedListPem,
+          timestampTrustAnchorsPem,
         ],
         apiImpl: this,
       ),
@@ -358,6 +377,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           "assetFormat",
           "trustAnchorsPem",
           "allowedListPem",
+          "timestampTrustAnchorsPem",
         ],
       );
 
@@ -368,6 +388,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required List<int> assetBytes,
     required String assetFormat,
     required String trustAnchorsPem,
+    String? timestampTrustAnchorsPem,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -378,6 +399,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_list_prim_u_8_loose(assetBytes, serializer);
           sse_encode_String(assetFormat, serializer);
           sse_encode_String(trustAnchorsPem, serializer);
+          sse_encode_opt_String(timestampTrustAnchorsPem, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -397,6 +419,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           assetBytes,
           assetFormat,
           trustAnchorsPem,
+          timestampTrustAnchorsPem,
         ],
         apiImpl: this,
       ),
@@ -413,6 +436,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           "assetBytes",
           "assetFormat",
           "trustAnchorsPem",
+          "timestampTrustAnchorsPem",
         ],
       );
 
@@ -615,6 +639,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required List<int> fileBytes,
     required String format,
     required String trustAnchorsPem,
+    String? timestampTrustAnchorsPem,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -623,6 +648,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_list_prim_u_8_loose(fileBytes, serializer);
           sse_encode_String(format, serializer);
           sse_encode_String(trustAnchorsPem, serializer);
+          sse_encode_opt_String(timestampTrustAnchorsPem, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -635,7 +661,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_String,
         ),
         constMeta: kCrateApiC2PaGetManifestWithTrustValidationConstMeta,
-        argValues: [fileBytes, format, trustAnchorsPem],
+        argValues: [
+          fileBytes,
+          format,
+          trustAnchorsPem,
+          timestampTrustAnchorsPem,
+        ],
         apiImpl: this,
       ),
     );
@@ -644,7 +675,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiC2PaGetManifestWithTrustValidationConstMeta =>
       const TaskConstMeta(
         debugName: "get_manifest_with_trust_validation",
-        argNames: ["fileBytes", "format", "trustAnchorsPem"],
+        argNames: [
+          "fileBytes",
+          "format",
+          "trustAnchorsPem",
+          "timestampTrustAnchorsPem",
+        ],
       );
 
   @override
@@ -653,6 +689,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required String format,
     required String trustAnchorsPem,
     String? allowedListPem,
+    String? timestampTrustAnchorsPem,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -662,6 +699,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_String(format, serializer);
           sse_encode_String(trustAnchorsPem, serializer);
           sse_encode_opt_String(allowedListPem, serializer);
+          sse_encode_opt_String(timestampTrustAnchorsPem, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -675,7 +713,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         ),
         constMeta:
             kCrateApiC2PaGetManifestWithTrustValidationAllowListConstMeta,
-        argValues: [fileBytes, format, trustAnchorsPem, allowedListPem],
+        argValues: [
+          fileBytes,
+          format,
+          trustAnchorsPem,
+          allowedListPem,
+          timestampTrustAnchorsPem,
+        ],
         apiImpl: this,
       ),
     );
@@ -685,13 +729,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   get kCrateApiC2PaGetManifestWithTrustValidationAllowListConstMeta =>
       const TaskConstMeta(
         debugName: "get_manifest_with_trust_validation_allow_list",
-        argNames: ["fileBytes", "format", "trustAnchorsPem", "allowedListPem"],
+        argNames: [
+          "fileBytes",
+          "format",
+          "trustAnchorsPem",
+          "allowedListPem",
+          "timestampTrustAnchorsPem",
+        ],
       );
 
   @override
   Future<String?> crateApiC2PaGetManifestWithTrustValidationFromPath({
     required String path,
     required String trustAnchorsPem,
+    String? timestampTrustAnchorsPem,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -699,6 +750,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(path, serializer);
           sse_encode_String(trustAnchorsPem, serializer);
+          sse_encode_opt_String(timestampTrustAnchorsPem, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -711,7 +763,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_String,
         ),
         constMeta: kCrateApiC2PaGetManifestWithTrustValidationFromPathConstMeta,
-        argValues: [path, trustAnchorsPem],
+        argValues: [path, trustAnchorsPem, timestampTrustAnchorsPem],
         apiImpl: this,
       ),
     );
@@ -721,7 +773,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   get kCrateApiC2PaGetManifestWithTrustValidationFromPathConstMeta =>
       const TaskConstMeta(
         debugName: "get_manifest_with_trust_validation_from_path",
-        argNames: ["path", "trustAnchorsPem"],
+        argNames: ["path", "trustAnchorsPem", "timestampTrustAnchorsPem"],
       );
 
   @override
@@ -729,6 +781,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required String path,
     required String trustAnchorsPem,
     String? allowedListPem,
+    String? timestampTrustAnchorsPem,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -737,6 +790,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_String(path, serializer);
           sse_encode_String(trustAnchorsPem, serializer);
           sse_encode_opt_String(allowedListPem, serializer);
+          sse_encode_opt_String(timestampTrustAnchorsPem, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -750,7 +804,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         ),
         constMeta:
             kCrateApiC2PaGetManifestWithTrustValidationFromPathAllowListConstMeta,
-        argValues: [path, trustAnchorsPem, allowedListPem],
+        argValues: [
+          path,
+          trustAnchorsPem,
+          allowedListPem,
+          timestampTrustAnchorsPem,
+        ],
         apiImpl: this,
       ),
     );
@@ -760,7 +819,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   get kCrateApiC2PaGetManifestWithTrustValidationFromPathAllowListConstMeta =>
       const TaskConstMeta(
         debugName: "get_manifest_with_trust_validation_from_path_allow_list",
-        argNames: ["path", "trustAnchorsPem", "allowedListPem"],
+        argNames: [
+          "path",
+          "trustAnchorsPem",
+          "allowedListPem",
+          "timestampTrustAnchorsPem",
+        ],
       );
 
   @override

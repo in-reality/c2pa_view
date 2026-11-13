@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 /// Thin wrapper over raw FFI calls to the Rust C2PA bridge.
 ///
 /// Provides convenient methods for loading [ManifestStore] instances from
-/// files, URLs, or raw bytes. When [trustAnchorsPem] and/or [allowedListPem]
+/// files, URLs, or raw bytes. When `trustAnchorsPem`, `timestampTrustAnchorsPem` and/or `allowedListPem`
 /// is provided, validation runs against those PEM bundles; otherwise the
 /// default (no trust list) is used.
 class C2paBridgeService {
@@ -15,15 +15,18 @@ class C2paBridgeService {
   static Future<String?> getManifestJsonFromFile(
     final String path, {
     final String? trustAnchorsPem,
+    final String? timestampTrustAnchorsPem,
     final String? allowedListPem,
   }) async {
     if (_hasTrustMaterial(
       trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
       allowedListPem: allowedListPem,
     )) {
       return getManifestWithTrustValidationFromPathAllowList(
         path: path,
         trustAnchorsPem: trustAnchorsPem ?? '',
+        timestampTrustAnchorsPem: timestampTrustAnchorsPem,
         allowedListPem: allowedListPem,
       );
     }
@@ -35,19 +38,21 @@ class C2paBridgeService {
     final String url, {
     final String? format,
     final String? trustAnchorsPem,
+    final String? timestampTrustAnchorsPem,
     final String? allowedListPem,
   }) async {
     final response = await http.get(Uri.parse(url));
-    final mimeType =
-        response.headers['content-type'] ?? format ?? 'image/jpeg';
+    final mimeType = response.headers['content-type'] ?? format ?? 'image/jpeg';
     if (_hasTrustMaterial(
       trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
       allowedListPem: allowedListPem,
     )) {
       return getManifestWithTrustValidationAllowList(
         fileBytes: response.bodyBytes,
         format: mimeType,
         trustAnchorsPem: trustAnchorsPem ?? '',
+        timestampTrustAnchorsPem: timestampTrustAnchorsPem,
         allowedListPem: allowedListPem,
       );
     }
@@ -62,16 +67,19 @@ class C2paBridgeService {
     required final List<int> fileBytes,
     required final String format,
     final String? trustAnchorsPem,
+    final String? timestampTrustAnchorsPem,
     final String? allowedListPem,
   }) async {
     if (_hasTrustMaterial(
       trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
       allowedListPem: allowedListPem,
     )) {
       return getManifestWithTrustValidationAllowList(
         fileBytes: fileBytes,
         format: format,
         trustAnchorsPem: trustAnchorsPem ?? '',
+        timestampTrustAnchorsPem: timestampTrustAnchorsPem,
         allowedListPem: allowedListPem,
       );
     }
@@ -82,11 +90,13 @@ class C2paBridgeService {
   static Future<ManifestStore?> loadFromFile(
     final String path, {
     final String? trustAnchorsPem,
+    final String? timestampTrustAnchorsPem,
     final String? allowedListPem,
   }) async {
     final json = await getManifestJsonFromFile(
       path,
       trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
       allowedListPem: allowedListPem,
     );
     if (json == null) {
@@ -100,12 +110,14 @@ class C2paBridgeService {
     final String url, {
     final String? format,
     final String? trustAnchorsPem,
+    final String? timestampTrustAnchorsPem,
     final String? allowedListPem,
   }) async {
     final json = await getManifestJsonFromUrl(
       url,
       format: format,
       trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
       allowedListPem: allowedListPem,
     );
     if (json == null) {
@@ -119,12 +131,14 @@ class C2paBridgeService {
     required final List<int> fileBytes,
     required final String format,
     final String? trustAnchorsPem,
+    final String? timestampTrustAnchorsPem,
     final String? allowedListPem,
   }) async {
     final json = await getManifestJsonFromBytes(
       fileBytes: fileBytes,
       format: format,
       trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
       allowedListPem: allowedListPem,
     );
     if (json == null) {
@@ -135,8 +149,11 @@ class C2paBridgeService {
 
   static bool _hasTrustMaterial({
     final String? trustAnchorsPem,
+    final String? timestampTrustAnchorsPem,
     final String? allowedListPem,
   }) =>
       (trustAnchorsPem != null && trustAnchorsPem.isNotEmpty) ||
+      (timestampTrustAnchorsPem != null &&
+          timestampTrustAnchorsPem.isNotEmpty) ||
       (allowedListPem != null && allowedListPem.isNotEmpty);
 }

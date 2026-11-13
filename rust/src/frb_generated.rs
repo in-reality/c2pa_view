@@ -74,6 +74,7 @@ fn wire__crate__api__c2pa__get_detached_manifest_with_trust_validation_impl(
             let api_asset_bytes = <Vec<u8>>::sse_decode(&mut deserializer);
             let api_asset_format = <String>::sse_decode(&mut deserializer);
             let api_trust_anchors_pem = <String>::sse_decode(&mut deserializer);
+            let api_timestamp_trust_anchors_pem = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, String>(
@@ -85,6 +86,7 @@ fn wire__crate__api__c2pa__get_detached_manifest_with_trust_validation_impl(
                                 api_asset_bytes,
                                 api_asset_format,
                                 api_trust_anchors_pem,
+                                api_timestamp_trust_anchors_pem,
                             )
                             .await?;
                         std::result::Result::Ok(output_ok)
@@ -109,9 +111,10 @@ let api_manifest_format = <String>::sse_decode(&mut deserializer);
 let api_asset_bytes = <Vec<u8>>::sse_decode(&mut deserializer);
 let api_asset_format = <String>::sse_decode(&mut deserializer);
 let api_trust_anchors_pem = <String>::sse_decode(&mut deserializer);
-let api_allowed_list_pem = <Option<String>>::sse_decode(&mut deserializer);deserializer.end(); move |context| async move {
+let api_allowed_list_pem = <Option<String>>::sse_decode(&mut deserializer);
+let api_timestamp_trust_anchors_pem = <Option<String>>::sse_decode(&mut deserializer);deserializer.end(); move |context| async move {
                     transform_result_sse::<_, String>((move || async move {
-                         let output_ok = crate::api::c2pa::get_detached_manifest_with_trust_validation_allow_list(api_manifest_bytes, api_manifest_format, api_asset_bytes, api_asset_format, api_trust_anchors_pem, api_allowed_list_pem).await?;   std::result::Result::Ok(output_ok)
+                         let output_ok = crate::api::c2pa::get_detached_manifest_with_trust_validation_allow_list(api_manifest_bytes, api_manifest_format, api_asset_bytes, api_asset_format, api_trust_anchors_pem, api_allowed_list_pem, api_timestamp_trust_anchors_pem).await?;   std::result::Result::Ok(output_ok)
                     })().await)
                 } })
 }
@@ -129,9 +132,10 @@ let api_manifest_format = <String>::sse_decode(&mut deserializer);
 let api_asset_bytes = <Vec<u8>>::sse_decode(&mut deserializer);
 let api_asset_format = <String>::sse_decode(&mut deserializer);
 let api_trust_anchors_pem = <String>::sse_decode(&mut deserializer);
-let api_allowed_list_pem = <Option<String>>::sse_decode(&mut deserializer);deserializer.end(); move |context| async move {
+let api_allowed_list_pem = <Option<String>>::sse_decode(&mut deserializer);
+let api_timestamp_trust_anchors_pem = <Option<String>>::sse_decode(&mut deserializer);deserializer.end(); move |context| async move {
                     transform_result_sse::<_, String>((move || async move {
-                         let output_ok = crate::api::c2pa::get_detached_manifest_with_trust_validation_allow_list_utf8(api_manifest_bytes, api_manifest_format, api_asset_bytes, api_asset_format, api_trust_anchors_pem, api_allowed_list_pem).await?;   std::result::Result::Ok(output_ok)
+                         let output_ok = crate::api::c2pa::get_detached_manifest_with_trust_validation_allow_list_utf8(api_manifest_bytes, api_manifest_format, api_asset_bytes, api_asset_format, api_trust_anchors_pem, api_allowed_list_pem, api_timestamp_trust_anchors_pem).await?;   std::result::Result::Ok(output_ok)
                     })().await)
                 } })
 }
@@ -162,6 +166,7 @@ fn wire__crate__api__c2pa__get_detached_manifest_with_trust_validation_utf8_impl
             let api_asset_bytes = <Vec<u8>>::sse_decode(&mut deserializer);
             let api_asset_format = <String>::sse_decode(&mut deserializer);
             let api_trust_anchors_pem = <String>::sse_decode(&mut deserializer);
+            let api_timestamp_trust_anchors_pem = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, String>(
@@ -173,6 +178,7 @@ fn wire__crate__api__c2pa__get_detached_manifest_with_trust_validation_utf8_impl
                                 api_asset_bytes,
                                 api_asset_format,
                                 api_trust_anchors_pem,
+                                api_timestamp_trust_anchors_pem,
                             )
                             .await?;
                         std::result::Result::Ok(output_ok)
@@ -417,6 +423,7 @@ fn wire__crate__api__c2pa__get_manifest_with_trust_validation_impl(
             let api_file_bytes = <Vec<u8>>::sse_decode(&mut deserializer);
             let api_format = <String>::sse_decode(&mut deserializer);
             let api_trust_anchors_pem = <String>::sse_decode(&mut deserializer);
+            let api_timestamp_trust_anchors_pem = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, String>(
@@ -425,6 +432,7 @@ fn wire__crate__api__c2pa__get_manifest_with_trust_validation_impl(
                             api_file_bytes,
                             api_format,
                             api_trust_anchors_pem,
+                            api_timestamp_trust_anchors_pem,
                         )
                         .await?;
                         std::result::Result::Ok(output_ok)
@@ -461,6 +469,7 @@ fn wire__crate__api__c2pa__get_manifest_with_trust_validation_allow_list_impl(
             let api_format = <String>::sse_decode(&mut deserializer);
             let api_trust_anchors_pem = <String>::sse_decode(&mut deserializer);
             let api_allowed_list_pem = <Option<String>>::sse_decode(&mut deserializer);
+            let api_timestamp_trust_anchors_pem = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, String>(
@@ -471,6 +480,7 @@ fn wire__crate__api__c2pa__get_manifest_with_trust_validation_allow_list_impl(
                                 api_format,
                                 api_trust_anchors_pem,
                                 api_allowed_list_pem,
+                                api_timestamp_trust_anchors_pem,
                             )
                             .await?;
                         std::result::Result::Ok(output_ok)
@@ -505,6 +515,7 @@ fn wire__crate__api__c2pa__get_manifest_with_trust_validation_from_path_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_path = <String>::sse_decode(&mut deserializer);
             let api_trust_anchors_pem = <String>::sse_decode(&mut deserializer);
+            let api_timestamp_trust_anchors_pem = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, String>(
@@ -513,6 +524,7 @@ fn wire__crate__api__c2pa__get_manifest_with_trust_validation_from_path_impl(
                             crate::api::c2pa::get_manifest_with_trust_validation_from_path(
                                 api_path,
                                 api_trust_anchors_pem,
+                                api_timestamp_trust_anchors_pem,
                             )
                             .await?;
                         std::result::Result::Ok(output_ok)
@@ -534,9 +546,10 @@ fn wire__crate__api__c2pa__get_manifest_with_trust_validation_from_path_allow_li
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_path = <String>::sse_decode(&mut deserializer);
 let api_trust_anchors_pem = <String>::sse_decode(&mut deserializer);
-let api_allowed_list_pem = <Option<String>>::sse_decode(&mut deserializer);deserializer.end(); move |context| async move {
+let api_allowed_list_pem = <Option<String>>::sse_decode(&mut deserializer);
+let api_timestamp_trust_anchors_pem = <Option<String>>::sse_decode(&mut deserializer);deserializer.end(); move |context| async move {
                     transform_result_sse::<_, String>((move || async move {
-                         let output_ok = crate::api::c2pa::get_manifest_with_trust_validation_from_path_allow_list(api_path, api_trust_anchors_pem, api_allowed_list_pem).await?;   std::result::Result::Ok(output_ok)
+                         let output_ok = crate::api::c2pa::get_manifest_with_trust_validation_from_path_allow_list(api_path, api_trust_anchors_pem, api_allowed_list_pem, api_timestamp_trust_anchors_pem).await?;   std::result::Result::Ok(output_ok)
                     })().await)
                 } })
 }

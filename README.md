@@ -29,6 +29,27 @@ publishing the hook output, so source changes rebuild the native reader during
 ordinary incremental app builds. Missing or unreadable dep-info fails the build
 instead of leaving an untracked library in the cache.
 
+The owning app/package may optionally configure Cargo through standard hook
+user-defines in its `pubspec.yaml`:
+
+```yaml
+hooks:
+  user_defines:
+    c2pa_view:
+      cargo_home: .cache/cargo
+      cargo_offline: true
+```
+
+`cargo_home` is a nonempty path relative to that pubspec and must resolve to a
+valid file URI. `cargo_offline` accepts only a boolean; explicit `false` forwards
+`CARGO_NET_OFFLINE=false`. Omitted settings preserve the existing environment.
+These settings are passed through the builder's public Cargo environment API,
+without changing features, release profile, jobs or its normal per-output target.
+Hook input caching already tracks the configuration; source/dependency watches
+are unchanged. Offline mode requires the selected toolchain/targets and resolved
+dependencies to exist: it is not a cache/download fallback or an override of the
+builder's earlier `rustup show active-toolchain` prerequisite check.
+
 ### Version compatibility note
 
 This package intentionally pins `flutter_rust_bridge` to a specific tested
@@ -76,6 +97,18 @@ final store = await ManifestStore.fromUrl('https://example.com/image.jpg');
 All methods return `null` if no C2PA manifest is found. For detached reads,
 invalid manifest bytes throw; hash/signature problems appear in
 `validationStatus` / `validation_results` like embedded manifests.
+
+### Trust inputs
+
+Pass Manifest CA PEMs in `trustAnchorsPem` and separately authorized TSA CA PEMs
+in `timestampTrustAnchorsPem`. The latter is optional on the existing reader
+methods; a Manifest anchor does not grant TSA authority. `allowedListPem` remains
+an exact Manifest signing-leaf allow-list. Current Reader diagnostics remain
+visible, including timestamp trust failures.
+
+`TrustListService` fetches the published Manifest and TSA lists separately. Pass
+both corresponding getters to readers. Its purpose-specific disk cache refetches
+legacy combined caches because their certificate purposes cannot be recovered.
 
 ### API summary
 

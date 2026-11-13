@@ -499,32 +499,27 @@ pub async fn get_manifest_with_validation_from_path(
 
 /// Build c2pa-rs Settings for explicit trust validation.
 ///
-/// CA PEMs go in `trust.trust_anchors`; end-entity PEMs in
-/// `trust.allowed_list`. Either may be empty — an allow-listed leaf is
+/// Manifest CA PEMs and private leaves configure the SDK manifest-purpose
+/// `trust.anchors` entry. Either may be empty — an allow-listed leaf is
 /// trusted even with an empty anchor set (c2pa-rs checks the end-entity
 /// SHA-256 first).
 fn trust_validation_settings(
     trust_anchors_pem: &str,
     allowed_list_pem: Option<&str>,
+    timestamp_trust_anchors_pem: Option<&str>,
 ) -> Result<Settings, String> {
-    let mut trust = serde_json::Map::new();
-    if !trust_anchors_pem.is_empty() {
-        trust.insert(
-            "trust_anchors".into(),
-            serde_json::Value::String(trust_anchors_pem.to_string()),
-        );
-    }
-    if let Some(allowed) = allowed_list_pem.filter(|s| !s.is_empty()) {
-        trust.insert(
-            "allowed_list".into(),
-            serde_json::Value::String(allowed.to_string()),
-        );
-    }
     let settings_json = serde_json::json!({
-        "trust": trust,
-        "verify": {
-            "verify_trust": true,
-        }
+        "trust": { "anchors": [{
+            "trust_uri": "urn:c2pa-view:trust:manifest",
+            "trust_kind": "manifest",
+            "trust_anchors": trust_anchors_pem,
+            "allowed_list": allowed_list_pem.filter(|s| !s.is_empty())
+        }, {
+            "trust_uri": "urn:c2pa-view:trust:tsa",
+            "trust_kind": "tsa",
+            "trust_anchors": timestamp_trust_anchors_pem.unwrap_or_default()
+        }] },
+        "verify": { "verify_trust": true }
     });
     Settings::new()
         .with_json(&settings_json.to_string())
@@ -533,29 +528,44 @@ fn trust_validation_settings(
 
 /// Validate a C2PA asset against provided trust anchor PEM bundles.
 ///
-/// `trust_anchors_pem` should contain CA certificates (and optionally TSA
-/// roots) as a PEM bundle. For end-entity allow-listing see
+/// `trust_anchors_pem` contains manifest-signing CA certificates.
+/// `timestamp_trust_anchors_pem` separately contains trusted TSA certificates;
+/// neither list grants the other purpose. For end-entity allow-listing see
 /// [`get_manifest_with_trust_validation_allow_list`].
 pub async fn get_manifest_with_trust_validation(
     file_bytes: Vec<u8>,
     format: String,
     trust_anchors_pem: String,
+    timestamp_trust_anchors_pem: Option<String>,
 ) -> Result<Option<String>, String> {
-    get_manifest_with_trust_validation_allow_list(file_bytes, format, trust_anchors_pem, None).await
+    get_manifest_with_trust_validation_allow_list(
+        file_bytes,
+        format,
+        trust_anchors_pem,
+        None,
+        timestamp_trust_anchors_pem,
+    )
+    .await
 }
 
 /// Validate a C2PA asset against trust anchors and/or an end-entity allow-list.
 ///
-/// `trust_anchors_pem` holds CA certificates (may be empty).
+/// `trust_anchors_pem` holds manifest CA certificates (may be empty).
+/// `timestamp_trust_anchors_pem` holds separately authorized TSA certificates.
 /// `allowed_list_pem` holds end-entity certificates accepted by fingerprint
-/// (c2pa-rs `trust.allowed_list`); omit or pass empty when unused.
+/// (the SDK manifest-purpose private credential store); omit or pass empty when unused.
 pub async fn get_manifest_with_trust_validation_allow_list(
     file_bytes: Vec<u8>,
     format: String,
     trust_anchors_pem: String,
     allowed_list_pem: Option<String>,
+    timestamp_trust_anchors_pem: Option<String>,
 ) -> Result<Option<String>, String> {
-    let settings = trust_validation_settings(&trust_anchors_pem, allowed_list_pem.as_deref())?;
+    let settings = trust_validation_settings(
+        &trust_anchors_pem,
+        allowed_list_pem.as_deref(),
+        timestamp_trust_anchors_pem.as_deref(),
+    )?;
 
     let context = Context::new()
         .with_settings(settings)
@@ -570,8 +580,15 @@ pub async fn get_manifest_with_trust_validation_allow_list(
 pub async fn get_manifest_with_trust_validation_from_path(
     path: String,
     trust_anchors_pem: String,
+    timestamp_trust_anchors_pem: Option<String>,
 ) -> Result<Option<String>, String> {
-    get_manifest_with_trust_validation_from_path_allow_list(path, trust_anchors_pem, None).await
+    get_manifest_with_trust_validation_from_path_allow_list(
+        path,
+        trust_anchors_pem,
+        None,
+        timestamp_trust_anchors_pem,
+    )
+    .await
 }
 
 /// Path convenience wrapper with optional end-entity allow-list PEM.
@@ -579,6 +596,7 @@ pub async fn get_manifest_with_trust_validation_from_path_allow_list(
     path: String,
     trust_anchors_pem: String,
     allowed_list_pem: Option<String>,
+    timestamp_trust_anchors_pem: Option<String>,
 ) -> Result<Option<String>, String> {
     let file_bytes = read_path_bytes(&path)?;
     let mime_type = mime_type_from_path(&path)?;
@@ -587,6 +605,7 @@ pub async fn get_manifest_with_trust_validation_from_path_allow_list(
         mime_type,
         trust_anchors_pem,
         allowed_list_pem,
+        timestamp_trust_anchors_pem,
     )
     .await
 }
@@ -636,6 +655,7 @@ pub async fn get_detached_manifest_with_trust_validation(
     asset_bytes: Vec<u8>,
     asset_format: String,
     trust_anchors_pem: String,
+    timestamp_trust_anchors_pem: Option<String>,
 ) -> Result<Option<String>, String> {
     get_detached_manifest_with_trust_validation_allow_list(
         manifest_bytes,
@@ -644,6 +664,7 @@ pub async fn get_detached_manifest_with_trust_validation(
         asset_format,
         trust_anchors_pem,
         None,
+        timestamp_trust_anchors_pem,
     )
     .await
 }
@@ -656,8 +677,13 @@ pub async fn get_detached_manifest_with_trust_validation_allow_list(
     asset_format: String,
     trust_anchors_pem: String,
     allowed_list_pem: Option<String>,
+    timestamp_trust_anchors_pem: Option<String>,
 ) -> Result<Option<String>, String> {
-    let settings = trust_validation_settings(&trust_anchors_pem, allowed_list_pem.as_deref())?;
+    let settings = trust_validation_settings(
+        &trust_anchors_pem,
+        allowed_list_pem.as_deref(),
+        timestamp_trust_anchors_pem.as_deref(),
+    )?;
 
     let context = Context::new()
         .with_settings(settings)
@@ -679,6 +705,7 @@ pub async fn get_detached_manifest_with_trust_validation_utf8(
     asset_bytes: Vec<u8>,
     asset_format: String,
     trust_anchors_pem: String,
+    timestamp_trust_anchors_pem: Option<String>,
 ) -> Result<Option<Vec<u8>>, String> {
     Ok(get_detached_manifest_with_trust_validation(
         manifest_bytes,
@@ -686,6 +713,7 @@ pub async fn get_detached_manifest_with_trust_validation_utf8(
         asset_bytes,
         asset_format,
         trust_anchors_pem,
+        timestamp_trust_anchors_pem,
     )
     .await?
     .map(|s| s.into_bytes()))
@@ -699,6 +727,7 @@ pub async fn get_detached_manifest_with_trust_validation_allow_list_utf8(
     asset_format: String,
     trust_anchors_pem: String,
     allowed_list_pem: Option<String>,
+    timestamp_trust_anchors_pem: Option<String>,
 ) -> Result<Option<Vec<u8>>, String> {
     Ok(get_detached_manifest_with_trust_validation_allow_list(
         manifest_bytes,
@@ -707,6 +736,7 @@ pub async fn get_detached_manifest_with_trust_validation_allow_list_utf8(
         asset_format,
         trust_anchors_pem,
         allowed_list_pem,
+        timestamp_trust_anchors_pem,
     )
     .await?
     .map(|s| s.into_bytes()))
@@ -951,6 +981,123 @@ mod tests {
         Some(dest.into_inner())
     }
 
+    // Existing v2 C_with_CAWG_data.jpg, SHA fa0b257c863cb5b367135a017813ce0c1fbfc690a03e94acdd047c25c2d1ed46.
+    // Explicit test TSA ICA nomination: DER [44109,45829), SHA
+    // ca0b1554ecd901ea19dcad8749e9f2648c8d6dfcea1add9d2c2109415bb82ccd.
+    // Production trust never comes from the media being verified.
+    fn timestamp_fixture() -> (Vec<u8>, String) {
+        let asset =
+            include_bytes!("../../../../../forks/c2pa-rs/sdk/tests/fixtures/C_with_CAWG_data.jpg");
+        let pem = r#"-----BEGIN CERTIFICATE-----
+MIIGtDCCBJygAwIBAgIQDcesVwX/IZkuQEMiDDpJhjANBgkqhkiG9w0BAQsFADBi
+MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
+d3cuZGlnaWNlcnQuY29tMSEwHwYDVQQDExhEaWdpQ2VydCBUcnVzdGVkIFJvb3Qg
+RzQwHhcNMjUwNTA3MDAwMDAwWhcNMzgwMTE0MjM1OTU5WjBpMQswCQYDVQQGEwJV
+UzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xQTA/BgNVBAMTOERpZ2lDZXJ0IFRy
+dXN0ZWQgRzQgVGltZVN0YW1waW5nIFJTQTQwOTYgU0hBMjU2IDIwMjUgQ0ExMIIC
+IjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAtHgx0wqYQXK+PEbAHKx126NG
+aHS0URedTa2NDZS1mZaDLFTtQ2oRjzUXMmxCqvkbsDpz4aH+qbxeLho8I6jY3xL1
+IusLopuW2qftJYJaDNs1+JH7Z+QdSKWM06qchUP+AbdJgMQB3h2DZ0Mal5kYp77j
+YMVQXSZH++0trj6Ao+xh/AS7sQRuQL37QXbDhAktVJMQbzIBHYJBYgzWIjk8eDrY
+hXDEpKk7RdoX0M980EpLtlrNyHw0Xm+nt5pnYJU3Gmq6bNMI1I7Gb5IBZK4ivbVC
+iZv7PNBYqHEpNVWC2ZQ8BbfnFRQVESYOszFI2Wv82wnJRfN20VRS3hpLgIR4hjzL
+0hpoYGk81coWJ+KdPvMvaB0WkE/2qHxJ0ucS638ZxqU14lDnki7CcoKCz6eum5A1
+9WZQHkqUJfdkDjHkccpL6uoG8pbF0LJAQQZxst7VvwDDjAmSFTUms+wV/FbWBqi7
+fTJnjq3hj0XbQcd8hjj/q8d6ylgxCZSKi17yVp2NL+cnT6Toy+rN+nM8M7LnLqCr
+O2JP3oW//1sfuZDKiDEb1AQ8es9Xr/u6bDTnYCTKIsDq1BtmXUqEG1NqzJKS4kOm
+xkYp2WyODi7vQTCBZtVFJfVZ3j7OgWmnhFr4yUozZtqgPrHRVHhGNKlYzyjlroPx
+ul+bgIspzOwbtmsgY1MCAwEAAaOCAV0wggFZMBIGA1UdEwEB/wQIMAYBAf8CAQAw
+HQYDVR0OBBYEFO9vU0rp5AZ8esrikFb2L9RJ7MtOMB8GA1UdIwQYMBaAFOzX44LS
+cV1kTN8uZz/nupiuHA9PMA4GA1UdDwEB/wQEAwIBhjATBgNVHSUEDDAKBggrBgEF
+BQcDCDB3BggrBgEFBQcBAQRrMGkwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmRp
+Z2ljZXJ0LmNvbTBBBggrBgEFBQcwAoY1aHR0cDovL2NhY2VydHMuZGlnaWNlcnQu
+Y29tL0RpZ2lDZXJ0VHJ1c3RlZFJvb3RHNC5jcnQwQwYDVR0fBDwwOjA4oDagNIYy
+aHR0cDovL2NybDMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0VHJ1c3RlZFJvb3RHNC5j
+cmwwIAYDVR0gBBkwFzAIBgZngQwBBAIwCwYJYIZIAYb9bAcBMA0GCSqGSIb3DQEB
+CwUAA4ICAQAXzvsWgBz+Bz0RdnEwvb4LyLU0pn/N0IfFiBowf0/Dm1wGc/Do7oVM
+Y2mhXZXjDNJQa8j00DNqhCT3t+s8G0iP5kvN2n7Jd2E4/iEIUBO41P5F448rSYJ5
+9Ib61eoalhnd6ywFLerycvZTAz40y8S4F3/a+Z1jEMK/DMm/axFSgoR8n6c3nuZB
+9BfBwAQYK9FHaoq2e26MHvVY9gCDA/JYsq7pGdogP8HRtrYfctSLANEBfHU16r3J
+05qX3kId+ZOczgj5kjatVB+NdADVZKON/gnZruMvNYY2o1f4MXRJDMdTSlOLh0HC
+n2cQLwQCqjFbqrXuvTPSegOOzr4EWj7PtspIHBldNE2K9i697cvaiIo2p61Ed2p8
+xMJb82Yosn0z4y25xUbI7GIN/TpVfHIqQ6Ku/qjTY6hc3hsXMrS+U0yy+GWqAXam
+4ToWd2UQ1KYT70kZjE4YtL8Pbzg0c1ugMZyZZd/BdHLiRu7hAWE6bTEm4XYRkA6T
+l4KSFLFk43esaUeqGkH/wyW4N7OigizwJWeukcyIPbAvjSabnf7+Pu0VrFgoiovR
+Diyx3zEdmcif/sYQsfch28bZeUz2rtY/9TCA6TD8dC3JE3rYkrhLULy7Dc90G6e8
+BlqmyIjlgp2+VqsS9/wQD7yFylIz0scmbKvFoW2jNrbM1pD2T7m3XA==
+-----END CERTIFICATE-----
+"#
+        .to_string();
+        (asset.to_vec(), pem)
+    }
+
+    #[test]
+    fn explicit_tsa_input_trusts_existing_timestamp() {
+        let (asset, tsa) = timestamp_fixture();
+        let json = pollster::block_on(get_manifest_with_trust_validation(
+            asset,
+            "image/jpeg".into(),
+            String::new(),
+            Some(tsa),
+        ))
+        .expect("timestamp fixture read")
+        .expect("manifest");
+        let codes = current_codes(&json);
+        assert!(codes.iter().any(|c| c == "timeStamp.validated"));
+        assert!(codes.iter().any(|c| c == "timeStamp.trusted"), "{codes:?}");
+        assert!(
+            !codes.iter().any(|c| c == "timeStamp.untrusted"),
+            "{codes:?}"
+        );
+        // TSA authority does not authorize the manifest or CAWG credential.
+        assert!(codes.iter().any(|c| c == "signingCredential.untrusted"));
+        assert!(codes.iter().any(|c| c == "cawg.x509.credential.untrusted"));
+    }
+
+    fn current_codes(json: &str) -> Vec<String> {
+        let value: serde_json::Value = serde_json::from_str(json).unwrap();
+        assert_eq!(value["manifests"].as_object().unwrap().len(), 1);
+        value["current_validation_status"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|s| s["ingredient_uri"].is_null())
+            .map(|s| s["code"].as_str().unwrap().to_string())
+            .collect()
+    }
+
+    #[test]
+    fn timestamp_trust_requires_separate_correct_tsa_input() {
+        let (asset, tsa) = timestamp_fixture();
+        let unrelated = include_str!(
+            "../../../../../forks/c2pa-rs/sdk/tests/fixtures/certs/trust/test_cert_root_bundle.pem"
+        );
+        for (manifest, timestamp) in [
+            (tsa, None),
+            (String::new(), None),
+            (String::new(), Some(unrelated.to_string())),
+        ] {
+            let json = pollster::block_on(get_manifest_with_trust_validation(
+                asset.clone(),
+                "image/jpeg".into(),
+                manifest,
+                timestamp,
+            ))
+            .expect("read")
+            .expect("manifest");
+            let codes = current_codes(&json);
+            assert!(
+                codes.iter().any(|c| c == "timeStamp.validated"),
+                "{codes:?}"
+            );
+            assert!(
+                codes.iter().any(|c| c == "timeStamp.untrusted"),
+                "{codes:?}"
+            );
+            assert!(!codes.iter().any(|c| c == "timeStamp.trusted"), "{codes:?}");
+        }
+    }
+
     #[test]
     fn allowed_list_trusts_listed_leaf_with_empty_anchors() {
         let Some(jpeg) = fixture_jpeg() else {
@@ -971,6 +1118,7 @@ mod tests {
             "image/jpeg".to_string(),
             String::new(),
             Some(leaf),
+            None,
         ))
         .expect("trust validation")
         .expect("manifest json");
@@ -1006,6 +1154,7 @@ mod tests {
             "image/jpeg".to_string(),
             String::new(),
             Some(listed_leaf),
+            None,
         ))
         .expect("trust validation")
         .expect("manifest json");
@@ -1276,6 +1425,7 @@ mod tests {
             bytes.clone(),
             "image/png".into(),
             String::new(),
+            None,
         ))
         .unwrap()
         .unwrap();
@@ -1300,6 +1450,7 @@ mod tests {
             "image/png".into(),
             String::new(),
             Some(allowed),
+            None,
         ))
         .unwrap()
         .unwrap();
@@ -1331,6 +1482,7 @@ mod tests {
                 "image/png".into(),
                 String::new(),
                 Some(allowed),
+                None,
             ))
             .unwrap()
             .unwrap();
@@ -1372,6 +1524,7 @@ mod tests {
             "image/png".into(),
             String::new(),
             Some(allowed),
+            None,
         ))
         .unwrap()
         .unwrap();
