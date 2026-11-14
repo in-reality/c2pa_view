@@ -171,7 +171,8 @@ fn validate_file(path: &Path, trust_pem: Option<&str>) -> ValidationResult {
     println!("  Validating: {file_name} ({mime}, {} bytes)", bytes.len());
 
     let result = if let Some(pem) = trust_pem {
-        get_manifest_with_trust_validation(bytes, mime.to_string(), pem.to_string()).block_on()
+        get_manifest_with_trust_validation(bytes, mime.to_string(), pem.to_string(), None)
+            .block_on()
     } else {
         get_manifest_with_validation(bytes, mime.to_string()).block_on()
     };
