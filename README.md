@@ -373,31 +373,36 @@ meaning. No description causes original-media or remote-resource fetching.
 
 ### Native C2PA capabilities
 
-Cargo feature `c2pa-http` enables the SDK's existing `default_http` resolvers.
-Standalone Native Assets hooks enable it by default. Hosts may set the
-package-local `hooks.user_defines.<package>.c2pa_http` boolean; omission means
-`true`, and strings/numbers are rejected. The hook disables implicit Cargo
-features and forwards this explicit selection. No ambient environment toggle
-or app-name inference selects capabilities.
+Cargo features `c2pa-http` and native-only `c2pa-openssl` request the SDK's
+existing `default_http` and `openssl` capabilities. Required
+`rust_native_crypto` stays enabled; the SDK already prefers that implementation
+when both crypto features are present. These selections add no transport or
+crypto implementation.
 
-The mobile app selects `false` for capture, ruleset and editor; capture's remote
-claim signing remains a Dart callback and no TSA URL is configured, while Core
-and editor production validation are offline. The generic viewer stays `true`
-to preserve its existing generic HTTP resolver behavior. The baseline does
-not enable `fetch_remote_manifests`; remote references retain their existing
-SDK URL/error behavior. Offline hosts cannot fetch manifests,
-OCSP or timestamps through the SDK. Existing resolver errors and downstream
-failed/inaccessible/incomplete outcomes remain unchanged; valid stapled evidence
-may still validate offline. Missing revocation evidence never asserts a passed
-revocation check. Supplied embedded/detached bytes, file I/O and crypto remain
-available. OpenSSL is
-retained in this HTTP-only stage. Future aggregate consumers select the same
-`c2pa-http` feature explicitly; no aggregate bridge seam is introduced here.
+Native Assets hosts set package-local
+`hooks.user_defines.<package>.c2pa_http` and `c2pa_openssl` booleans. Omitted
+values are both `true`, preserving standalone hook capabilities; strings and
+numbers fail before Cargo. Hooks set `enableDefaultFeatures: false` and forward
+an explicit feature list, without ambient environment switches or app inference.
+Raw Cargo SDK defaults use Rust crypto, so their feature lists differ from the
+legacy hook selection; supported behavior is checked with the SDK fixture matrix.
 
-Cargo features are additive. `c2pa_http: false` omits this standalone root's
-HTTP feature request; it is not a per-domain networking sandbox. A unified
-aggregate still has SDK HTTP enabled when the viewer requests it. Core/editor
-network refusal remains enforced by their explicit settings/denying contexts.
-The unavailable-resolver regressions assume an isolated no-default SDK graph.
-Hooks pass an explicit feature list with `enableDefaultFeatures: false`; later
-bridge/capability features must therefore be forwarded explicitly by their hook.
+The mobile app requests HTTP only for the generic viewer and requests no SDK
+OpenSSL in all four packages. Viewer HTTP is retained conservatively; baseline
+`fetch_remote_manifests` is absent, so remote references retain the SDK URL/error
+behavior. Supplied embedded/detached bytes, file I/O, required signature checks,
+separate TSA trust and stapled revocation remain available. Missing transport can
+be an error or inaccessible/incomplete check, with legitimate staple fallback;
+missing revocation evidence never asserts a passed revocation check.
+
+Cargo features are additive. A false package request is not a per-domain
+networking sandbox: an aggregate still has SDK HTTP enabled through the viewer.
+Core/editor offline settings and denying contexts remain authoritative. Resolver
+absence regressions assume an isolated no-default SDK graph. Backend direct SDK
+dependencies retain their existing capabilities and vendoring.
+
+Coordination for t2269–t2272: the future default-enabled `standalone-bridge`
+feature must be explicitly forwarded by the normal hook when `build_native=true`;
+its Cargo default declaration alone will not enable it through these hooks.
+Aggregate `defaultFeatures: false` must omit that bridge feature. No bridge seam
+or `build_native` implementation is introduced by this capability change.

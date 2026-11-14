@@ -40,12 +40,24 @@ impl Signer for StapledSigner {
 }
 
 fn signed(remote: bool, revoked: bool) -> (Vec<u8>, Vec<u8>) {
+    signed_with(
+        SigningAlg::Es256,
+        include_bytes!("../../../../forks/c2pa-rs/sdk/tests/fixtures/certs/es256.pub"),
+        include_bytes!("../../../../forks/c2pa-rs/sdk/tests/fixtures/certs/es256.pem"),
+        remote,
+        revoked,
+    )
+}
+
+fn signed_with(
+    alg: SigningAlg,
+    cert: &[u8],
+    key: &[u8],
+    remote: bool,
+    revoked: bool,
+) -> (Vec<u8>, Vec<u8>) {
     let signer = StapledSigner {
-        inner: c2pa::create_signer::from_keys(
-            include_bytes!("../../../../forks/c2pa-rs/sdk/tests/fixtures/certs/es256.pub"),
-            include_bytes!("../../../../forks/c2pa-rs/sdk/tests/fixtures/certs/es256.pem"),
-            SigningAlg::Es256, None,
-        ).unwrap(),
+        inner: c2pa::create_signer::from_keys(cert, key, alg, None).unwrap(),
         staple: revoked.then(|| include_bytes!("../../../../forks/c2pa-rs/sdk/tests/fixtures/crypto/ocsp/es256_revoked_response.der").to_vec()),
     };
     let context = Context::new()
@@ -139,4 +151,98 @@ fn offline_stapled_revocation_stays_a_failure() {
         .success()
         .iter()
         .any(|s| s.code() == "claimSignature.validated"));
+}
+
+#[test]
+fn standard_algorithms_preserve_chain_and_exact_leaf_trust() {
+    macro_rules! fixture {
+        ($name:literal, $alg:ident) => {
+            (
+                SigningAlg::$alg,
+                include_bytes!(concat!(
+                    "../../../../forks/c2pa-rs/sdk/tests/fixtures/certs/",
+                    $name,
+                    ".pub"
+                ))
+                .as_slice(),
+                include_bytes!(concat!(
+                    "../../../../forks/c2pa-rs/sdk/tests/fixtures/certs/",
+                    $name,
+                    ".pem"
+                ))
+                .as_slice(),
+            )
+        };
+    }
+    let root = include_str!(
+        "../../../../forks/c2pa-rs/sdk/tests/fixtures/certs/trust/test_cert_root_bundle.pem"
+    );
+    let first_cert = |chain: &[u8]| {
+        let text = std::str::from_utf8(chain).unwrap();
+        let end =
+            text.find("-----END CERTIFICATE-----").unwrap() + "-----END CERTIFICATE-----".len();
+        text[..end].to_owned()
+    };
+    let es256 = include_bytes!("../../../../forks/c2pa-rs/sdk/tests/fixtures/certs/es256.pub");
+    let ps256 = include_bytes!("../../../../forks/c2pa-rs/sdk/tests/fixtures/certs/ps256.pub");
+    for (alg, chain, key) in [
+        fixture!("es256", Es256),
+        fixture!("es384", Es384),
+        fixture!("es512", Es512),
+        fixture!("ps256", Ps256),
+        fixture!("ps384", Ps384),
+        fixture!("ps512", Ps512),
+        fixture!("ed25519", Ed25519),
+    ] {
+        let (media, _) = signed_with(alg, chain, key, false, false);
+        for (case, anchors, allowed, trusted) in [
+            ("chain", root.to_owned(), None, true),
+            ("listed-leaf", String::new(), Some(first_cert(chain)), true),
+            (
+                "sibling-leaf",
+                String::new(),
+                Some(first_cert(if alg == SigningAlg::Es256 {
+                    ps256.as_slice()
+                } else {
+                    es256.as_slice()
+                })),
+                false,
+            ),
+        ] {
+            let json = pollster::block_on(
+                crate::api::c2pa::get_manifest_with_trust_validation_allow_list(
+                    media.clone(),
+                    "image/jpeg".into(),
+                    anchors,
+                    allowed,
+                    None,
+                ),
+            )
+            .unwrap()
+            .unwrap();
+            let report: serde_json::Value = serde_json::from_str(&json).unwrap();
+            let statuses = report["current_validation_status"].as_array().unwrap();
+            let has = |code: &str| statuses.iter().any(|s| s["code"] == code);
+            assert_eq!(
+                has("signingCredential.trusted"),
+                trusted,
+                "{alg:?} {case}: {statuses:?}"
+            );
+            if trusted {
+                assert!(
+                    has("claimSignature.validated"),
+                    "{alg:?} {case}: {statuses:?}"
+                );
+                assert!(
+                    has("assertion.dataHash.match"),
+                    "{alg:?} {case}: {statuses:?}"
+                );
+            } else {
+                assert!(
+                    has("signingCredential.untrusted"),
+                    "{alg:?} {case}: {statuses:?}"
+                );
+            }
+        }
+    }
 }

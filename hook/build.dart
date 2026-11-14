@@ -12,7 +12,10 @@ Future<void> main(final List<String> args) async {
     final nativeOutput = BuildOutputBuilder();
     await FlutterRustBridgeNativeAssetsBuilder(
       enableDefaultFeatures: false,
-      features: c2paCargoFeatures(input.userDefines['c2pa_http']),
+      features: c2paCargoFeatures(
+        input.userDefines['c2pa_http'],
+        openssl: input.userDefines['c2pa_openssl'],
+      ),
       extraCargoEnvironmentVariables: {
         'CARGO_BUILD_JOBS': '1',
         'CARGO_INCREMENTAL': '0',
