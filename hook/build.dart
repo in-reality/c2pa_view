@@ -4,11 +4,23 @@ import 'package:code_assets/code_assets.dart';
 import 'package:flutter_rust_bridge_hooks/flutter_rust_bridge_hooks.dart';
 
 import 'cargo_dependencies.dart';
+import 'native_capabilities.dart';
 
 Future<void> main(final List<String> args) async {
   await build(args, (final input, final output) async {
+    if (!buildNativeEnabled(input.userDefines['build_native'])) {
+      return;
+    }
     final nativeOutput = BuildOutputBuilder();
     await FlutterRustBridgeNativeAssetsBuilder(
+      enableDefaultFeatures: false,
+      features: [
+        'standalone-bridge',
+        ...c2paCargoFeatures(
+          input.userDefines['c2pa_http'],
+          openssl: input.userDefines['c2pa_openssl'],
+        ),
+      ],
       extraCargoEnvironmentVariables: {
         'CARGO_BUILD_JOBS': '1',
         'CARGO_INCREMENTAL': '0',
@@ -113,4 +125,12 @@ Map<String, String> _appleCargoEnvironment(final Map<String, Object?> json) {
     return environment;
   }
   return {...environment, 'IPHONEOS_DEPLOYMENT_TARGET': '$version.0'};
+}
+
+/// Omitted/null retain standalone builds; explicit false emits no native asset.
+bool buildNativeEnabled(final Object? value) {
+  if (value != null && value is! bool) {
+    throw const FormatException('build_native must be a boolean');
+  }
+  return value != false;
 }

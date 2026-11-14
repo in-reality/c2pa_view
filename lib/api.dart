@@ -1,21 +1,5 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:c2pa_view/src/rust/api/c2pa.dart';
-import 'package:flutter/foundation.dart';
+import 'package:c2pa_view/core/bridge/c2pa_backend.dart';
 import 'package:http/http.dart' as http;
-
-String? _manifestJsonFromUtf8Bytes(final Uint8List? bytes) =>
-    bytes == null ? null : utf8.decode(bytes);
-
-bool _hasTrustMaterial({
-  final String? trustAnchorsPem,
-  final String? timestampTrustAnchorsPem,
-  final String? allowedListPem,
-}) =>
-    (trustAnchorsPem != null && trustAnchorsPem.isNotEmpty) ||
-    (timestampTrustAnchorsPem != null && timestampTrustAnchorsPem.isNotEmpty) ||
-    (allowedListPem != null && allowedListPem.isNotEmpty);
 
 /// Get the manifest from a file.
 ///
@@ -30,19 +14,13 @@ Future<String?> getManifestJsonFromFile(
   final String? timestampTrustAnchorsPem,
   final String? allowedListPem,
 }) async {
-  if (_hasTrustMaterial(
+  await initializeC2paBackend();
+  return c2paBackend.validatePath(
+    path: path,
     trustAnchorsPem: trustAnchorsPem,
     timestampTrustAnchorsPem: timestampTrustAnchorsPem,
     allowedListPem: allowedListPem,
-  )) {
-    return getManifestWithTrustValidationFromPathAllowList(
-      path: path,
-      trustAnchorsPem: trustAnchorsPem ?? '',
-      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
-      allowedListPem: allowedListPem,
-    );
-  }
-  return getManifestWithValidationFromPath(path: path);
+  );
 }
 
 /// Get the manifest from a URL.
@@ -57,22 +35,18 @@ Future<String?> getManifestJsonFromURL(
   final String? timestampTrustAnchorsPem,
   final String? allowedListPem,
 }) async {
+  // Select and initialize before network I/O so an in-flight or failed fetch
+  // cannot leave execution ownership replaceable.
+  await initializeC2paBackend();
   final response = await http.get(Uri.parse(url));
   final mime = response.headers['content-type'] ?? format ?? 'image/jpeg';
-  if (_hasTrustMaterial(
+  return getManifestJsonFromBytes(
+    fileBytes: response.bodyBytes,
+    format: mime,
     trustAnchorsPem: trustAnchorsPem,
     timestampTrustAnchorsPem: timestampTrustAnchorsPem,
     allowedListPem: allowedListPem,
-  )) {
-    return getManifestWithTrustValidationAllowList(
-      fileBytes: response.bodyBytes,
-      format: mime,
-      trustAnchorsPem: trustAnchorsPem ?? '',
-      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
-      allowedListPem: allowedListPem,
-    );
-  }
-  return getManifestJsonFromBytes(fileBytes: response.bodyBytes, format: mime);
+  );
 }
 
 /// Get the manifest from bytes and format (mime type).
@@ -86,43 +60,14 @@ Future<String?> getManifestJsonFromBytes({
   final String? timestampTrustAnchorsPem,
   final String? allowedListPem,
 }) async {
-  if (_hasTrustMaterial(
+  await initializeC2paBackend();
+  return c2paBackend.validateBytes(
+    fileBytes: fileBytes,
+    format: format,
     trustAnchorsPem: trustAnchorsPem,
     timestampTrustAnchorsPem: timestampTrustAnchorsPem,
     allowedListPem: allowedListPem,
-  )) {
-    return getManifestWithTrustValidationAllowList(
-      fileBytes: fileBytes,
-      format: format,
-      trustAnchorsPem: trustAnchorsPem ?? '',
-      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
-      allowedListPem: allowedListPem,
-    );
-  }
-  if (kDebugMode) {
-    debugPrint(
-      'provenance: frb utf8 in len=${fileBytes.length} format=$format',
-    );
-  }
-  try {
-    final raw = await getManifestWithValidationUtf8(
-      fileBytes: fileBytes,
-      format: format,
-    );
-    if (kDebugMode) {
-      debugPrint('provenance: frb utf8 out len=${raw?.length ?? 'null'}');
-    }
-    return _manifestJsonFromUtf8Bytes(raw);
-  } on Object catch (error, stackTrace) {
-    if (kDebugMode) {
-      debugPrint(
-        'provenance: frb utf8 failed ${error.runtimeType}: '
-        '${error.toString().length > 120 ? '${error.toString().substring(0, 120)}…' : error}',
-      );
-      debugPrint('provenance: frb utf8 stack: $stackTrace');
-    }
-    rethrow;
-  }
+  );
 }
 
 /// Reads a detached C2PA manifest **store** (JUMBF bytes) without binding it
@@ -135,9 +80,8 @@ Future<String?> getManifestStoreJsonFromBytes({
   required final List<int> fileBytes,
   required final String format,
 }) async {
-  return _manifestJsonFromUtf8Bytes(
-    await getFileManifestFormatUtf8(fileBytes: fileBytes, format: format),
-  );
+  await initializeC2paBackend();
+  return c2paBackend.readManifestStore(fileBytes: fileBytes, format: format);
 }
 
 /// Validates a detached manifest store against asset bytes.
@@ -157,27 +101,14 @@ Future<String?> getDetachedManifestJsonFromBytes({
   final String? timestampTrustAnchorsPem,
   final String? allowedListPem,
 }) async {
-  if (_hasTrustMaterial(
+  await initializeC2paBackend();
+  return c2paBackend.validateDetached(
+    manifestBytes: manifestBytes,
+    assetBytes: assetBytes,
+    assetFormat: assetFormat,
+    manifestFormat: manifestFormat,
     trustAnchorsPem: trustAnchorsPem,
     timestampTrustAnchorsPem: timestampTrustAnchorsPem,
     allowedListPem: allowedListPem,
-  )) {
-    return getDetachedManifestWithTrustValidationAllowList(
-      manifestBytes: manifestBytes,
-      manifestFormat: manifestFormat,
-      assetBytes: assetBytes,
-      assetFormat: assetFormat,
-      trustAnchorsPem: trustAnchorsPem ?? '',
-      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
-      allowedListPem: allowedListPem,
-    );
-  }
-  return _manifestJsonFromUtf8Bytes(
-    await getDetachedManifestWithValidationUtf8(
-      manifestBytes: manifestBytes,
-      manifestFormat: manifestFormat,
-      assetBytes: assetBytes,
-      assetFormat: assetFormat,
-    ),
   );
 }

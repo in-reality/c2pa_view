@@ -1,0 +1,173 @@
+import 'dart:convert';
+
+import 'package:c2pa_view/core/bridge/c2pa_backend.dart';
+import 'package:c2pa_view/core/bridge/rust_lib_init_platform.dart'
+    if (dart.library.js_interop) 'package:c2pa_view/core/bridge/rust_lib_init_web.dart';
+import 'package:c2pa_view/src/rust/api/c2pa.dart';
+import 'package:c2pa_view/src/rust/frb_generated.dart';
+import 'package:flutter/foundation.dart';
+
+String? _manifestJsonFromUtf8Bytes(final Uint8List? bytes) =>
+    bytes == null ? null : utf8.decode(bytes);
+
+bool _hasTrustMaterial({
+  final String? trustAnchorsPem,
+  final String? timestampTrustAnchorsPem,
+  final String? allowedListPem,
+}) =>
+    (trustAnchorsPem != null && trustAnchorsPem.isNotEmpty) ||
+    (timestampTrustAnchorsPem != null && timestampTrustAnchorsPem.isNotEmpty) ||
+    (allowedListPem != null && allowedListPem.isNotEmpty);
+
+/// Default native/WASM reader using the package's generated FRB bridge.
+///
+/// Applications normally use the facade, which coalesces initialization.
+class StandaloneC2paBackend implements C2paBackend {
+  /// Creates the unchanged standalone FRB adapter.
+  const StandaloneC2paBackend();
+
+  @override
+  Future<void> initialize() async {
+    if (RustLib.instance.initialized) {
+      return;
+    }
+    await RustLib.init(externalLibrary: await loadRustExternalLibrary());
+    markRustLibraryReady();
+  }
+
+  /// Get the manifest from a file.
+  ///
+  /// When [trustAnchorsPem], [timestampTrustAnchorsPem] and/or [allowedListPem] is provided, validation
+  /// runs against those PEM bundles (Manifest anchors, separate TSA anchors and Manifest end-entity allow-list);
+  /// otherwise the underlying `c2pa-rs` defaults are used and certificates
+  /// report as `untrusted`.
+  @override
+  Future<String?> validatePath({
+    required final String path,
+    final String? trustAnchorsPem,
+    final String? timestampTrustAnchorsPem,
+    final String? allowedListPem,
+  }) async {
+    if (_hasTrustMaterial(
+      trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
+      allowedListPem: allowedListPem,
+    )) {
+      return getManifestWithTrustValidationFromPathAllowList(
+        path: path,
+        trustAnchorsPem: trustAnchorsPem ?? '',
+        timestampTrustAnchorsPem: timestampTrustAnchorsPem,
+        allowedListPem: allowedListPem,
+      );
+    }
+    return getManifestWithValidationFromPath(path: path);
+  }
+
+  /// Get the manifest from bytes and format (mime type).
+  ///
+  /// See [validatePath] for the meaning of [trustAnchorsPem] /
+  /// [allowedListPem].
+  @override
+  Future<String?> validateBytes({
+    required final List<int> fileBytes,
+    required final String format,
+    final String? trustAnchorsPem,
+    final String? timestampTrustAnchorsPem,
+    final String? allowedListPem,
+  }) async {
+    if (_hasTrustMaterial(
+      trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
+      allowedListPem: allowedListPem,
+    )) {
+      return getManifestWithTrustValidationAllowList(
+        fileBytes: fileBytes,
+        format: format,
+        trustAnchorsPem: trustAnchorsPem ?? '',
+        timestampTrustAnchorsPem: timestampTrustAnchorsPem,
+        allowedListPem: allowedListPem,
+      );
+    }
+    if (kDebugMode) {
+      debugPrint(
+        'provenance: frb utf8 in len=${fileBytes.length} format=$format',
+      );
+    }
+    try {
+      final raw = await getManifestWithValidationUtf8(
+        fileBytes: fileBytes,
+        format: format,
+      );
+      if (kDebugMode) {
+        debugPrint('provenance: frb utf8 out len=${raw?.length ?? 'null'}');
+      }
+      return _manifestJsonFromUtf8Bytes(raw);
+    } on Object catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          'provenance: frb utf8 failed ${error.runtimeType}: '
+          '${error.toString().length > 120 ? '${error.toString().substring(0, 120)}…' : error}',
+        );
+        debugPrint('provenance: frb utf8 stack: $stackTrace');
+      }
+      rethrow;
+    }
+  }
+
+  /// Reads a detached C2PA manifest **store** (JUMBF bytes) without binding it
+  /// to an asset.
+  ///
+  /// Hash binding and signature checks against the referenced media are **not**
+  /// performed (`verify_after_reading: false`). Prefer [validateDetached]
+  /// when the sidecar must be validated against known asset bytes.
+  @override
+  Future<String?> readManifestStore({
+    required final List<int> fileBytes,
+    required final String format,
+  }) async => _manifestJsonFromUtf8Bytes(
+    await getFileManifestFormatUtf8(fileBytes: fileBytes, format: format),
+  );
+
+  /// Validates a detached manifest store against asset bytes.
+  ///
+  /// [manifestBytes] is the sidecar JUMBF. [manifestFormat] must be a C2PA
+  /// manifest-store MIME (`application/c2pa` by default). [assetBytes] and
+  /// [assetFormat] are the bound media. When [trustAnchorsPem] and/or
+  /// [allowedListPem] is provided, signing credentials are checked against
+  /// those PEM bundles; otherwise certificates report as
+  /// `signingCredential.untrusted`.
+  @override
+  Future<String?> validateDetached({
+    required final List<int> manifestBytes,
+    required final List<int> assetBytes,
+    required final String assetFormat,
+    final String manifestFormat = 'application/c2pa',
+    final String? trustAnchorsPem,
+    final String? timestampTrustAnchorsPem,
+    final String? allowedListPem,
+  }) async {
+    if (_hasTrustMaterial(
+      trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
+      allowedListPem: allowedListPem,
+    )) {
+      return getDetachedManifestWithTrustValidationAllowList(
+        manifestBytes: manifestBytes,
+        manifestFormat: manifestFormat,
+        assetBytes: assetBytes,
+        assetFormat: assetFormat,
+        trustAnchorsPem: trustAnchorsPem ?? '',
+        timestampTrustAnchorsPem: timestampTrustAnchorsPem,
+        allowedListPem: allowedListPem,
+      );
+    }
+    return _manifestJsonFromUtf8Bytes(
+      await getDetachedManifestWithValidationUtf8(
+        manifestBytes: manifestBytes,
+        manifestFormat: manifestFormat,
+        assetBytes: assetBytes,
+        assetFormat: assetFormat,
+      ),
+    );
+  }
+}

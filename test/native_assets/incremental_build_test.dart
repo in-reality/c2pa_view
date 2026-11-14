@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:code_assets/code_assets.dart';
+import 'package:flutter_rust_bridge_hooks/flutter_rust_bridge_hooks.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -16,7 +18,11 @@ void main() {
         ..writeAsStringSync(contents);
     }
 
-    for (final name in ['build.dart', 'cargo_dependencies.dart']) {
+    for (final name in [
+      'build.dart',
+      'cargo_dependencies.dart',
+      'native_capabilities.dart',
+    ]) {
       write('hook/$name', File('hook/$name').readAsStringSync());
     }
     write(
@@ -38,6 +44,10 @@ version = "0.1.0"
 edition = "2024"
 [lib]
 crate-type = ["cdylib", "staticlib"]
+[features]
+standalone-bridge = []
+c2pa-http = []
+c2pa-openssl = []
 ''');
     write('bin/main.dart', '''
 import 'dart:ffi';
@@ -80,6 +90,8 @@ void main() => print(buildRevision());
     }
 
     void revision(final int value) => write('rust/src/lib.rs', '''
+#[cfg(not(feature = "standalone-bridge"))]
+compile_error!("hook must explicitly enable standalone-bridge");
 #[unsafe(no_mangle)]
 pub extern "C" fn build_revision() -> i32 { $value }
 ''');
@@ -110,5 +122,76 @@ pub extern "C" fn build_revision() -> i32 { $value }
       timestamp,
       reason: 'An unchanged source must reuse the hook output.',
     );
+    // Exercise the real hook entrypoint and public hook input configuration.
+    // Reuse one output file: opt-out must replace a prior emitted asset.
+    final hookOutput = root.uri.resolve('trials/output.json');
+    Future<ProcessResult> trial(final Map<String, Object?> defines) async {
+      final input = BuildInputBuilder()
+        ..setupShared(
+          packageRoot: root.uri,
+          packageName: 'c2pa_view',
+          outputDirectoryShared: root.uri.resolve('trials/shared/'),
+          outputFile: hookOutput,
+          userDefines: PackageUserDefines(
+            workspacePubspec: PackageUserDefinesSource(
+              defines: defines,
+              basePath: root.uri,
+            ),
+          ),
+        )
+        ..setupBuildInput();
+      input.config.setupBuild(linkingEnabled: false);
+      input.addExtension(
+        CodeAssetExtension(
+          targetArchitecture: Architecture.current,
+          targetOS: OS.current,
+          linkModePreference: LinkModePreference.dynamic,
+        ),
+      );
+      final inputFile = File.fromUri(root.uri.resolve('trials/input.json'));
+      inputFile.parent.createSync(recursive: true);
+      inputFile.writeAsStringSync(jsonEncode(input.build().json));
+      return Process.run(dartExecutable.path, [
+        'hook/build.dart',
+        '--config=${inputFile.path}',
+      ], workingDirectory: root.path);
+    }
+
+    Map outputJson() =>
+        jsonDecode(File.fromUri(hookOutput).readAsStringSync()) as Map;
+    for (final defines in <Map<String, Object?>>[
+      {},
+      {'build_native': true},
+      {'build_native': null},
+    ]) {
+      final result = await trial(defines);
+      expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');
+      expect((outputJson()['assets'] as List).length, 1);
+      expect(
+        jsonEncode(outputJson()['assets']),
+        contains(OS.current.dylibFileName('c2pa_view')),
+      );
+    }
+    // Cargo would fail with this manifest: false must return before the builder.
+    final manifest = File('${root.path}/rust/Cargo.toml');
+    final validManifest = manifest.readAsStringSync();
+    manifest.writeAsStringSync('invalid Cargo manifest');
+    final disabled = await trial({'build_native': false});
+    expect(
+      disabled.exitCode,
+      0,
+      reason: '${disabled.stdout}\n${disabled.stderr}',
+    );
+    expect(outputJson()['assets'] ?? [], isEmpty);
+    expect(outputJson()['dependencies'] ?? [], isEmpty);
+    manifest.writeAsStringSync(validManifest);
+    for (final value in <Object>['false', 0, <Object>[], <String, Object>{}]) {
+      final result = await trial({'build_native': value});
+      expect(result.exitCode, isNot(0));
+      expect(
+        '${result.stdout}\n${result.stderr}',
+        contains('build_native must be a boolean'),
+      );
+    }
   }, timeout: const Timeout(Duration(minutes: 3)));
 }
