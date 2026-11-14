@@ -370,3 +370,34 @@ including hosts that already have other highlights. Host thumbnails preserve the
 projection. Invalid/untrusted precedence, Not verified versus No CR, previews,
 authenticated fetches and interaction/export callbacks retain their existing
 meaning. No description causes original-media or remote-resource fetching.
+
+### Native C2PA capabilities
+
+Cargo feature `c2pa-http` enables the SDK's existing `default_http` resolvers.
+Standalone Native Assets hooks enable it by default. Hosts may set the
+package-local `hooks.user_defines.<package>.c2pa_http` boolean; omission means
+`true`, and strings/numbers are rejected. The hook disables implicit Cargo
+features and forwards this explicit selection. No ambient environment toggle
+or app-name inference selects capabilities.
+
+The mobile app selects `false` for capture, ruleset and editor; capture's remote
+claim signing remains a Dart callback and no TSA URL is configured, while Core
+and editor production validation are offline. The generic viewer stays `true`
+to preserve its existing generic HTTP resolver behavior. The baseline does
+not enable `fetch_remote_manifests`; remote references retain their existing
+SDK URL/error behavior. Offline hosts cannot fetch manifests,
+OCSP or timestamps through the SDK. Existing resolver errors and downstream
+failed/inaccessible/incomplete outcomes remain unchanged; valid stapled evidence
+may still validate offline. Missing revocation evidence never asserts a passed
+revocation check. Supplied embedded/detached bytes, file I/O and crypto remain
+available. OpenSSL is
+retained in this HTTP-only stage. Future aggregate consumers select the same
+`c2pa-http` feature explicitly; no aggregate bridge seam is introduced here.
+
+Cargo features are additive. `c2pa_http: false` omits this standalone root's
+HTTP feature request; it is not a per-domain networking sandbox. A unified
+aggregate still has SDK HTTP enabled when the viewer requests it. Core/editor
+network refusal remains enforced by their explicit settings/denying contexts.
+The unavailable-resolver regressions assume an isolated no-default SDK graph.
+Hooks pass an explicit feature list with `enableDefaultFeatures: false`; later
+bridge/capability features must therefore be forwarded explicitly by their hook.

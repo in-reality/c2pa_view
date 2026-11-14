@@ -3,12 +3,16 @@ import 'dart:io';
 import 'package:code_assets/code_assets.dart';
 import 'package:flutter_rust_bridge_hooks/flutter_rust_bridge_hooks.dart';
 
+import 'native_capabilities.dart';
+
 import 'cargo_dependencies.dart';
 
 Future<void> main(final List<String> args) async {
   await build(args, (final input, final output) async {
     final nativeOutput = BuildOutputBuilder();
     await FlutterRustBridgeNativeAssetsBuilder(
+      enableDefaultFeatures: false,
+      features: c2paCargoFeatures(input.userDefines['c2pa_http']),
       extraCargoEnvironmentVariables: {
         'CARGO_BUILD_JOBS': '1',
         'CARGO_INCREMENTAL': '0',

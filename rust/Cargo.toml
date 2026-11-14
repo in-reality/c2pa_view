@@ -6,18 +6,23 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib", "staticlib", "lib"]
 
+[features]
+# Standalone hosts retain the SDK transport unless explicitly disabled.
+default = ["c2pa-http"]
+c2pa-http = ["c2pa/default_http"]
+
 [dependencies]
 flutter_rust_bridge = "=2.13.0"
 mime_guess = "2.0.5"
 serde_json = "1"
 image = { version = "0.25.10", default-features = false, features = ["png", "jpeg"] }
 
-# Preserve native OpenSSL/default HTTP features; OpenSSL is unsupported on Wasm.
+# Native keeps vendored OpenSSL; the HTTP capability is explicit on both targets.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-c2pa = { git = "https://github.com/in-reality/c2pa-rs", rev = "b250db0849cdd2667f7edfa94d4de374dea3e806", features = ["file_io", "rust_native_crypto"] }
+c2pa = { git = "https://github.com/in-reality/c2pa-rs", rev = "b250db0849cdd2667f7edfa94d4de374dea3e806", default-features = false, features = ["file_io", "rust_native_crypto", "openssl"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-c2pa = { git = "https://github.com/in-reality/c2pa-rs", rev = "b250db0849cdd2667f7edfa94d4de374dea3e806", default-features = false, features = ["file_io", "rust_native_crypto", "default_http"] }
+c2pa = { git = "https://github.com/in-reality/c2pa-rs", rev = "b250db0849cdd2667f7edfa94d4de374dea3e806", default-features = false, features = ["file_io", "rust_native_crypto"] }
 
 [dev-dependencies]
 pollster = "0.4"
