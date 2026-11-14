@@ -8,7 +8,8 @@ crate-type = ["cdylib", "staticlib", "lib"]
 
 [features]
 # Standalone hosts retain the SDK transport unless explicitly disabled.
-default = ["c2pa-http"]
+default = ["standalone-bridge", "c2pa-http"]
+standalone-bridge = []
 c2pa-http = ["c2pa/default_http"]
 c2pa-openssl = ["c2pa/openssl"]
 

@@ -1,8 +1,7 @@
 import 'dart:convert';
 
+import 'package:c2pa_view/api.dart' as api;
 import 'package:c2pa_view/domain/entities/manifest_store.dart';
-import 'package:c2pa_view/src/rust/api/c2pa.dart';
-import 'package:http/http.dart' as http;
 
 /// Thin wrapper over raw FFI calls to the Rust C2PA bridge.
 ///
@@ -17,21 +16,12 @@ class C2paBridgeService {
     final String? trustAnchorsPem,
     final String? timestampTrustAnchorsPem,
     final String? allowedListPem,
-  }) async {
-    if (_hasTrustMaterial(
-      trustAnchorsPem: trustAnchorsPem,
-      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
-      allowedListPem: allowedListPem,
-    )) {
-      return getManifestWithTrustValidationFromPathAllowList(
-        path: path,
-        trustAnchorsPem: trustAnchorsPem ?? '',
-        timestampTrustAnchorsPem: timestampTrustAnchorsPem,
-        allowedListPem: allowedListPem,
-      );
-    }
-    return getManifestWithValidationFromPath(path: path);
-  }
+  }) async => api.getManifestJsonFromFile(
+    path,
+    trustAnchorsPem: trustAnchorsPem,
+    timestampTrustAnchorsPem: timestampTrustAnchorsPem,
+    allowedListPem: allowedListPem,
+  );
 
   /// Get raw manifest JSON from a URL.
   static Future<String?> getManifestJsonFromUrl(
@@ -40,27 +30,13 @@ class C2paBridgeService {
     final String? trustAnchorsPem,
     final String? timestampTrustAnchorsPem,
     final String? allowedListPem,
-  }) async {
-    final response = await http.get(Uri.parse(url));
-    final mimeType = response.headers['content-type'] ?? format ?? 'image/jpeg';
-    if (_hasTrustMaterial(
-      trustAnchorsPem: trustAnchorsPem,
-      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
-      allowedListPem: allowedListPem,
-    )) {
-      return getManifestWithTrustValidationAllowList(
-        fileBytes: response.bodyBytes,
-        format: mimeType,
-        trustAnchorsPem: trustAnchorsPem ?? '',
-        timestampTrustAnchorsPem: timestampTrustAnchorsPem,
-        allowedListPem: allowedListPem,
-      );
-    }
-    return getManifestWithValidation(
-      fileBytes: response.bodyBytes,
-      format: mimeType,
-    );
-  }
+  }) async => api.getManifestJsonFromURL(
+    url,
+    format: format,
+    trustAnchorsPem: trustAnchorsPem,
+    timestampTrustAnchorsPem: timestampTrustAnchorsPem,
+    allowedListPem: allowedListPem,
+  );
 
   /// Get raw manifest JSON from bytes.
   static Future<String?> getManifestJsonFromBytes({
@@ -69,22 +45,13 @@ class C2paBridgeService {
     final String? trustAnchorsPem,
     final String? timestampTrustAnchorsPem,
     final String? allowedListPem,
-  }) async {
-    if (_hasTrustMaterial(
-      trustAnchorsPem: trustAnchorsPem,
-      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
-      allowedListPem: allowedListPem,
-    )) {
-      return getManifestWithTrustValidationAllowList(
-        fileBytes: fileBytes,
-        format: format,
-        trustAnchorsPem: trustAnchorsPem ?? '',
-        timestampTrustAnchorsPem: timestampTrustAnchorsPem,
-        allowedListPem: allowedListPem,
-      );
-    }
-    return getManifestWithValidation(fileBytes: fileBytes, format: format);
-  }
+  }) async => api.getManifestJsonFromBytes(
+    fileBytes: fileBytes,
+    format: format,
+    trustAnchorsPem: trustAnchorsPem,
+    timestampTrustAnchorsPem: timestampTrustAnchorsPem,
+    allowedListPem: allowedListPem,
+  );
 
   /// Load a [ManifestStore] from a local file path.
   static Future<ManifestStore?> loadFromFile(
@@ -146,14 +113,4 @@ class C2paBridgeService {
     }
     return ManifestStore.fromJson(jsonDecode(json));
   }
-
-  static bool _hasTrustMaterial({
-    final String? trustAnchorsPem,
-    final String? timestampTrustAnchorsPem,
-    final String? allowedListPem,
-  }) =>
-      (trustAnchorsPem != null && trustAnchorsPem.isNotEmpty) ||
-      (timestampTrustAnchorsPem != null &&
-          timestampTrustAnchorsPem.isNotEmpty) ||
-      (allowedListPem != null && allowedListPem.isNotEmpty);
 }

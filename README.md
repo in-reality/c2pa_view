@@ -406,3 +406,40 @@ feature must be explicitly forwarded by the normal hook when `build_native=true`
 its Cargo default declaration alone will not enable it through these hooks.
 Aggregate `defaultFeatures: false` must omit that bridge feature. No bridge seam
 or `build_native` implementation is introduced by this capability change.
+
+### Host-provided C2PA execution
+
+Version 1.1 adds the package-owned `C2paBackend` interface. Install a host adapter
+with `installC2paBackend(adapter)` before `initRustLib()` or any reader call.
+Public readers, `ManifestStore` constructors, static `C2paBridgeService` helpers
+and lazy `initRustLib()` use that adapter. URL helpers retain their Dart HTTP
+fetch and forward the response bytes/MIME to `validateBytes`. The adapter covers
+path/bytes, detached-with-media and unverified store-only reads, including preview
+annotations. Its JSON/error/null contract and separate Manifest CA, TSA CA and
+signing-leaf allow-list inputs match the standalone reader; adapters must preserve
+these distinctions. The generic package has no app or private-policy dependency.
+
+Without registration, the existing native/WASM FRB adapter remains the default.
+Concurrent initialization shares one future and the first timeout; failures stay
+failed until reload, with no standalone fallback. Repeated or late adapter registration fails.
+Legacy raw `RustLib` and generated APIs remain available for standalone consumers;
+host adapters use the supported facade and own their initialization.
+
+A consuming root that supplies execution can omit this package's native payload:
+
+```yaml
+hooks:
+  user_defines:
+    c2pa_view:
+      build_native: false
+```
+
+Omitted, null and true retain the normal standalone builder; false emits no native
+assets or dependencies and does not invoke Cargo. Other types fail. No package
+sets its own default off. Cargo's default-enabled `standalone-bridge` gates only
+the generated Rust module; ordinary `rlib` consumers disable defaults and request
+their existing capabilities explicitly. The standalone hook disables Cargo
+defaults internally and explicitly forwards `standalone-bridge` alongside its
+HTTP/OpenSSL selections. Supported FRB regeneration preserves the conditional
+module declaration with `add_mod_to_lib: false`. Native Apple settings, source
+watching, profiles and the separately built WASM entrypoint are retained.
