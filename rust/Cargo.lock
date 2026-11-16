@@ -521,6 +521,7 @@ dependencies = [
  "mime_guess",
  "pollster",
  "serde_json",
+ "sha2 0.11.0",
 ]
 
 [[package]]

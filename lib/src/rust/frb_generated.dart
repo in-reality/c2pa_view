@@ -4,6 +4,7 @@
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
 import 'api/c2pa.dart';
+import 'api/resources.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
@@ -64,7 +65,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => 1684961251;
+  int get rustContentHash => 1976240692;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -184,6 +185,19 @@ abstract class RustLibApi extends BaseApi {
   Future<Uint8List?> crateApiC2PaGetManifestWithValidationUtf8({
     required List<int> fileBytes,
     required String format,
+  });
+
+  Future<EmbeddedResourceRead> crateApiResourcesReadEmbeddedResource({
+    required List<int> fileBytes,
+    required String format,
+    required List<int> expectedInputSha256,
+    required String manifestLabel,
+    required String identifier,
+    required List<int> expectedPayloadSha256,
+    required int maxBytes,
+    String? trustAnchorsPem,
+    String? timestampTrustAnchorsPem,
+    String? allowedListPem,
   });
 }
 
@@ -930,10 +944,97 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         argNames: ["fileBytes", "format"],
       );
 
+  @override
+  Future<EmbeddedResourceRead> crateApiResourcesReadEmbeddedResource({
+    required List<int> fileBytes,
+    required String format,
+    required List<int> expectedInputSha256,
+    required String manifestLabel,
+    required String identifier,
+    required List<int> expectedPayloadSha256,
+    required int maxBytes,
+    String? trustAnchorsPem,
+    String? timestampTrustAnchorsPem,
+    String? allowedListPem,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_prim_u_8_loose(fileBytes, serializer);
+          sse_encode_String(format, serializer);
+          sse_encode_list_prim_u_8_loose(expectedInputSha256, serializer);
+          sse_encode_String(manifestLabel, serializer);
+          sse_encode_String(identifier, serializer);
+          sse_encode_list_prim_u_8_loose(expectedPayloadSha256, serializer);
+          sse_encode_u_32(maxBytes, serializer);
+          sse_encode_opt_String(trustAnchorsPem, serializer);
+          sse_encode_opt_String(timestampTrustAnchorsPem, serializer);
+          sse_encode_opt_String(allowedListPem, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 17,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_embedded_resource_read,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiResourcesReadEmbeddedResourceConstMeta,
+        argValues: [
+          fileBytes,
+          format,
+          expectedInputSha256,
+          manifestLabel,
+          identifier,
+          expectedPayloadSha256,
+          maxBytes,
+          trustAnchorsPem,
+          timestampTrustAnchorsPem,
+          allowedListPem,
+        ],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiResourcesReadEmbeddedResourceConstMeta =>
+      const TaskConstMeta(
+        debugName: "read_embedded_resource",
+        argNames: [
+          "fileBytes",
+          "format",
+          "expectedInputSha256",
+          "manifestLabel",
+          "identifier",
+          "expectedPayloadSha256",
+          "maxBytes",
+          "trustAnchorsPem",
+          "timestampTrustAnchorsPem",
+          "allowedListPem",
+        ],
+      );
+
   @protected
   String dco_decode_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as String;
+  }
+
+  @protected
+  EmbeddedResourceRead dco_decode_embedded_resource_read(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return EmbeddedResourceRead(
+      resolution: dco_decode_String(arr[0]),
+      bytes: dco_decode_list_prim_u_8_strict(arr[1]),
+      inputSha256: dco_decode_list_prim_u_8_strict(arr[2]),
+      currentValidationJson: dco_decode_list_prim_u_8_strict(arr[3]),
+    );
   }
 
   @protected
@@ -961,6 +1062,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  int dco_decode_u_32(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
+  }
+
+  @protected
   int dco_decode_u_8(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
@@ -971,6 +1078,25 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_list_prim_u_8_strict(deserializer);
     return utf8.decoder.convert(inner);
+  }
+
+  @protected
+  EmbeddedResourceRead sse_decode_embedded_resource_read(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_resolution = sse_decode_String(deserializer);
+    var var_bytes = sse_decode_list_prim_u_8_strict(deserializer);
+    var var_inputSha256 = sse_decode_list_prim_u_8_strict(deserializer);
+    var var_currentValidationJson = sse_decode_list_prim_u_8_strict(
+      deserializer,
+    );
+    return EmbeddedResourceRead(
+      resolution: var_resolution,
+      bytes: var_bytes,
+      inputSha256: var_inputSha256,
+      currentValidationJson: var_currentValidationJson,
+    );
   }
 
   @protected
@@ -1010,6 +1136,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  int sse_decode_u_32(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint32();
+  }
+
+  @protected
   int sse_decode_u_8(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint8();
@@ -1031,6 +1163,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void sse_encode_String(String self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer);
+  }
+
+  @protected
+  void sse_encode_embedded_resource_read(
+    EmbeddedResourceRead self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.resolution, serializer);
+    sse_encode_list_prim_u_8_strict(self.bytes, serializer);
+    sse_encode_list_prim_u_8_strict(self.inputSha256, serializer);
+    sse_encode_list_prim_u_8_strict(self.currentValidationJson, serializer);
   }
 
   @protected
@@ -1076,6 +1220,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     if (self != null) {
       sse_encode_list_prim_u_8_strict(self, serializer);
     }
+  }
+
+  @protected
+  void sse_encode_u_32(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint32(self);
   }
 
   @protected

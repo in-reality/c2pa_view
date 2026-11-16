@@ -1,3 +1,4 @@
+// @dart=3.11
 import 'dart:async';
 
 import 'helpers/init_native_rust_stub.dart'

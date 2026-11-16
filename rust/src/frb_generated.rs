@@ -39,7 +39,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1684961251;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1976240692;
 
 // Section: executor
 
@@ -673,6 +673,63 @@ fn wire__crate__api__c2pa__get_manifest_with_validation_utf8_impl(
         },
     )
 }
+fn wire__crate__api__resources__read_embedded_resource_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "read_embedded_resource",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_file_bytes = <Vec<u8>>::sse_decode(&mut deserializer);
+            let api_format = <String>::sse_decode(&mut deserializer);
+            let api_expected_input_sha256 = <Vec<u8>>::sse_decode(&mut deserializer);
+            let api_manifest_label = <String>::sse_decode(&mut deserializer);
+            let api_identifier = <String>::sse_decode(&mut deserializer);
+            let api_expected_payload_sha256 = <Vec<u8>>::sse_decode(&mut deserializer);
+            let api_max_bytes = <u32>::sse_decode(&mut deserializer);
+            let api_trust_anchors_pem = <Option<String>>::sse_decode(&mut deserializer);
+            let api_timestamp_trust_anchors_pem = <Option<String>>::sse_decode(&mut deserializer);
+            let api_allowed_list_pem = <Option<String>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, String>(
+                    (move || async move {
+                        let output_ok = crate::api::resources::read_embedded_resource(
+                            api_file_bytes,
+                            api_format,
+                            api_expected_input_sha256,
+                            api_manifest_label,
+                            api_identifier,
+                            api_expected_payload_sha256,
+                            api_max_bytes,
+                            api_trust_anchors_pem,
+                            api_timestamp_trust_anchors_pem,
+                            api_allowed_list_pem,
+                        )
+                        .await?;
+                        std::result::Result::Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 
 // Section: dart2rust
 
@@ -681,6 +738,22 @@ impl SseDecode for String {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <Vec<u8>>::sse_decode(deserializer);
         return String::from_utf8(inner).unwrap();
+    }
+}
+
+impl SseDecode for crate::api::resources::EmbeddedResourceRead {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_resolution = <String>::sse_decode(deserializer);
+        let mut var_bytes = <Vec<u8>>::sse_decode(deserializer);
+        let mut var_inputSha256 = <Vec<u8>>::sse_decode(deserializer);
+        let mut var_currentValidationJson = <Vec<u8>>::sse_decode(deserializer);
+        return crate::api::resources::EmbeddedResourceRead {
+            resolution: var_resolution,
+            bytes: var_bytes,
+            input_sha256: var_inputSha256,
+            current_validation_json: var_currentValidationJson,
+        };
     }
 }
 
@@ -715,6 +788,13 @@ impl SseDecode for Option<Vec<u8>> {
         } else {
             return None;
         }
+    }
+}
+
+impl SseDecode for u32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_u32::<NativeEndian>().unwrap()
     }
 }
 
@@ -838,6 +918,12 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
+        17 => wire__crate__api__resources__read_embedded_resource_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
         _ => unreachable!(),
     }
 }
@@ -856,10 +942,44 @@ fn pde_ffi_dispatcher_sync_impl(
 
 // Section: rust2dart
 
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::resources::EmbeddedResourceRead {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.resolution.into_into_dart().into_dart(),
+            self.bytes.into_into_dart().into_dart(),
+            self.input_sha256.into_into_dart().into_dart(),
+            self.current_validation_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::resources::EmbeddedResourceRead
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::resources::EmbeddedResourceRead>
+    for crate::api::resources::EmbeddedResourceRead
+{
+    fn into_into_dart(self) -> crate::api::resources::EmbeddedResourceRead {
+        self
+    }
+}
+
 impl SseEncode for String {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <Vec<u8>>::sse_encode(self.into_bytes(), serializer);
+    }
+}
+
+impl SseEncode for crate::api::resources::EmbeddedResourceRead {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.resolution, serializer);
+        <Vec<u8>>::sse_encode(self.bytes, serializer);
+        <Vec<u8>>::sse_encode(self.input_sha256, serializer);
+        <Vec<u8>>::sse_encode(self.current_validation_json, serializer);
     }
 }
 
@@ -890,6 +1010,13 @@ impl SseEncode for Option<Vec<u8>> {
         if let Some(value) = self {
             <Vec<u8>>::sse_encode(value, serializer);
         }
+    }
+}
+
+impl SseEncode for u32 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_u32::<NativeEndian>(self).unwrap();
     }
 }
 

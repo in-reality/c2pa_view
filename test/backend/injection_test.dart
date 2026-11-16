@@ -121,6 +121,22 @@ void main() {
       ..error = null;
   });
 
+  test('legacy host explicitly lacks the optional binary capability', () async {
+    final calls = backend.calls.length;
+    final result = await readEmbeddedC2paResource(
+      fileBytes: bytes,
+      format: 'image/png',
+      expectedInputSha256: Uint8List(32),
+      manifestLabel: 'claim',
+      identifier: 'self#jumbf=c2pa.databoxes/c2pa.data',
+      expectedPayloadSha256: Uint8List(32),
+    );
+    expect(result.resolution, 'unsupported');
+    expect(result.bytes, isEmpty);
+    expect(backend.calls.length, calls);
+    expect(RustLib.instance.initialized, isFalse);
+  });
+
   test(
     'selected backend stays initialized and rejects late replacement',
     () async {

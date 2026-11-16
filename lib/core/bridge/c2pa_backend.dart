@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:c2pa_view/core/bridge/standalone_c2pa_backend.dart';
 
@@ -45,6 +46,85 @@ abstract interface class C2paBackend {
     final String? timestampTrustAnchorsPem,
     final String? allowedListPem,
   });
+}
+
+/// Optional capability; existing host adapters need not implement binary reads.
+// An optional capability must be distinct from the existing host interface.
+// ignore: one_member_abstracts
+abstract interface class C2paResourceBackend {
+  /// Resolves bytes independently of validation/trust, using current input only.
+  Future<C2paResourceRead> readEmbeddedResource({
+    required final Uint8List fileBytes,
+    required final String format,
+    required final Uint8List expectedInputSha256,
+    required final String manifestLabel,
+    required final String identifier,
+    required final Uint8List expectedPayloadSha256,
+    final int maxBytes = 32 * 1024 * 1024,
+    final String? trustAnchorsPem,
+    final String? timestampTrustAnchorsPem,
+    final String? allowedListPem,
+  });
+}
+
+/// Binary resource result. Resolution grants no signature or trust status.
+class C2paResourceRead {
+  /// Creates a resource outcome with separate current validation metadata.
+  const C2paResourceRead({
+    required this.resolution,
+    required this.bytes,
+    required this.inputSha256,
+    required this.currentValidationJson,
+  });
+
+  /// `resolved`, `unsupported`, or an explicit admission/resolution failure.
+  final String resolution;
+
+  /// Bounded encoded payload; never hydrated through thumbnail JSON arrays.
+  final Uint8List bytes;
+
+  /// SHA-256 of the exact asset bytes used for this read.
+  final Uint8List inputSha256;
+
+  /// Current SDK checks, distinct from recorded statuses and payload resolution.
+  final Uint8List currentValidationJson;
+}
+
+/// Uses the selected backend's optional capability; never switches execution.
+Future<C2paResourceRead> readEmbeddedC2paResource({
+  required final Uint8List fileBytes,
+  required final String format,
+  required final Uint8List expectedInputSha256,
+  required final String manifestLabel,
+  required final String identifier,
+  required final Uint8List expectedPayloadSha256,
+  final int maxBytes = 32 * 1024 * 1024,
+  final String? trustAnchorsPem,
+  final String? timestampTrustAnchorsPem,
+  final String? allowedListPem,
+}) async {
+  final backend = c2paBackend;
+  if (backend is! C2paResourceBackend) {
+    return C2paResourceRead(
+      resolution: 'unsupported',
+      bytes: Uint8List(0),
+      inputSha256: Uint8List(0),
+      currentValidationJson: Uint8List(0),
+    );
+  }
+  await initializeC2paBackend();
+  return (backend as C2paResourceBackend).readEmbeddedResource(
+    fileBytes: fileBytes,
+    format: format,
+    expectedInputSha256: expectedInputSha256,
+    manifestLabel: manifestLabel,
+    identifier: identifier,
+    expectedPayloadSha256: expectedPayloadSha256,
+    maxBytes: maxBytes,
+    trustAnchorsPem: trustAnchorsPem,
+    timestampTrustAnchorsPem: timestampTrustAnchorsPem,
+    allowedListPem: allowedListPem,
+  );
 }
 
 C2paBackend _backend = const StandaloneC2paBackend();

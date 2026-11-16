@@ -18,6 +18,7 @@ flutter_rust_bridge = "=2.13.0"
 mime_guess = "2.0.5"
 serde_json = "1"
 image = { version = "0.25.10", default-features = false, features = ["png", "jpeg"] }
+sha2 = "0.11"
 
 # Native legacy OpenSSL is opt-in; normal WASM defaults remain Rust-only.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

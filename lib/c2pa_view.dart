@@ -1,7 +1,13 @@
 // Core
 // Legacy API (still functional)
 export 'api.dart';
-export 'core/bridge/c2pa_backend.dart' show C2paBackend, installC2paBackend;
+export 'core/bridge/c2pa_backend.dart'
+    show
+        C2paBackend,
+        C2paResourceBackend,
+        C2paResourceRead,
+        installC2paBackend,
+        readEmbeddedC2paResource;
 export 'core/bridge/c2pa_bridge_service.dart';
 export 'core/bridge/rust_lib_init.dart';
 export 'core/theme/c2pa_theme.dart';

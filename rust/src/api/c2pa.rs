@@ -79,10 +79,10 @@ const PREVIEW_REFS: usize = 1024;
 const PREVIEW_IDENTIFIER: usize = 4096;
 const PREVIEW_CONTEXT: usize = 256;
 
-struct PreviewWriter {
-    cursor: std::io::Cursor<Vec<u8>>,
-    limit: usize,
-    exceeded: bool,
+pub(super) struct PreviewWriter {
+    pub(super) cursor: std::io::Cursor<Vec<u8>>,
+    pub(super) limit: usize,
+    pub(super) exceeded: bool,
 }
 
 impl std::io::Write for PreviewWriter {
@@ -503,7 +503,7 @@ pub async fn get_manifest_with_validation_from_path(
 /// `trust.anchors` entry. Either may be empty — an allow-listed leaf is
 /// trusted even with an empty anchor set (c2pa-rs checks the end-entity
 /// SHA-256 first).
-fn trust_validation_settings(
+pub(super) fn trust_validation_settings(
     trust_anchors_pem: &str,
     allowed_list_pem: Option<&str>,
     timestamp_trust_anchors_pem: Option<&str>,

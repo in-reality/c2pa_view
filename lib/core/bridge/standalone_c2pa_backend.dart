@@ -4,6 +4,7 @@ import 'package:c2pa_view/core/bridge/c2pa_backend.dart';
 import 'package:c2pa_view/core/bridge/rust_lib_init_platform.dart'
     if (dart.library.js_interop) 'package:c2pa_view/core/bridge/rust_lib_init_web.dart';
 import 'package:c2pa_view/src/rust/api/c2pa.dart';
+import 'package:c2pa_view/src/rust/api/resources.dart' as resources;
 import 'package:c2pa_view/src/rust/frb_generated.dart';
 import 'package:flutter/foundation.dart';
 
@@ -22,9 +23,47 @@ bool _hasTrustMaterial({
 /// Default native/WASM reader using the package's generated FRB bridge.
 ///
 /// Applications normally use the facade, which coalesces initialization.
-class StandaloneC2paBackend implements C2paBackend {
+class StandaloneC2paBackend implements C2paBackend, C2paResourceBackend {
   /// Creates the unchanged standalone FRB adapter.
   const StandaloneC2paBackend();
+
+  @override
+  Future<C2paResourceRead> readEmbeddedResource({
+    required final Uint8List fileBytes,
+    required final String format,
+    required final Uint8List expectedInputSha256,
+    required final String manifestLabel,
+    required final String identifier,
+    required final Uint8List expectedPayloadSha256,
+    final int maxBytes = 32 * 1024 * 1024,
+    final String? trustAnchorsPem,
+    final String? timestampTrustAnchorsPem,
+    final String? allowedListPem,
+  }) async {
+    if (fileBytes.length > 128 * 1024 * 1024 ||
+        maxBytes <= 0 ||
+        maxBytes > 32 * 1024 * 1024) {
+      throw ArgumentError('resource_limit');
+    }
+    final result = await resources.readEmbeddedResource(
+      fileBytes: fileBytes,
+      format: format,
+      expectedInputSha256: expectedInputSha256,
+      manifestLabel: manifestLabel,
+      identifier: identifier,
+      expectedPayloadSha256: expectedPayloadSha256,
+      maxBytes: maxBytes,
+      trustAnchorsPem: trustAnchorsPem,
+      timestampTrustAnchorsPem: timestampTrustAnchorsPem,
+      allowedListPem: allowedListPem,
+    );
+    return C2paResourceRead(
+      resolution: result.resolution,
+      bytes: result.bytes,
+      inputSha256: result.inputSha256,
+      currentValidationJson: result.currentValidationJson,
+    );
+  }
 
   @override
   Future<void> initialize() async {

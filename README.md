@@ -443,3 +443,37 @@ defaults internally and explicitly forwards `standalone-bridge` alongside its
 HTTP/OpenSSL selections. Supported FRB regeneration preserves the conditional
 module declaration with `add_mod_to_lib: false`. Native Apple settings, source
 watching, profiles and the separately built WASM entrypoint are retained.
+
+### Bounded embedded binary resources
+
+`readEmbeddedC2paResource` uses the optional `C2paResourceBackend` capability.
+Existing `C2paBackend` host adapters keep compiling and return `unsupported`
+until they implement it. Execution never falls back to another backend.
+The standalone native/WASM adapter uses `read_embedded_resource`; supply exact
+asset bytes/MIME, an independently retained whole-input SHA-256, containing
+manifest label, exact local JUMBF resource ID and expected encoded-payload
+SHA-256. Relative IDs are made absolute in the selected containing claim before SDK
+lookup. No path/URL dereference, active-claim fallback or whole-manifest
+fallback is performed.
+
+The input ceiling is 128 MiB; `maxBytes` is 1 byte–32 MiB and further limits one output
+buffer. SDK metadata size admission precedes a bounded SDK output stream. The
+FRB result carries `Uint8List` binary bytes, including MP4, alongside **separate current validation checks** as UTF-8 JSON.
+Discover descriptors through the existing manifest reader on the same input;
+the binary read never serializes the complete manifest again. Validation output
+is limited to 1,024 current checks and 128 KiB of source strings; exceeding this
+returns `validation_limit` without payload bytes.
+Existing thumbnail limits are unchanged. These limits bound bridge input/output
+and resource hydration, not all allocations made while the SDK parses an asset.
+Callers own aggregate/concurrent admission across reads.
+
+`resolution` distinguishes `resolved`, `missing`, `missing_claim`,
+`invalid_reference`, `input_mismatch`, `payload_mismatch`, `invalid_asset`,
+`invalid_resource`, `validation_limit` and `limit`; unsupported hosts report `unsupported`.
+Invalid top-level byte budgets return `resource_limit`. The API always verifies
+these exact supplied bytes and never reuses a prior trusted summary. Resolved
+bytes confer no signature validity, issuer trust, access authorization or
+pixel/context equivalence. Current SDK checks remain separate from recorded
+ingredient/legacy validation in manifest JSON. Manifest CA, TSA CA and leaf
+allow-list inputs retain their separate purposes. Overlay descriptor parsing,
+decoder/canvas/timeline checks and compositing belong to the consuming package.
